@@ -61,8 +61,8 @@ npmTask := {
   List(distDir, sourceDir, jarDir).foreach(d => new File(s"$targetDir/$d").mkdirs())
 
   // copy static files
-  copyToDir(s"../LICENSE", targetDir)
-  copyToDir(s"../README.md", targetDir)
+  copyToDir(s"LICENSE", targetDir)
+  copyToDir(s"README.md", targetDir)
 
   // copy optimized js library
   val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")

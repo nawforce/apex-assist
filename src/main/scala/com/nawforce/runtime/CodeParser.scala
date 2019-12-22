@@ -28,7 +28,7 @@
 package com.nawforce.runtime
 
 import com.nawforce.parsers._
-import com.nawforce.parsers.antlr.CommonTokenStream
+import com.nawforce.parsers.antlr.{CommonTokenStream, TerminalNode}
 import com.nawforce.path.PathLike
 
 import scala.scalajs.js
@@ -37,7 +37,7 @@ import scala.scalajs.js.JavaScriptException
 object CodeParser {
   type ParserRuleContext = com.nawforce.parsers.antlr.ParserRuleContext
 
-  def parseCompilationUnit(path: PathLike, data: String): Either[SyntaxException, CompilationUnitContext] = {
+  def parseCompilationUnit(path: PathLike, data: String): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
     try {
       Right(createParser(path, data).compilationUnit())
     } catch {
@@ -72,6 +72,10 @@ object CodeParser {
     builder.toString
   }
 
+  def getText(node: TerminalNode): String = {
+    node.text
+  }
+
   def toScala[T](collection: js.Array[T]): Seq[T] = {
     collection
   }
@@ -80,7 +84,7 @@ object CodeParser {
     value.toOption
   }
 
-  private def createParser(path: PathLike, data: String): ApexParser = {
+  def createParser(path: PathLike, data: String): ApexParser = {
     val listener = new ThrowingErrorListener()
     val cis = new CaseInsensitiveInputStream(path.absolute.toString, data)
     val lexer = new ApexLexer(cis)

@@ -2,7 +2,7 @@
 
 rm -rf jars
 mkdir jars
-export APEXLINK_TARGET=../runtime/target
+export APEXLINK_TARGET=../ApexLink/target
 cp $APEXLINK_TARGET/apexlink-0.5.jar jars/.
 cp $APEXLINK_TARGET/dependency/antlr4-runtime-*.jar jars/.
 cp $APEXLINK_TARGET/dependency/logback-classic-*.jar jars/.

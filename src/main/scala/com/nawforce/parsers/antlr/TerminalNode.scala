@@ -33,5 +33,5 @@ import scala.scalajs.js.annotation.JSImport
 @js.native
 @JSImport("antlr4ts", "TerminalNode")
 class TerminalNode(options: js.Dynamic) extends js.Object {
-
+  val text: String = js.native
 }

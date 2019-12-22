@@ -1,3 +1,3 @@
 # Make common code available to the JS module
-ln -s ../ApexLink/src/common module/common
-ln -s ../ApexLink/src/common-test module/common-test
+ln -s ../ApexLink/src/common common
+ln -s ../ApexLink/src/common-test common-test

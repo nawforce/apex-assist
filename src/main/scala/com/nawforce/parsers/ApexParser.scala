@@ -28,7 +28,9 @@
 package com.nawforce.parsers
 
 import com.nawforce.parsers.ApexParser.BlockContext
-import com.nawforce.parsers.antlr.{CommonTokenStream, ParserRuleContext}
+import com.nawforce.parsers.ApexParser.CompilationUnitContext
+import com.nawforce.parsers.ApexParser.LiteralContext
+import com.nawforce.parsers.antlr.{CommonTokenStream, ParserRuleContext, TerminalNode}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -42,9 +44,17 @@ class ApexParser(tokens: CommonTokenStream) extends js.Object {
 
   def compilationUnit(): CompilationUnitContext = js.native
   def block(): BlockContext = js.native
+
+  def literal(): LiteralContext = js.native
 }
 
 object ApexParser {
+
+  @js.native
+  @JSImport("apex-parser", "CompilationUnitContext")
+  class CompilationUnitContext extends js.Object {
+
+  }
 
   @js.native
   @JSImport("apex-parser", "IdContext")
@@ -98,5 +108,15 @@ object ApexParser {
   class ElementValuePairContext extends ParserRuleContext {
     def id(): IdContext = js.native
     def elementValue(): ElementValueContext = js.native
+  }
+
+  @js.native
+  @JSImport("apex-parser", "LiteralContext")
+  class LiteralContext extends ParserRuleContext {
+    def IntegerLiteral(): js.UndefOr[TerminalNode] = js.native
+    def NumberLiteral(): js.UndefOr[TerminalNode] = js.native
+    def StringLiteral(): js.UndefOr[TerminalNode] = js.native
+    def BooleanLiteral(): js.UndefOr[TerminalNode] = js.native
+    def NULL(): js.UndefOr[TerminalNode] = js.native
   }
 }
