@@ -55,10 +55,11 @@ npmTask := {
   val sourceDir = "source/js"
   val distDir = "dist/js"
   val jarDir = "jars"
+  val platformDir = "platform"
 
   // Create module directory structure
   new File(targetDir).mkdirs()
-  List(distDir, sourceDir, jarDir).foreach(d => new File(s"$targetDir/$d").mkdirs())
+  List(distDir, sourceDir, jarDir, platformDir).foreach(d => new File(s"$targetDir/$d").mkdirs())
 
   // copy static files
   copyToDir(s"LICENSE", targetDir)
@@ -84,6 +85,17 @@ npmTask := {
     println(s"copy file $jarDir/$file")
     copy(s"$jarDir/$file", s"$targetDir/$jarDir/$file", REPLACE_EXISTING)
   }
+
+  // copy platform directory
+  val platformNamespaces = new File(platformDir).listFiles().map(_.name)
+  for(namespace <- platformNamespaces) {
+    println(s"copying platform namespace '$namespace'")
+    new File(s"$targetDir/platform/$namespace").mkdirs()
+    new File(s"$platformDir/$namespace").listFiles().foreach(name =>{
+      copy(s"$name", s"$targetDir/$name", REPLACE_EXISTING)
+    })
+  }
+
 
   val packageJson = s"""{
   "name": "$libName",
