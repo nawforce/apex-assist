@@ -1,0 +1,1 @@
+{"version":1,"name":"QueueableContext","typeName":"System.QueueableContext","nature":"interface","modifiers":["public"],"superClass":"","interfaces":[],"fields":[],"constructors":[],"methods":[{"version":1,"name":"getJobId","modifiers":["public"],"typeName":"System.Id","parameters":[]}],"nestedTypes":[]}

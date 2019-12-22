@@ -1,0 +1,1 @@
+{"version":1,"name":"Iterable","typeName":"System.Iterable<T>","nature":"interface","modifiers":["public"],"superClass":"","interfaces":[],"fields":[],"constructors":[],"methods":[{"version":1,"name":"iterator","modifiers":["public"],"typeName":"System.Iterator<T>","parameters":[]}],"nestedTypes":[]}

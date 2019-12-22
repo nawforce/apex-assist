@@ -1,0 +1,1 @@
+{"version":1,"name":"Iterator","typeName":"System.Iterator<T>","nature":"interface","modifiers":["public"],"superClass":"","interfaces":[],"fields":[],"constructors":[],"methods":[{"version":1,"name":"hasNext","modifiers":["public"],"typeName":"System.Boolean","parameters":[]},{"version":1,"name":"next","modifiers":["public"],"typeName":"T","parameters":[]}],"nestedTypes":[]}

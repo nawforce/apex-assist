@@ -1,0 +1,1 @@
+{"version":1,"name":"SchedulableContext","typeName":"System.SchedulableContext","nature":"interface","modifiers":["public"],"superClass":"","interfaces":[],"fields":[],"constructors":[],"methods":[{"version":1,"name":"getTriggerId","modifiers":["public"],"typeName":"System.Id","parameters":[]}],"nestedTypes":[]}

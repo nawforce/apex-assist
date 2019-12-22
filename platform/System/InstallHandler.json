@@ -1,0 +1,1 @@
+{"version":1,"name":"InstallHandler","typeName":"System.InstallHandler","nature":"interface","modifiers":["public"],"superClass":"","interfaces":[],"fields":[],"constructors":[],"methods":[{"version":1,"name":"onInstall","modifiers":["public"],"typeName":"void","parameters":[{"version":1,"name":"context","typeName":"System.InstallContext"}]}],"nestedTypes":[]}
