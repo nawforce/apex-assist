@@ -23,6 +23,8 @@ webpackConfigFile in fullOptJS := Some(baseDirectory.value / "custom.webpack.con
 resolvers += Resolver.sonatypeRepo("public")
 libraryDependencies += "io.scalajs" %%% "nodejs" % "0.4.2"
 libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.2.8"
+libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.9.0"
+
 libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.0" % "test"
 
 val npmTargetDir = s"target/npm/" // where to generate npm
