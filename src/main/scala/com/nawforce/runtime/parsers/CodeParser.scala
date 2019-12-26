@@ -28,14 +28,18 @@
 package com.nawforce.runtime.parsers
 
 import com.nawforce.common.parsers.CSTRange
-import com.nawforce.common.path.PathLike
-import com.nawforce.runtime.parsers.antlr.{CommonTokenStream, TerminalNode}
+import com.nawforce.common.path.{PathFactory, PathLike}
+import com.nawforce.runtime.parsers.ApexParser.ExpressionContext
+import com.nawforce.runtime.parsers.antlr.{CommonTokenStream, Interval}
 
 import scala.scalajs.js
 import scala.scalajs.js.JavaScriptException
 
+case class ClippedText(path: PathLike, text: String, line: Int, column: Int)
+
 object CodeParser {
   type ParserRuleContext = com.nawforce.runtime.parsers.antlr.ParserRuleContext
+  type TerminalNode = com.nawforce.runtime.parsers.antlr.TerminalNode
 
   def parseCompilationUnit(path: PathLike, data: String): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
     try {
@@ -45,9 +49,9 @@ object CodeParser {
     }
   }
 
-  def parseBlock(path: PathLike, data: Array[Byte]): Either[SyntaxException, ApexParser.BlockContext] = {
+  def parseBlock(path: PathLike, data: String): Either[SyntaxException, ApexParser.BlockContext] = {
     try {
-      Right(createParser(path, new String(data)).block())
+      Right(createParser(path, data).block())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
@@ -74,6 +78,25 @@ object CodeParser {
 
   def getText(node: TerminalNode): String = {
     node.text
+  }
+
+  def clipText(context: ParserRuleContext): ClippedText = {
+    val is = context.start.inputStream
+    val text = is.getText(new Interval(context.start.startIndex, context.stop.stopIndex))
+    val path = is.path
+
+    ClippedText(PathFactory(path), text, context.start.line-1, context.start.charPositionInLine)
+  }
+
+  def getTerminals(from: ExpressionContext, index: Integer): String = {
+    if (index < from.childCount) {
+      from.getChild(index) match {
+        case tn: TerminalNode => tn.text + getTerminals(from, index + 1)
+        case _ => ""
+      }
+    } else {
+      ""
+    }
   }
 
   def toScala[T](collection: js.Array[T]): Seq[T] = {

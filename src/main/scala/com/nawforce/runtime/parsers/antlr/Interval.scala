@@ -31,6 +31,5 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 @js.native
-@JSImport("antlr4ts", "TerminalNode")
-class TerminalNode(options: js.Dynamic) extends ParseTree {
-}
+@JSImport("antlr4ts", "Interval")
+class Interval(a: Int, b: Int) extends js.Object

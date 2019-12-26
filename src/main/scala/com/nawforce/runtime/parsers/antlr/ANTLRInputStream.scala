@@ -25,25 +25,13 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.nawforce
-
-import com.nawforce.pkg.imports.{FSMonkey, Memfs}
-import com.nawforce.path.{PathFactory, PathLike}
+package com.nawforce.runtime.parsers.antlr
 
 import scala.scalajs.js
-import js.JSConverters._
+import scala.scalajs.js.annotation.JSImport
 
-object FileSystemHelper {
-
-  // Abstract virtual filesystem for testing
-  def run(files: Map[String, String])(verify: PathLike => Unit): Unit = {
-    val unpatch = FSMonkey.patchFs(Memfs.vol)
-    try {
-      Memfs.vol.fromJSON(files.map(kv => ("/" + kv._1, kv._2)).toJSDictionary.asInstanceOf[js.Dynamic])
-      verify(PathFactory("/"))
-    } finally {
-      unpatch()
-      Memfs.vol.reset()
-    }
-  }
+@js.native
+@JSImport("antlr4ts", "ANTLRInputStream")
+class ANTLRInputStream extends js.Object {
+  def getText(interval: Interval): String = js.native
 }

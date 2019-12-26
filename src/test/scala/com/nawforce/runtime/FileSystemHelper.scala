@@ -25,37 +25,25 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.nawforce.runtime.api
+package com.nawforce.runtime
 
-import com.nawforce.common.diagnostics.IssueCategory
-import com.nawforce.common.documents.Location
-import com.nawforce.runtime.server.OrgProxy
+import com.nawforce.common.path.{PathFactory, PathLike}
+import com.nawforce.pkg.imports.{FSMonkey, Memfs}
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExportAll, JSExportTopLevel}
+import scala.scalajs.js.JSConverters._
 
-@JSExportTopLevel("Org") @JSExportAll
-class Org(proxy: OrgProxy) {
-  private lazy val unmanaged = new Package(proxy.unmanagedPackage)
+object FileSystemHelper {
 
-  def unmanagedPackage(): Package = unmanaged
-
-  def addPackage(namespace: String, directories: js.Array[String], basePackages: js.Array[String]): Package = {
-    new Package(proxy.addPackage(namespace, directories, basePackages))
-  }
-
-  def issues(warnings: Boolean, zombies: Boolean): String = {
-    proxy.issues(warnings, zombies)
-  }
-}
-
-object Org {
-
-  def log(location: Location, msg: String, category: IssueCategory): Unit = {
-    //Org.current.value.issues.logMessage(location, msg, category)
-  }
-
-  def logMessage(location: Location, msg: String): Unit = {
-    //log(location, msg, ERROR_CATEGORY)
+  // Abstract virtual filesystem for testing
+  def run(files: Map[String, String])(verify: PathLike => Unit): Unit = {
+    val unpatch = FSMonkey.patchFs(Memfs.vol)
+    try {
+      Memfs.vol.fromJSON(files.map(kv => ("/" + kv._1, kv._2)).toJSDictionary.asInstanceOf[js.Dynamic])
+      verify(PathFactory("/"))
+    } finally {
+      unpatch()
+      Memfs.vol.reset()
+    }
   }
 }

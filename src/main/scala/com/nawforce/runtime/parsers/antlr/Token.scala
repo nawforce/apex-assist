@@ -39,4 +39,6 @@ class Token extends js.Object {
   val line: Int = js.native
   val charPositionInLine: Int = js.native
   val inputStream: CaseInsensitiveInputStream = js.native
+  val startIndex: Int = js.native
+  val stopIndex: Int = js.native
 }
