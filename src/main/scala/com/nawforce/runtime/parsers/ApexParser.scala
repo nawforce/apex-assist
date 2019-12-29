@@ -430,61 +430,61 @@ object ApexParser {
   @JSImport("apex-parser", "PostOpExpressionContext")
   class PostOpExpressionContext extends ExpressionContext {
     def expression(): ExpressionContext = js.native
-    def INC(): TerminalNode = js.native
-    def DEC(): TerminalNode = js.native
+    def INC(): js.UndefOr[TerminalNode] = js.native
+    def DEC(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "PreOpExpressionContext")
   class PreOpExpressionContext extends ExpressionContext {
     def expression(): ExpressionContext = js.native
-    def ADD(): TerminalNode = js.native
-    def DEC(): TerminalNode = js.native
-    def INC(): TerminalNode = js.native
-    def SUB(): TerminalNode = js.native
+    def ADD(): js.UndefOr[TerminalNode] = js.native
+    def DEC(): js.UndefOr[TerminalNode] = js.native
+    def INC(): js.UndefOr[TerminalNode] = js.native
+    def SUB(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "NegExpressionContext")
   class NegExpressionContext extends ExpressionContext {
     def expression(): ExpressionContext = js.native
-    def BANG(): TerminalNode = js.native
-    def TILDE(): TerminalNode = js.native
+    def BANG(): js.UndefOr[TerminalNode] = js.native
+    def TILDE(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "Arth1ExpressionContext")
   class Arth1ExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
-    def DIV(): TerminalNode = js.native
-    def MOD(): TerminalNode = js.native
-    def MUL(): TerminalNode = js.native
+    def DIV(): js.UndefOr[TerminalNode] = js.native
+    def MOD(): js.UndefOr[TerminalNode] = js.native
+    def MUL(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "Arth2ExpressionContext")
   class Arth2ExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
-    def ADD(): TerminalNode = js.native
-    def SUB(): TerminalNode = js.native
+    def ADD(): js.UndefOr[TerminalNode] = js.native
+    def SUB(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "BitExpressionContext")
   class BitExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
-    def GT(): TerminalNode = js.native
-    def LT(): TerminalNode = js.native
+    def GT(): js.Array[TerminalNode] = js.native
+    def LT(): js.Array[TerminalNode] = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "CmpExpressionContext")
   class CmpExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
-    def GE(): TerminalNode = js.native
-    def GT(): TerminalNode = js.native
-    def LE(): TerminalNode = js.native
-    def LT(): TerminalNode = js.native
+    def GE(): js.UndefOr[TerminalNode] = js.native
+    def GT(): js.UndefOr[TerminalNode] = js.native
+    def LE(): js.UndefOr[TerminalNode] = js.native
+    def LT(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
@@ -498,11 +498,11 @@ object ApexParser {
   @JSImport("apex-parser", "EqualityExpressionContext")
   class EqualityExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
-    def EQUAL(): TerminalNode = js.native
-    def LESSANDGREATER(): TerminalNode = js.native
-    def NOTEQUAL(): TerminalNode = js.native
-    def TRIPLEEQUAL(): TerminalNode = js.native
-    def TRIPLENOTEQUAL(): TerminalNode = js.native
+    def EQUAL(): js.UndefOr[TerminalNode] = js.native
+    def LESSANDGREATER(): js.UndefOr[TerminalNode] = js.native
+    def NOTEQUAL(): js.UndefOr[TerminalNode] = js.native
+    def TRIPLEEQUAL(): js.UndefOr[TerminalNode] = js.native
+    def TRIPLENOTEQUAL(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
@@ -546,18 +546,18 @@ object ApexParser {
   class AssignExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
 
-    def ADD_ASSIGN(): TerminalNode = js.native
-    def AND_ASSIGN(): TerminalNode = js.native
-    def ASSIGN(): TerminalNode = js.native
-    def DIV_ASSIGN(): TerminalNode = js.native
-    def LSHIFT_ASSIGN(): TerminalNode = js.native
-    def MOD_ASSIGN(): TerminalNode = js.native
-    def MUL_ASSIGN(): TerminalNode = js.native
-    def OR_ASSIGN(): TerminalNode = js.native
-    def RSHIFT_ASSIGN(): TerminalNode = js.native
-    def SUB_ASSIGN(): TerminalNode = js.native
-    def URSHIFT_ASSIGN(): TerminalNode = js.native
-    def XOR_ASSIGN(): TerminalNode = js.native
+    def ADD_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def AND_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def DIV_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def LSHIFT_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def MOD_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def MUL_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def OR_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def RSHIFT_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def SUB_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def URSHIFT_ASSIGN(): js.UndefOr[TerminalNode] = js.native
+    def XOR_ASSIGN(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native

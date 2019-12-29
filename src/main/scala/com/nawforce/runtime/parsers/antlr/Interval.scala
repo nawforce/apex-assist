@@ -31,5 +31,5 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 @js.native
-@JSImport("antlr4ts", "Interval")
+@JSImport("antlr4ts/misc/Interval", "Interval")
 class Interval(a: Int, b: Int) extends js.Object

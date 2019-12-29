@@ -36,7 +36,7 @@ import scala.scalajs.js.JSConverters._
 object FileSystemHelper {
 
   // Abstract virtual filesystem for testing
-  def run(files: Map[String, String])(verify: PathLike => Unit): Unit = {
+  def run[T](files: Map[String, String])(verify: PathLike => T): T = {
     val unpatch = FSMonkey.patchFs(Memfs.vol)
     try {
       Memfs.vol.fromJSON(files.map(kv => ("/" + kv._1, kv._2)).toJSDictionary.asInstanceOf[js.Dynamic])
