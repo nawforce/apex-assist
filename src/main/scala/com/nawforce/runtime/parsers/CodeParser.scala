@@ -31,6 +31,7 @@ import com.nawforce.common.parsers.CSTRange
 import com.nawforce.common.path.{PathFactory, PathLike}
 import com.nawforce.runtime.parsers.ApexParser.ExpressionContext
 import com.nawforce.runtime.parsers.antlr.{CommonTokenStream, Interval}
+import io.scalajs.nodejs.console
 
 import scala.scalajs.js
 import scala.scalajs.js.JavaScriptException
@@ -52,6 +53,14 @@ object CodeParser {
   def parseBlock(path: PathLike, data: String): Either[SyntaxException, ApexParser.BlockContext] = {
     try {
       Right(createParser(path, data).block())
+    } catch {
+      case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
+    }
+  }
+
+  def parseTypeRef(path: PathLike, data: String): Either[SyntaxException, ApexParser.TypeRefContext] = {
+    try {
+      Right(createParser(path, data).typeRef())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
@@ -90,6 +99,10 @@ object CodeParser {
 
   def getTerminals(from: ExpressionContext, index: Integer): String = {
     if (index < from.childCount) {
+      val entry = from.getChild(index)
+      console.dir(entry)
+      console.dir(entry.isInstanceOf[TerminalNode])
+
       from.getChild(index) match {
         case tn: TerminalNode => tn.text + getTerminals(from, index + 1)
         case _ => ""
@@ -109,7 +122,7 @@ object CodeParser {
 
   def createParser(path: PathLike, data: String): ApexParser = {
     val listener = new ThrowingErrorListener()
-    val cis = new CaseInsensitiveInputStream(path.absolute.toString, data)
+    val cis = new CaseInsensitiveInputStream(path.toString, data)
     val lexer = new ApexLexer(cis)
 
     val tokens = new CommonTokenStream(lexer)

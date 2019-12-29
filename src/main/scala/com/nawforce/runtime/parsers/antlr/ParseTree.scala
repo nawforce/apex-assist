@@ -31,7 +31,6 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 @js.native
-@JSImport("antlr4ts", "ParseTree")
-class ParseTree extends js.Object {
+trait ParseTree extends js.Object {
   val text: String = js.native
 }

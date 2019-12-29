@@ -27,9 +27,7 @@
 */
 package com.nawforce.runtime.parsers
 
-import com.nawforce.runtime.parsers.ApexParser.BlockContext
-import com.nawforce.runtime.parsers.ApexParser.CompilationUnitContext
-import com.nawforce.runtime.parsers.ApexParser.LiteralContext
+import com.nawforce.runtime.parsers.ApexParser.{BlockContext, CompilationUnitContext, LiteralContext, TypeRefContext}
 import com.nawforce.runtime.parsers.antlr.{CommonTokenStream, ParserRuleContext, TerminalNode}
 
 import scala.scalajs.js
@@ -44,6 +42,7 @@ class ApexParser(tokens: CommonTokenStream) extends js.Object {
 
   def compilationUnit(): CompilationUnitContext = js.native
   def block(): BlockContext = js.native
+  def typeRef(): TypeRefContext = js.native
 
   def literal(): LiteralContext = js.native
 }
@@ -431,42 +430,61 @@ object ApexParser {
   @JSImport("apex-parser", "PostOpExpressionContext")
   class PostOpExpressionContext extends ExpressionContext {
     def expression(): ExpressionContext = js.native
+    def INC(): TerminalNode = js.native
+    def DEC(): TerminalNode = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "PreOpExpressionContext")
   class PreOpExpressionContext extends ExpressionContext {
     def expression(): ExpressionContext = js.native
+    def ADD(): TerminalNode = js.native
+    def DEC(): TerminalNode = js.native
+    def INC(): TerminalNode = js.native
+    def SUB(): TerminalNode = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "NegExpressionContext")
   class NegExpressionContext extends ExpressionContext {
     def expression(): ExpressionContext = js.native
+    def BANG(): TerminalNode = js.native
+    def TILDE(): TerminalNode = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "Arth1ExpressionContext")
   class Arth1ExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
+    def DIV(): TerminalNode = js.native
+    def MOD(): TerminalNode = js.native
+    def MUL(): TerminalNode = js.native
   }
 
   @js.native
   @JSImport("apex-parser", "Arth2ExpressionContext")
   class Arth2ExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
+    def ADD(): TerminalNode = js.native
+    def SUB(): TerminalNode = js.native
   }
 
   @js.native
-  @JSImport("apex-parser", "Cmp1ExpressionContext")
-  class Cmp1ExpressionContext extends ExpressionContext {
+  @JSImport("apex-parser", "BitExpressionContext")
+  class BitExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
+    def GT(): TerminalNode = js.native
+    def LT(): TerminalNode = js.native
   }
 
   @js.native
-  @JSImport("apex-parser", "Cmp2ExpressionContext")
-  class Cmp2ExpressionContext extends ExpressionContext {
+  @JSImport("apex-parser", "CmpExpressionContext")
+  class CmpExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
+    def GE(): TerminalNode = js.native
+    def GT(): TerminalNode = js.native
+    def LE(): TerminalNode = js.native
+    def LT(): TerminalNode = js.native
   }
 
   @js.native
@@ -480,6 +498,11 @@ object ApexParser {
   @JSImport("apex-parser", "EqualityExpressionContext")
   class EqualityExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
+    def EQUAL(): TerminalNode = js.native
+    def LESSANDGREATER(): TerminalNode = js.native
+    def NOTEQUAL(): TerminalNode = js.native
+    def TRIPLEEQUAL(): TerminalNode = js.native
+    def TRIPLENOTEQUAL(): TerminalNode = js.native
   }
 
   @js.native
@@ -522,6 +545,19 @@ object ApexParser {
   @JSImport("apex-parser", "AssignExpressionContext")
   class AssignExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
+
+    def ADD_ASSIGN(): TerminalNode = js.native
+    def AND_ASSIGN(): TerminalNode = js.native
+    def ASSIGN(): TerminalNode = js.native
+    def DIV_ASSIGN(): TerminalNode = js.native
+    def LSHIFT_ASSIGN(): TerminalNode = js.native
+    def MOD_ASSIGN(): TerminalNode = js.native
+    def MUL_ASSIGN(): TerminalNode = js.native
+    def OR_ASSIGN(): TerminalNode = js.native
+    def RSHIFT_ASSIGN(): TerminalNode = js.native
+    def SUB_ASSIGN(): TerminalNode = js.native
+    def URSHIFT_ASSIGN(): TerminalNode = js.native
+    def XOR_ASSIGN(): TerminalNode = js.native
   }
 
   @js.native

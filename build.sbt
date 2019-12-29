@@ -14,6 +14,7 @@ webpackBundlingMode := BundlingMode.Application
 npmDependencies in Compile += "java" -> "0.11.1"
 npmDependencies in Compile += "xmldom" -> "0.1.27"
 npmDependencies in Compile += "antlr4ts" -> "0.5.0-alpha.3"
+npmDependencies in Compile += "apex-parser" -> "1.0.0"
 npmDependencies in Test += "fs-monkey" -> "0.3.3"
 npmDependencies in Test += "memfs" -> "3.0.1"
 
