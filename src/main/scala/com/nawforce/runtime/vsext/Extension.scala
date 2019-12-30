@@ -25,16 +25,29 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.nawforce.runtime.imports
+package com.nawforce.runtime.vsext
 
-import scala.scalajs.js
-import scala.scalajs.js.annotation._
+import com.nawforce.runtime.vsext.vscode.ExtensionContext
+import com.nawforce.runtime.vsext.vscode.Commands
+import io.scalajs.nodejs.console
 
-@js.native
-trait OSExtra extends js.Object {
-  def homedir(): String = js.native
+import scala.scalajs.js.annotation.JSExportTopLevel
+
+// https://github.com/scalacenter/accessible-scala/blob/master/vscode/src/main/scala/vscode/vscode.scala
+
+object Extension {
+  @JSExportTopLevel("activate")
+  def activate(context: ExtensionContext): Unit = {
+    console.log("Activated")
+    context.subscriptions.push(
+      Commands.registerCommand("extension.helloWorld", () => {
+        console.log("Command Run")
+      })
+    )
+  }
+
+  @JSExportTopLevel("deactivate")
+  def deactivate(): Unit = {
+    console.log("Deactivated")
+  }
 }
-
-@js.native
-@JSImport("os", JSImport.Namespace)
-object OSExtra extends OSExtra

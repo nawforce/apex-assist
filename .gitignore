@@ -1,6 +1,5 @@
 target/
-jars/
-samples/
+samples
 common
 common-test
 

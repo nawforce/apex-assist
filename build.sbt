@@ -57,18 +57,20 @@ npmTask := {
 
   val inputDir = "target/scala-2.12/scalajs-bundler/main"
   val targetDir = s"$npmTargetDir/$libName"
-  val sourceDir = "source/js"
-  val distDir = "dist/js"
-  val jarDir = "jars"
+  val sourceDir = "source"
+  val distDir = "dist"
   val platformDir = "platform"
 
   // Create module directory structure
   new File(targetDir).mkdirs()
-  List(distDir, sourceDir, jarDir, platformDir).foreach(d => new File(s"$targetDir/$d").mkdirs())
+  List(".vscode", distDir, sourceDir, platformDir)
+    .foreach(d => new File(s"$targetDir/$d").mkdirs())
 
   // copy static files
   copyToDir(s"LICENSE", targetDir)
   copyToDir(s"README.md", targetDir)
+  copy("npm/package.json", s"$targetDir/package.json", REPLACE_EXISTING)
+  copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
 
   // copy optimized js library
   val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")
@@ -84,13 +86,6 @@ npmTask := {
     copy(s"$inputDir/$file", s"$targetDir/$sourceDir/$file", REPLACE_EXISTING)
   }
 
-  // copy jars directory
-  val fileJars = new File(jarDir).listFiles().filter(_.name.endsWith(".jar")).map(_.name)
-  for(file <- fileJars) {
-    println(s"copy file $jarDir/$file")
-    copy(s"$jarDir/$file", s"$targetDir/$jarDir/$file", REPLACE_EXISTING)
-  }
-
   // copy platform directory
   val platformNamespaces = new File(platformDir).listFiles().map(_.name)
   for(namespace <- platformNamespaces) {
@@ -100,26 +95,6 @@ npmTask := {
       copy(s"$name", s"$targetDir/$name", REPLACE_EXISTING)
     })
   }
-
-
-  val packageJson = s"""{
-  "name": "$libName",
-  "version": "${version.value.toString}",
-  "description": "${description.value.toString}",
-  "main": "$distDir/$libName-opt.js",
-  "repository": "nawforce/apexlink",
-  "author": "Kevin Jones <nawforce@gmail.com> (https://github.com/nawforce)",
-  "license": "BSD-3-Clause",
-  "bugs": "https://github.com/nawforce/apexlink/issues",
-  "dependencies": {
-    "xmldom": "0.1.27",
-    "antlr4ts": "0.5.0-alpha.3",
-    "apex-parser": "1.0.0"
-  }
-}"""
-
-  println(packageJson)
-  Files.write(Paths.get(s"$targetDir/package.json"), packageJson.getBytes(StandardCharsets.UTF_8))
 
   println(s"NPM package created in $npmTargetDir")
 }

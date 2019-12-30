@@ -30,7 +30,6 @@ package com.nawforce.runtime.xml
 import com.nawforce.common.documents.{Location, PointLocation, Position}
 import com.nawforce.common.path.PathLike
 import com.nawforce.common.xml.{XMLDocumentLike, XMLElementLike, XMLName}
-import com.nawforce.runtime.imports.xml._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.scalajs.js

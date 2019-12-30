@@ -27,36 +27,14 @@
 */
 package com.nawforce.runtime.cache
 
-import com.nawforce.common.path.{DIRECTORY, DOES_NOT_EXIST, PathFactory, PathLike}
-import io.scalajs.nodejs.process
+import scala.scalajs.js
+import scala.scalajs.js.annotation._
 
-class Cache(path: PathLike) {
-
+@js.native
+trait OSExtra extends js.Object {
+  def homedir(): String = js.native
 }
 
-object Cache {
-  val CACHE_DIR: String = ".apexlink_cache"
-  val TEST_FILE: String = "test_file"
-
-  def apply(): Either[String, Cache] = {
-    val cacheDir =
-      process.env.get("APEXLINK_CACHE_DIR").map(d =>PathFactory(d))
-        .getOrElse(PathFactory(OSExtra.homedir()).join(CACHE_DIR))
-
-    if (cacheDir.nature != DOES_NOT_EXIST) {
-      if (cacheDir.nature != DIRECTORY) {
-        return Left(s"Cache directory '$cacheDir' exists but is not a directory")
-      }
-
-      cacheDir.createFile(TEST_FILE, "") match {
-        case Left(err) => Left(s"Cache directory '$cacheDir' exists but is not writable, error '$err'")
-        case Right(created) =>
-          created.delete()
-          Right(new Cache(cacheDir))
-      }
-    } else {
-      // TODO
-      Left("Create Dir")
-    }
-  }
-}
+@js.native
+@JSImport("os", JSImport.Namespace)
+object OSExtra extends OSExtra
