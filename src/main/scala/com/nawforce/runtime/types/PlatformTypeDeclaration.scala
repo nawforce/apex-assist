@@ -28,13 +28,12 @@
 
 package com.nawforce.runtime.types
 
-import com.nawforce.common.api.{ConstructorSummary, FieldSummary, MethodSummary, ParameterSummary, TypeSummary}
+import com.nawforce.common.api._
 import com.nawforce.common.finding.TypeRequest.TypeRequest
 import com.nawforce.common.finding.{MissingType, WrongTypeArguments}
 import com.nawforce.common.names.{DotName, Name, TypeName}
 import com.nawforce.common.path.{DIRECTORY, FILE, PathFactory, PathLike}
 import com.nawforce.common.types._
-import scalaz.Memo
 import upickle.default._
 
 import scala.collection.immutable.HashMap
@@ -157,9 +156,10 @@ object PlatformTypeDeclaration {
    * PlatformTypeDeclaration but it does not handle nested classes, see PlatformTypes for that.
    */
   def get(typeName: TypeName, from: Option[TypeDeclaration]): TypeRequest = {
-    val tdOption = declarationCache(typeName.asDotName)
-    if (tdOption.isEmpty)
+    val tdOption = getDeclaration(typeName.asDotName)
+    if (tdOption.isEmpty) {
       return Left(MissingType(typeName))
+    }
 
     // Quick fail on wrong number of type variables
     val td = tdOption.get
@@ -176,19 +176,31 @@ object PlatformTypeDeclaration {
    * delegate here if needed. This does not handle generics or inner classes
    */
   def getDeclaration(name: DotName): Option[PlatformTypeDeclaration] = {
-    declarationCache(name)
+    val found = declarationCache.get(name)
+    if (found.nonEmpty) {
+      found.get
+    } else {
+      val loaded = find(name)
+      declarationCache.put(name, loaded)
+      loaded
+    }
   }
 
-  private val declarationCache: DotName => Option[PlatformTypeDeclaration] =
-    Memo.immutableHashMapMemo { name: DotName => find(name) }
+  lazy val all: Iterable[Option[PlatformTypeDeclaration]] = {
+    classNames.map(name => getDeclaration(name))
+  }
+
+  private val declarationCache = mutable.Map[DotName, Option[PlatformTypeDeclaration]]()
 
   private def find(name: DotName): Option[PlatformTypeDeclaration] = {
     val matched = classNameMap.get(name)
+
     assert(matched.size < 2, s"Found multiple platform type matches for $name")
-    matched.flatMap(head => {
-      readDeclaration(pathFor(platformPackagePath, head.names))
-        .map(summary => PlatformTypeDeclaration(summary, None))
-    })
+    if (matched.nonEmpty) {
+      Some(PlatformTypeDeclaration(readDeclaration(pathFor(platformPackagePath, matched.head.names)).get, None))
+    } else {
+      None
+    }
   }
 
   @scala.annotation.tailrec
@@ -201,7 +213,7 @@ object PlatformTypeDeclaration {
 
   def readDeclaration(path: PathLike): Option[TypeSummary] = {
     path.read() match {
-      case Left(_) => None
+      case Left(err) => assert(false); None
       case Right(data) => Some(read[TypeSummary](data))
     }
   }

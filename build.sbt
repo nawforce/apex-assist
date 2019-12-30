@@ -3,6 +3,9 @@ import java.nio.file.Path
 name := "apexlink-js"
 version := "0.5.0"
 scalaVersion := "2.12.3"
+parallelExecution in Test := false
+//scalaJSOptimizerOptions ~= { _.withDisableOptimizer(true) }
+//jsEnv in Test := new org.scalajs.jsenv.nodejs.NodeJSEnv(org.scalajs.jsenv.nodejs.NodeJSEnv.Config().withArgs(List("--inspect-brk")))
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / "common"
 unmanagedSourceDirectories in Test += baseDirectory.value / "common-test"
@@ -11,7 +14,6 @@ enablePlugins(ScalaJSBundlerPlugin)
 scalacOptions += "-P:scalajs:sjsDefinedByDefault"
 webpackBundlingMode := BundlingMode.Application
 
-npmDependencies in Compile += "java" -> "0.11.1"
 npmDependencies in Compile += "xmldom" -> "0.1.27"
 npmDependencies in Compile += "antlr4ts" -> "0.5.0-alpha.3"
 npmDependencies in Compile += "apex-parser" -> "1.0.0"
@@ -110,7 +112,6 @@ npmTask := {
   "license": "BSD-3-Clause",
   "bugs": "https://github.com/nawforce/apexlink/issues",
   "dependencies": {
-    "java": "0.11.1",
     "xmldom": "0.1.27",
     "antlr4ts": "0.5.0-alpha.3",
     "apex-parser": "1.0.0"
