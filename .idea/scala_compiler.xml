@@ -3,7 +3,7 @@
   <component name="ScalaCompilerConfiguration">
     <option name="incrementalityType" value="SBT" />
     <profile name="sbt 1" modules="shared_272" />
-    <profile name="sbt 2" modules="ApexLink,apexlink-js,apexlink.js">
+    <profile name="sbt 2" modules="ApexLink,apex-assist,apexlink-js,apexlink.js">
       <parameters>
         <parameter value="-P:scalajs:sjsDefinedByDefault" />
       </parameters>

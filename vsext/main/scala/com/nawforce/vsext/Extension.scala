@@ -25,13 +25,28 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.nawforce.runtime.vsext.vscode
+package com.nawforce.vsext
 
-import scala.scalajs.js
-import scala.scalajs.js.annotation.JSImport
+import com.nawforce.vsext.vscode.{Commands, ExtensionContext}
+import io.scalajs.nodejs.console
 
-@js.native
-@JSImport("vscode", "Disposable")
-class Disposable extends js.Object {
-  def dispose(): js.Dynamic = js.native
+import scala.scalajs.js.annotation.JSExportTopLevel
+
+// https://github.com/scalacenter/accessible-scala/blob/master/vscode/src/main/scala/vscode/vscode.scala
+
+object Extension {
+  @JSExportTopLevel("activate")
+  def activate(context: ExtensionContext): Unit = {
+    console.log("Activated")
+    context.subscriptions.push(
+      Commands.registerCommand("extension.helloWorld", () => {
+        console.log("Command Run")
+      })
+    )
+  }
+
+  @JSExportTopLevel("deactivate")
+  def deactivate(): Unit = {
+    console.log("Deactivated")
+  }
 }

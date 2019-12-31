@@ -1,6 +1,6 @@
 import java.nio.file.Path
 
-name := "apexlink-js"
+name := "apex-assist"
 version := "0.5.0"
 scalaVersion := "2.12.3"
 parallelExecution in Test := false

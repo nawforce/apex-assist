@@ -1,8 +1,8 @@
 {
-  "name": "apexlink-js",
+  "name": "apex-assist",
   "version": "0.5.0",
-  "description": "apexlink-js",
-  "main": "dist/apexlink-js-opt.js",
+  "description": "Salesforce Apex language code analysis tools",
+  "main": "dist/apex-assist-opt.js",
   "repository": "nawforce/apexlink",
   "author": "Kevin Jones <nawforce@gmail.com> (https://github.com/nawforce)",
   "license": "BSD-3-Clause",
