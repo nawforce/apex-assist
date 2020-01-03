@@ -60,7 +60,10 @@ case class Path(path: String) extends PathLike {
   }
 
   override def join(arg: String): Path = {
-    Path(io.scalajs.nodejs.path.Path.join(path, arg))
+    if (io.scalajs.nodejs.path.Path.isAbsolute(arg))
+      Path(arg)
+    else
+      Path(io.scalajs.nodejs.path.Path.join(path, arg))
   }
 
   override def createFile(name: String, data: String): Either[String, Path] = {
@@ -125,3 +128,8 @@ case class Path(path: String) extends PathLike {
     }
   }
 }
+
+object Path {
+  val separator: String = io.scalajs.nodejs.path.Path.sep
+}
+

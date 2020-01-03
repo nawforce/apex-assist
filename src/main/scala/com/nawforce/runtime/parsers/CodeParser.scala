@@ -100,8 +100,6 @@ object CodeParser {
   def getTerminals(from: ExpressionContext, index: Integer): String = {
     if (index < from.childCount) {
       val entry = from.getChild(index)
-      console.dir(entry)
-      console.dir(entry.isInstanceOf[TerminalNode])
 
       from.getChild(index) match {
         case tn: TerminalNode => tn.text + getTerminals(from, index + 1)

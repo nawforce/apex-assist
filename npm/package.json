@@ -2,6 +2,7 @@
   "name": "apex-assist",
   "version": "0.5.0",
   "description": "Salesforce Apex language code analysis tools",
+  "publisher": "KevinJones",
   "main": "dist/apex-assist-opt.js",
   "repository": "nawforce/apexlink",
   "author": "Kevin Jones <nawforce@gmail.com> (https://github.com/nawforce)",
@@ -19,13 +20,23 @@
     "vscode": "^1.41.0"
   },
   "activationEvents": [
-    "onCommand:extension.helloWorld"
+    "onCommand:apex-assist.check",
+    "onCommand:apex-assist.zombies",
+    "onCommand:apex-assist.clear"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "extension.helloWorld",
-        "title": "Hello World"
+        "command": "apex-assist.check",
+        "title": "ApexAssist: Check code"
+      },
+      {
+        "command": "apex-assist.zombies",
+        "title": "ApexAssist: Find zombies"
+      },
+      {
+        "command": "apex-assist.clear",
+        "title": "ApexAssist: Clear diagnostics"
       }
     ]
   },

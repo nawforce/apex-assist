@@ -27,26 +27,72 @@
 */
 package com.nawforce.vsext
 
-import com.nawforce.vsext.vscode.{Commands, ExtensionContext}
-import io.scalajs.nodejs.console
+import com.nawforce.common.api.ServerOps
+import com.nawforce.common.cmds.Check
+import com.nawforce.common.diagnostics.IssueLog
+import com.nawforce.common.path.PathFactory
+import com.nawforce.common.sfdx.Workspace
+import com.nawforce.vsext.vscode._
 
+import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-// https://github.com/scalacenter/accessible-scala/blob/master/vscode/src/main/scala/vscode/vscode.scala
-
 object Extension {
+  private var diagnostics: DiagnosticCollection = _
+
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext): Unit = {
-    console.log("Activated")
+    OutputLogging.setup(context)
+    diagnostics = Languages.createDiagnosticCollection("apex-assist")
+    context.subscriptions.push(diagnostics)
+    ServerOps.info("Apex Assist activated")
+
     context.subscriptions.push(
-      Commands.registerCommand("extension.helloWorld", () => {
-        console.log("Command Run")
-      })
+      Commands.registerCommand("apex-assist.check", () => check(zombies = false)),
+      Commands.registerCommand("apex-assist.zombies", () => check(zombies = true)),
+      Commands.registerCommand("apex-assist.clear", () => clear())
     )
+  }
+
+  private def check(zombies: Boolean): Unit = {
+    val folders: Seq[WorkspaceFolder] = vscode.Workspace.workspaceFolders.toOption.map(_.toSeq).getOrElse(Seq())
+    if (folders.size != 1) {
+      Window.showInformationMessage(s"Check command requires that only a single workspace is open")
+    } else {
+      Workspace(None, Seq(PathFactory(folders.head.uri.fsPath))) match {
+        case Left(err) =>
+          Window.showInformationMessage(err)
+        case Right(workspace) =>
+          ServerOps.debug(ServerOps.Trace, workspace.toString)
+          postIssues(Check.run(workspace, zombies))
+      }
+    }
+  }
+
+  private def postIssues(issues: IssueLog): Unit = {
+    diagnostics.clear()
+    for (pathIssues <- issues.getIssues) {
+      val issues = pathIssues._2.map(issue => {
+        new Diagnostic(
+          new Range(
+            new Position(issue.location.startPosition._1-1,issue.location.startPosition._2),
+            new Position(issue.location.endPosition._1-1,issue.location.endPosition._2)
+          ),
+          issue.category.value + " " +issue.msg,
+          DiagnosticSeverity.WARNING
+        )
+      })
+      diagnostics.set(URI.file(pathIssues._1.toString), js.Array(issues :_*))
+    }
+  }
+
+  private def clear(): Unit = {
+    ServerOps.debug(ServerOps.Trace, s"Clear")
+    diagnostics.clear()
   }
 
   @JSExportTopLevel("deactivate")
   def deactivate(): Unit = {
-    console.log("Deactivated")
+    ServerOps.info("Apex Assist activated")
   }
 }

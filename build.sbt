@@ -7,8 +7,7 @@ parallelExecution in Test := false
 //scalaJSOptimizerOptions ~= { _.withDisableOptimizer(true) }
 //jsEnv in Test := new org.scalajs.jsenv.nodejs.NodeJSEnv(org.scalajs.jsenv.nodejs.NodeJSEnv.Config().withArgs(List("--inspect-brk")))
 
-unmanagedSourceDirectories in Compile += baseDirectory.value / "common"
-unmanagedSourceDirectories in Test += baseDirectory.value / "common-test"
+unmanagedSourceDirectories in Compile += baseDirectory.value / "vsext/main/scala"
 
 enablePlugins(ScalaJSBundlerPlugin)
 scalacOptions += "-P:scalajs:sjsDefinedByDefault"
@@ -70,6 +69,7 @@ npmTask := {
   copyToDir(s"LICENSE", targetDir)
   copyToDir(s"README.md", targetDir)
   copy("npm/package.json", s"$targetDir/package.json", REPLACE_EXISTING)
+  copy("npm/.vscodeignore", s"$targetDir/.vscodeignore", REPLACE_EXISTING)
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
 
   // copy optimized js library
