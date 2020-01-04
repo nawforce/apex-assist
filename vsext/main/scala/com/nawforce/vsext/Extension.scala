@@ -36,9 +36,12 @@ import com.nawforce.vsext.vscode._
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
+import scala.scalajs.js.timers
 
 object Extension {
+  private val delay: Double = 50
   private var diagnostics: DiagnosticCollection = _
+  private var check: Option[Check] = None
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext): Unit = {
@@ -55,17 +58,32 @@ object Extension {
   }
 
   private def check(zombies: Boolean): Unit = {
-    val folders: Seq[WorkspaceFolder] = vscode.Workspace.workspaceFolders.toOption.map(_.toSeq).getOrElse(Seq())
-    if (folders.size != 1) {
-      Window.showInformationMessage(s"Check command requires that only a single workspace is open")
+    if (check.nonEmpty) {
+      Window.showInformationMessage(s"Check command already running")
     } else {
-      Workspace(None, Seq(PathFactory(folders.head.uri.fsPath))) match {
-        case Left(err) =>
-          Window.showInformationMessage(err)
-        case Right(workspace) =>
-          ServerOps.debug(ServerOps.Trace, workspace.toString)
-          postIssues(Check.run(workspace, zombies))
+      val folders: Seq[WorkspaceFolder] = vscode.Workspace.workspaceFolders.toOption.map(_.toSeq).getOrElse(Seq())
+      if (folders.size != 1) {
+        Window.showInformationMessage(s"Check command requires that a single directory is open")
+      } else {
+        Workspace(None, Seq(PathFactory(folders.head.uri.fsPath))) match {
+          case Left(err) =>
+            Window.showInformationMessage(err)
+          case Right(workspace) =>
+            ServerOps.debug(ServerOps.Trace, workspace.toString)
+            check = Some(new Check(workspace, zombies))
+            timers.setTimeout(delay)(progressCheck())
+        }
       }
+    }
+  }
+
+  private def progressCheck(): Unit = {
+    val log = check.get.run()
+    if (log.nonEmpty) {
+      check = None
+      postIssues(log.get)
+    } else {
+      timers.setTimeout(delay)(progressCheck())
     }
   }
 

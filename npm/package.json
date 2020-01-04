@@ -8,6 +8,7 @@
   "author": "Kevin Jones <nawforce@gmail.com> (https://github.com/nawforce)",
   "license": "BSD-3-Clause",
   "bugs": "https://github.com/nawforce/apexlink/issues",
+  "icon": "logo.png",
   "dependencies": {
     "xmldom": "0.1.27",
     "antlr4ts": "0.5.0-alpha.3",

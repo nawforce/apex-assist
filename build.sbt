@@ -1,7 +1,7 @@
 import java.nio.file.Path
 
 name := "apex-assist"
-version := "0.5.0"
+version := "0.6.0"
 scalaVersion := "2.12.3"
 parallelExecution in Test := false
 //scalaJSOptimizerOptions ~= { _.withDisableOptimizer(true) }
@@ -69,6 +69,7 @@ npmTask := {
   copyToDir(s"LICENSE", targetDir)
   copyToDir(s"README.md", targetDir)
   copy("npm/package.json", s"$targetDir/package.json", REPLACE_EXISTING)
+  copy("npm/logo.png", s"$targetDir/logo.png", REPLACE_EXISTING)
   copy("npm/.vscodeignore", s"$targetDir/.vscodeignore", REPLACE_EXISTING)
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
 
