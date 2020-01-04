@@ -26,7 +26,7 @@ You can monitor progress of the analysis in the VSCode Output Window, select 'Ap
 ## FAQ
 
 1. *What Apex files are used in the analysis?*
-For directories with a sfdx-project.json file the analysis scans the directories identified by 'packageDirectory'. If there is no sfdx-package.json then all sub-directories are scanned for metadata. In either case if you have a .forceignore file then the directives in this are honoured.
+For directories with a sfdx-project.json file the analysis scans the directories identified by 'packageDirectory'. If there is no sfdx-package.json then all sub-directories are scanned for metadata. For sfdx format projects the .forceignore file directives are honoured.
 
 2. *How are namespaces handled?*
 For sfdx projects the namespace is read from sfdx-project.json if available, otherwise it is assumed that the package metadata can be deployed 'unmanged' without an explicit namespace.
