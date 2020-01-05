@@ -11,6 +11,7 @@ Performance improvements and more analysis features will be added in future rele
 
 ## QuickStart
 
+* Check your VSCode version is up to date
 * Install Apex Assist
 * Open a directory in VSCode containing Salesforce package source (MDAPI or SFDX format)
 * Run the command 'ApexAssist: Find zombies'

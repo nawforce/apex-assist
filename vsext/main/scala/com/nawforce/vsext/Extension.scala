@@ -51,10 +51,20 @@ object Extension {
     ServerOps.info("Apex Assist activated")
 
     context.subscriptions.push(
-      Commands.registerCommand("apex-assist.check", () => check(zombies = false)),
-      Commands.registerCommand("apex-assist.zombies", () => check(zombies = true)),
+      Commands.registerCommand("apex-assist.check", () => checkWithTry(zombies = false)),
+      Commands.registerCommand("apex-assist.zombies", () => checkWithTry(zombies = true)),
       Commands.registerCommand("apex-assist.clear", () => clear())
     )
+  }
+
+  private def checkWithTry(zombies: Boolean): Unit = {
+    try {
+      check(zombies)
+    } catch {
+      case ex: Throwable =>
+        ServerOps.debug(ServerOps.Trace, ex.toString)
+        ServerOps.debug(ServerOps.Trace, ex.getStackTrace.mkString("\n"))
+    }
   }
 
   private def check(zombies: Boolean): Unit = {
@@ -71,9 +81,19 @@ object Extension {
           case Right(workspace) =>
             ServerOps.debug(ServerOps.Trace, workspace.toString)
             check = Some(new Check(workspace, zombies))
-            timers.setTimeout(delay)(progressCheck())
+            timers.setTimeout(delay)(progressCheckWithTry())
         }
       }
+    }
+  }
+
+  private def progressCheckWithTry(): Unit = {
+    try {
+      progressCheck()
+    } catch {
+      case ex: Throwable =>
+        ServerOps.debug(ServerOps.Trace, ex.toString)
+        ServerOps.debug(ServerOps.Trace, ex.getStackTrace.mkString("\n"))
     }
   }
 
@@ -83,7 +103,7 @@ object Extension {
       check = None
       postIssues(log.get)
     } else {
-      timers.setTimeout(delay)(progressCheck())
+      timers.setTimeout(delay)(progressCheckWithTry())
     }
   }
 

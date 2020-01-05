@@ -1,9 +1,9 @@
 {
   "name": "apex-assist",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Salesforce Apex language code analysis tools",
   "publisher": "KevinJones",
-  "main": "dist/apex-assist-opt.js",
+  "main": "dist/boot.js",
   "repository": "nawforce/apexlink",
   "author": "Kevin Jones <nawforce@gmail.com> (https://github.com/nawforce)",
   "license": "BSD-3-Clause",

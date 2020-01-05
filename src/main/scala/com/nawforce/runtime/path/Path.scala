@@ -42,10 +42,6 @@ case class Path(path: String) extends PathLike {
   override lazy val absolute: Path = Path(io.scalajs.nodejs.path.Path.resolve(path))
   override val native: Any = path
 
-  override def toString: String = {
-    io.scalajs.nodejs.path.Path.format(pathObject)
-  }
-
   override lazy val nature: PathNature = {
     try {
       val stats = Fs.lstatSync(path)
@@ -125,6 +121,15 @@ case class Path(path: String) extends PathLike {
       }
     } else {
       Right(Seq())
+    }
+  }
+
+  override def toString: String = {
+    val value = io.scalajs.nodejs.path.Path.format(pathObject)
+    if (Path.separator == "\\") {
+      value.replace('\\', '/')
+    } else {
+      value
     }
   }
 }

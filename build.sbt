@@ -1,5 +1,7 @@
 import java.nio.file.Path
 
+import org.scalajs.core.tools.linker.backend.ModuleKind.CommonJSModule
+
 name := "apex-assist"
 version := "0.6.0"
 scalaVersion := "2.12.3"
@@ -9,18 +11,9 @@ parallelExecution in Test := false
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / "vsext/main/scala"
 
-enablePlugins(ScalaJSBundlerPlugin)
+enablePlugins(ScalaJSPlugin)
+scalaJSModuleKind := CommonJSModule
 scalacOptions += "-P:scalajs:sjsDefinedByDefault"
-webpackBundlingMode := BundlingMode.Application
-
-npmDependencies in Compile += "xmldom" -> "0.1.27"
-npmDependencies in Compile += "antlr4ts" -> "0.5.0-alpha.3"
-npmDependencies in Compile += "apex-parser" -> "1.0.0"
-npmDependencies in Test += "fs-monkey" -> "0.3.3"
-npmDependencies in Test += "memfs" -> "3.0.1"
-
-webpackConfigFile in fastOptJS := Some(baseDirectory.value / "custom.webpack.config.js")
-webpackConfigFile in fullOptJS := Some(baseDirectory.value / "custom.webpack.config.js")
 
 resolvers += Resolver.sonatypeRepo("public")
 libraryDependencies += "io.scalajs" %%% "nodejs" % "0.4.2"
@@ -54,7 +47,7 @@ npmTask := {
 
   val libName = name.value.toLowerCase()
 
-  val inputDir = "target/scala-2.12/scalajs-bundler/main"
+  val inputDir = "target/scala-2.12"
   val targetDir = s"$npmTargetDir/$libName"
   val sourceDir = "source"
   val distDir = "dist"
@@ -72,6 +65,8 @@ npmTask := {
   copy("npm/logo.png", s"$targetDir/logo.png", REPLACE_EXISTING)
   copy("npm/.vscodeignore", s"$targetDir/.vscodeignore", REPLACE_EXISTING)
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
+  copy("npm/dist/boot.js", s"$targetDir/dist/boot.js", REPLACE_EXISTING)
+
 
   // copy optimized js library
   val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")

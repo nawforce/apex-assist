@@ -34,11 +34,11 @@ import com.nawforce.common.finding.{MissingType, WrongTypeArguments}
 import com.nawforce.common.names.{DotName, Name, TypeName}
 import com.nawforce.common.path.{DIRECTORY, FILE, PathFactory, PathLike}
 import com.nawforce.common.types._
-import io.scalajs.nodejs.__dirname
 import upickle.default._
 
 import scala.collection.immutable.HashMap
 import scala.collection.mutable
+import scala.scalajs.js
 
 class PlatformTypeException(msg: String) extends Exception
 
@@ -149,7 +149,7 @@ class PlatformParameter(summary: ParameterSummary) extends ParameterDeclaration 
 
 object PlatformTypeDeclaration {
   /* Get a Path that leads to platform classes */
-  lazy val platformPackagePath: PathLike = PathFactory(__dirname + "../../platform").absolute
+  lazy val platformPackagePath: PathLike = PathFactory(js.Dynamic.global.__dirname + "../../platform").absolute
 
   /* Get a type, in general don't call this direct, use TypeRequest which will delegate here if
    * needed. If needed this will construct a GenericPlatformTypeDeclaration to specialise a
