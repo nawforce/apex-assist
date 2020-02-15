@@ -31,7 +31,6 @@ import com.nawforce.common.parsers.CSTRange
 import com.nawforce.common.path.{PathFactory, PathLike}
 import com.nawforce.runtime.parsers.ApexParser.ExpressionContext
 import com.nawforce.runtime.parsers.antlr.{CommonTokenStream, Interval}
-import io.scalajs.nodejs.console
 
 import scala.scalajs.js
 import scala.scalajs.js.JavaScriptException
@@ -42,9 +41,17 @@ object CodeParser {
   type ParserRuleContext = com.nawforce.runtime.parsers.antlr.ParserRuleContext
   type TerminalNode = com.nawforce.runtime.parsers.antlr.TerminalNode
 
-  def parseCompilationUnit(path: PathLike, data: String): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
+  def parseClass(path: PathLike, data: String): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
     try {
-      Right(createParser(path, data).compilationUnit())
+      Right(createParser(Some(path), data).compilationUnit())
+    } catch {
+      case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
+    }
+  }
+
+  def parseTrigger(path: PathLike, data: String): Either[SyntaxException, ApexParser.TriggerUnitContext] = {
+    try {
+      Right(createParser(Some(path), data).triggerUnit())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
@@ -52,15 +59,15 @@ object CodeParser {
 
   def parseBlock(path: PathLike, data: String): Either[SyntaxException, ApexParser.BlockContext] = {
     try {
-      Right(createParser(path, data).block())
+      Right(createParser(Some(path), data).block())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
   }
 
-  def parseTypeRef(path: PathLike, data: String): Either[SyntaxException, ApexParser.TypeRefContext] = {
+  def parseTypeRef(data: String): Either[SyntaxException, ApexParser.TypeRefContext] = {
     try {
-      Right(createParser(path, data).typeRef())
+      Right(createParser(None, data).typeRef())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
@@ -99,8 +106,6 @@ object CodeParser {
 
   def getTerminals(from: ExpressionContext, index: Integer): String = {
     if (index < from.childCount) {
-      val entry = from.getChild(index)
-
       from.getChild(index) match {
         case tn: TerminalNode => tn.text + getTerminals(from, index + 1)
         case _ => ""
@@ -118,9 +123,9 @@ object CodeParser {
     value.toOption
   }
 
-  def createParser(path: PathLike, data: String): ApexParser = {
+  def createParser(path: Option[PathLike], data: String): ApexParser = {
     val listener = new ThrowingErrorListener()
-    val cis = new CaseInsensitiveInputStream(path.toString, data)
+    val cis = new CaseInsensitiveInputStream(path.map(_.toString).getOrElse("<Unknown>"), data)
     val lexer = new ApexLexer(cis)
 
     val tokens = new CommonTokenStream(lexer)

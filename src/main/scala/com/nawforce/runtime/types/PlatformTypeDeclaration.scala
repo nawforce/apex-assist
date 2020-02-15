@@ -29,11 +29,15 @@
 package com.nawforce.runtime.types
 
 import com.nawforce.common.api._
+import com.nawforce.common.cst.Modifier
 import com.nawforce.common.finding.TypeRequest.TypeRequest
 import com.nawforce.common.finding.{MissingType, WrongTypeArguments}
+import com.nawforce.common.metadata.Dependent
 import com.nawforce.common.names.{DotName, Name, TypeName}
 import com.nawforce.common.path.{DIRECTORY, FILE, PathFactory, PathLike}
+import com.nawforce.common.pkg.PackageImpl
 import com.nawforce.common.types._
+import com.nawforce.common.types.platform.{GenericPlatformTypeDeclaration, PlatformTypes}
 import upickle.default._
 
 import scala.collection.immutable.HashMap
@@ -46,8 +50,8 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
 
   override lazy val summary: TypeSummary = native.asInstanceOf[TypeSummary]
 
-  override lazy val packageDeclaration: Option[PackageDeclaration] = None
-  override lazy val typeName: TypeName = TypeName.fromString(summary.typeName).get
+  override lazy val packageDeclaration: Option[PackageImpl] = None
+  override lazy val typeName: TypeName = TypeName.fromString(summary.typeName)
   override lazy val name: Name = typeName.name
   override lazy val outerTypeName: Option[TypeName] = outer.map(_.typeName)
   override lazy val nature: Nature = Nature(summary.nature)
@@ -83,8 +87,8 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   }
   override lazy val blocks: Seq[BlockDeclaration] = Seq()
 
-  protected def getSuperClass: Option[TypeName] = TypeName.fromString(summary.superClass)
-  protected def getInterfaces: Seq[TypeName] = summary.interfaces.map(i => TypeName.fromString(i).get)
+  protected def getSuperClass: Option[TypeName] = Some(TypeName.fromString(summary.superClass))
+  protected def getInterfaces: Seq[TypeName] = summary.interfaces.map(i => TypeName.fromString(i))
   protected def getFields: Seq[PlatformField] = summary.fields.map(fs => new PlatformField(fs))
   protected def getMethods: Seq[PlatformMethod] = summary.methods.map(mthd => new PlatformMethod(mthd))
 
@@ -97,25 +101,23 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   }
 
   override def validate(): Unit = {}
-  override def dependencies(): Set[Dependant] = Set.empty
-  override def collectDependencies(dependencies: mutable.Set[Dependant]): Unit = {}
+  override def dependencies(): Set[Dependent] = Set.empty
 }
 
 class PlatformField(summary: FieldSummary) extends FieldDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = TypeName.fromString(summary.typeName).get
+  override val typeName: TypeName = TypeName.fromString(summary.typeName)
   override val readAccess: Modifier = Modifier(summary.readAccess)
   override val writeAccess: Modifier = Modifier(summary.writeAccess)
 
   def getGenericTypeName: TypeName = typeName
 }
 
-class PlatformMethod(_summary: MethodSummary) extends MethodDeclaration {
-  override lazy val summary: MethodSummary = _summary
+class PlatformMethod(summary: MethodSummary) extends MethodDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = TypeName.fromString(summary.typeName).get
+  override val typeName: TypeName = TypeName.fromString(summary.typeName)
   override val parameters: Seq[ParameterDeclaration] = getParameters
 
   def getGenericTypeName: TypeName = typeName
@@ -140,7 +142,7 @@ class PlatformConstructor(summary: ConstructorSummary, typeDeclaration: TypeDecl
 
 class PlatformParameter(summary: ParameterSummary) extends ParameterDeclaration {
   override val name: Name = Name(summary.name)
-  override val typeName: TypeName = TypeName.fromString(summary.typeName).get
+  override val typeName: TypeName = TypeName.fromString(summary.typeName)
 
   override def toString: String = typeName.toString + " " + name.toString
 

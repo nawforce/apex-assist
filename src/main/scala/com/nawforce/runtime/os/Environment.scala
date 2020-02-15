@@ -25,38 +25,30 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.nawforce.runtime.cache
 
-import com.nawforce.common.path.{DIRECTORY, DOES_NOT_EXIST, PathFactory, PathLike}
+package com.nawforce.runtime.os
+
 import io.scalajs.nodejs.process
 
-class Cache(path: PathLike) {
+object Environment {
+  def homedir: Option[Path] = {
+    variable("user.home").map(Path(_))
+  }
 
-}
+  def variable(name: String): Option[String] = {
+    process.env.get(name)
+  }
 
-object Cache {
-  val CACHE_DIR: String = ".apexassist_cache"
-  val TEST_FILE: String = "test_file"
-
-  def apply(): Either[String, Cache] = {
-    val cacheDir =
-      process.env.get("APEXASSIST_CACHE_DIR").map(d =>PathFactory(d))
-        .getOrElse(PathFactory(OSExtra.homedir()).join(CACHE_DIR))
-
-    if (cacheDir.nature != DOES_NOT_EXIST) {
-      if (cacheDir.nature != DIRECTORY) {
-        return Left(s"Cache directory '$cacheDir' exists but is not a directory")
-      }
-
-      cacheDir.createFile(TEST_FILE, "") match {
-        case Left(err) => Left(s"Cache directory '$cacheDir' exists but is not writable, error '$err'")
-        case Right(created) =>
-          created.delete()
-          Right(new Cache(cacheDir))
-      }
-    } else {
-      // TODO
-      Left("Create Dir")
+  def setVariable(name: String, value: String): Boolean = {
+    try {
+      if (value == null)
+        process.env -= name
+      else
+        process.env.update(name, value)
+      true
+    } catch {
+      case _: SecurityException => false
     }
   }
+
 }

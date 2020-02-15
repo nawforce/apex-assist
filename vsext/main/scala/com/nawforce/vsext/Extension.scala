@@ -28,20 +28,16 @@
 package com.nawforce.vsext
 
 import com.nawforce.common.api.ServerOps
-import com.nawforce.common.cmds.Check
 import com.nawforce.common.diagnostics.IssueLog
-import com.nawforce.common.path.PathFactory
-import com.nawforce.common.sfdx.Workspace
 import com.nawforce.vsext.vscode._
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
-import scala.scalajs.js.timers
 
 object Extension {
   private val delay: Double = 50
   private var diagnostics: DiagnosticCollection = _
-  private var check: Option[Check] = None
+  //private var check: Option[Check] = None
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext): Unit = {
@@ -68,6 +64,7 @@ object Extension {
   }
 
   private def check(zombies: Boolean): Unit = {
+    /*
     if (check.nonEmpty) {
       Window.showInformationMessage(s"Check command already running")
     } else {
@@ -84,7 +81,7 @@ object Extension {
             timers.setTimeout(delay)(progressCheckWithTry())
         }
       }
-    }
+    }*/
   }
 
   private def progressCheckWithTry(): Unit = {
@@ -98,13 +95,14 @@ object Extension {
   }
 
   private def progressCheck(): Unit = {
+    /*
     val log = check.get.run()
     if (log.nonEmpty) {
       check = None
       postIssues(log.get)
     } else {
       timers.setTimeout(delay)(progressCheckWithTry())
-    }
+    }*/
   }
 
   private def postIssues(issues: IssueLog): Unit = {

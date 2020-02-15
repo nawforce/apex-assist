@@ -27,7 +27,7 @@
 */
 package com.nawforce.runtime.parsers
 
-import com.nawforce.runtime.parsers.ApexParser.{BlockContext, CompilationUnitContext, LiteralContext, TypeRefContext}
+import com.nawforce.runtime.parsers.ApexParser.{BlockContext, CompilationUnitContext, LiteralContext, TriggerUnitContext, TypeRefContext}
 import com.nawforce.runtime.parsers.antlr.{CommonTokenStream, ParserRuleContext, TerminalNode}
 
 import scala.scalajs.js
@@ -41,6 +41,7 @@ class ApexParser(tokens: CommonTokenStream) extends js.Object {
   def addErrorListener(listener: ThrowingErrorListener): Unit = js.native
 
   def compilationUnit(): CompilationUnitContext = js.native
+  def triggerUnit(): TriggerUnitContext = js.native
   def block(): BlockContext = js.native
   def typeRef(): TypeRefContext = js.native
 
@@ -48,6 +49,25 @@ class ApexParser(tokens: CommonTokenStream) extends js.Object {
 }
 
 object ApexParser {
+
+  @js.native
+  @JSImport("apex-parser", "TriggerUnitContext")
+  class TriggerUnitContext extends ParserRuleContext {
+    def id(): js.Array[IdContext] = js.native
+    def triggerCase(): js.Array[TriggerCaseContext] = js.native
+    def block(): BlockContext = js.native
+  }
+
+  @js.native
+  @JSImport("apex-parser", "TriggerCaseContext")
+  class TriggerCaseContext extends ParserRuleContext {
+    def BEFORE(): js.UndefOr[TerminalNode] = js.native
+    def AFTER(): js.UndefOr[TerminalNode] = js.native
+    def INSERT(): js.UndefOr[TerminalNode] = js.native
+    def UPDATE(): js.UndefOr[TerminalNode] = js.native
+    def DELETE(): js.UndefOr[TerminalNode] = js.native
+    def UNDELETE(): js.UndefOr[TerminalNode] = js.native
+  }
 
   @js.native
   @JSImport("apex-parser", "CompilationUnitContext")
@@ -481,10 +501,9 @@ object ApexParser {
   @JSImport("apex-parser", "CmpExpressionContext")
   class CmpExpressionContext extends ExpressionContext {
     def expression(): js.Array[ExpressionContext] = js.native
-    def GE(): js.UndefOr[TerminalNode] = js.native
     def GT(): js.UndefOr[TerminalNode] = js.native
-    def LE(): js.UndefOr[TerminalNode] = js.native
     def LT(): js.UndefOr[TerminalNode] = js.native
+    def ASSIGN(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
@@ -607,8 +626,28 @@ object ApexParser {
   @js.native
   @JSImport("apex-parser", "WhenControlContext")
   class WhenControlContext extends ParserRuleContext {
+    def whenValue(): js.UndefOr[WhenValueContext] = js.native
     def block(): BlockContext = js.native
-    def expressionList(): js.UndefOr[ExpressionListContext] = js.native
+  }
+
+  @js.native
+  @JSImport("apex-parser", "WhenLiteralContext")
+  class WhenLiteralContext extends ParserRuleContext {
+    def id(): js.UndefOr[IdContext] = js.native
+
+    def StringLiteral(): js.UndefOr[TerminalNode] = js.native
+    def IntegerLiteral(): js.UndefOr[TerminalNode] = js.native
+    def SUB(): js.UndefOr[TerminalNode] = js.native
+    def NULL(): js.UndefOr[TerminalNode] = js.native
+  }
+
+  @js.native
+  @JSImport("apex-parser", "WhenValueContext")
+  class WhenValueContext extends ParserRuleContext {
+    def whenLiteral(): js.Array[WhenLiteralContext] = js.native
+    def id(): js.Array[IdContext] = js.native
+
+    def ELSE(): js.UndefOr[TerminalNode] = js.native
   }
 
   @js.native
