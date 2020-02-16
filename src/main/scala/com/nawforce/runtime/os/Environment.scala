@@ -30,9 +30,12 @@ package com.nawforce.runtime.os
 
 import io.scalajs.nodejs.process
 
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
 object Environment {
   def homedir: Option[Path] = {
-    variable("user.home").map(Path(_))
+    Option(OSExtra.homedir()).filter(_.nonEmpty).map(Path(_))
   }
 
   def variable(name: String): Option[String] = {
@@ -50,5 +53,15 @@ object Environment {
       case _: SecurityException => false
     }
   }
-
 }
+
+@js.native
+trait OSExtra extends js.Object {
+  def homedir(): String = js.native
+}
+
+@js.native
+@JSImport("os", JSImport.Namespace)
+object OSExtra extends OSExtra
+
+

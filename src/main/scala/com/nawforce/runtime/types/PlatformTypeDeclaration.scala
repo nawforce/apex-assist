@@ -87,7 +87,9 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   }
   override lazy val blocks: Seq[BlockDeclaration] = Seq()
 
-  protected def getSuperClass: Option[TypeName] = Some(TypeName.fromString(summary.superClass))
+  protected def getSuperClass: Option[TypeName] = {
+    if (summary.superClass.isEmpty) None else Some(TypeName.fromString(summary.superClass))
+  }
   protected def getInterfaces: Seq[TypeName] = summary.interfaces.map(i => TypeName.fromString(i))
   protected def getFields: Seq[PlatformField] = summary.fields.map(fs => new PlatformField(fs))
   protected def getMethods: Seq[PlatformMethod] = summary.methods.map(mthd => new PlatformMethod(mthd))

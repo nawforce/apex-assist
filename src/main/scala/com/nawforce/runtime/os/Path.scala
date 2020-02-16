@@ -27,18 +27,16 @@
 */
 package com.nawforce.runtime.os
 
-import java.nio.file.Files
-
 import com.nawforce.common.path._
 import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.fs.Fs
+import io.scalajs.nodejs.process
 
 import scala.scalajs.js
-import js.JSConverters._
-import scala.scalajs.js.annotation.JSImport
+import scala.scalajs.js.JSConverters._
 
-case class Path(path: String) extends PathLike {
-  assert(path.nonEmpty)
+case class Path(_path: String) extends PathLike {
+  val path: String = Option(_path).getOrElse(process.cwd())
 
   private lazy val pathObject = io.scalajs.nodejs.path.Path.parse(path)
 
@@ -85,7 +83,8 @@ case class Path(path: String) extends PathLike {
 
   override def readBytes(): Either[String, Array[Byte]] = {
     try {
-      Right(Fs.readFileSync(path).values().asInstanceOf[Iterable[Byte]].toArray)
+      val data = Fs.readFileSync(path).values()
+      Right(data.map(_.toByte).toArray)
     } catch {
       case ex: js.JavaScriptException => Left(ex.getMessage())
     }
@@ -102,7 +101,8 @@ case class Path(path: String) extends PathLike {
 
   override def write(data: Array[Byte]): Option[String] = {
     try {
-      Fs.writeFileSync(path, Buffer.from(data.asInstanceOf[Array[Int]].toJSArray))
+      val asInt = data.map(_.toInt)
+      Fs.writeFileSync(path, Buffer.from(asInt.toJSArray))
       None
     } catch {
       case ex: js.JavaScriptException => Some(ex.getMessage())
@@ -111,7 +111,10 @@ case class Path(path: String) extends PathLike {
 
   override def delete(): Option[String] = {
     try {
-      Fs.unlinkSync(path)
+      if (nature == DIRECTORY)
+        Fs.rmdirSync(path)
+      else
+        Fs.unlinkSync(path)
       None
     } catch {
       case ex: js.JavaScriptException => Some(ex.getMessage())

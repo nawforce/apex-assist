@@ -27,8 +27,10 @@
 */
 package com.nawforce.runtime
 
+import com.nawforce.common.documents.ParsedCache
 import com.nawforce.common.path.{PathFactory, PathLike}
-import com.nawforce.pkg.imports.{FSMonkey, Memfs}
+import com.nawforce.imports.{FSMonkey, Memfs}
+import com.nawforce.runtime.os.Environment
 import com.nawforce.runtime.types.PlatformTypeDeclaration
 
 import scala.scalajs.js
@@ -37,17 +39,28 @@ import scala.scalajs.js.JSConverters._
 object FileSystemHelper {
 
   // Abstract virtual filesystem for testing
-  def run[T](files: Map[String, String])(verify: PathLike => T): T = {
+  def run[T](files: Map[String, String], setupCache: Boolean = false)(verify: PathLike => T): T = {
     // Force loaded of all platform types before messing with Fs
     PlatformTypeDeclaration.all
 
+    // Load files into memfs
+    Memfs.vol.fromJSON(files.map(kv => ("/" + kv._1, kv._2)).toJSDictionary.asInstanceOf[js.Dynamic])
+
+    // Make a cache directory so don't need home access
+    if (setupCache) {
+      Memfs.vol.mkdirSync("/tmpcache")
+      Environment.setVariable("APEXLINK_CACHE_DIR", "/tmpcache")
+    }
+
     val unpatch = FSMonkey.patchFs(Memfs.vol)
     try {
-      Memfs.vol.fromJSON(files.map(kv => ("/" + kv._1, kv._2)).toJSDictionary.asInstanceOf[js.Dynamic])
       verify(PathFactory("/"))
     } finally {
       unpatch()
       Memfs.vol.reset()
+      if (setupCache) {
+        Environment.setVariable("APEXLINK_CACHE_DIR", null)
+      }
     }
   }
 }
