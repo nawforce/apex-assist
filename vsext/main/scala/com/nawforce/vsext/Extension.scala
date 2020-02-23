@@ -114,7 +114,7 @@ object Extension {
             new Position(issue.location.startPosition._1-1,issue.location.startPosition._2),
             new Position(issue.location.endPosition._1-1,issue.location.endPosition._2)
           ),
-          issue.category.value + " " +issue.msg,
+          issue.category.value + " " +issue.message,
           DiagnosticSeverity.WARNING
         )
       })

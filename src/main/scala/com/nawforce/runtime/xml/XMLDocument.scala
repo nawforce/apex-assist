@@ -27,7 +27,7 @@
 */
 package com.nawforce.runtime.xml
 
-import com.nawforce.common.documents.{Location, PointLocation, Position}
+import com.nawforce.common.documents.{LocationImpl, PointLocationImpl, PositionImpl}
 import com.nawforce.common.path.PathLike
 import com.nawforce.common.xml.{XMLDocumentLike, XMLElementLike, XMLName}
 
@@ -73,9 +73,9 @@ class XMLDocument(path: PathLike, doc: Document) extends XMLDocumentLike(path) {
 
 object XMLDocument {
   val sfNamespace = "http://soap.sforce.com/2006/04/metadata"
-  var errors: List[(Location, String)] = Nil
+  var errors: List[(LocationImpl, String)] = Nil
 
-  def apply(path: PathLike, data: String): Either[(Location, String), XMLDocument] = {
+  def apply(path: PathLike, data: String): Either[(LocationImpl, String), XMLDocument] = {
     errors = Nil
     val parser = new DOMParser(getOptions(path))
     val doc = parser.parseFromString(data, "text/xml")
@@ -105,7 +105,7 @@ object XMLDocument {
   private val lineMatch: Regex = "line:[0-9]*".r
   private val columnMatch: Regex = "col:[0-9]*".r
 
-  private def toError(path: PathLike, msg: String): (Location, String) = {
+  private def toError(path: PathLike, msg: String): (LocationImpl, String) = {
     val line = lineMatch.findFirstIn(msg) match {
       case Some(l) => try {
         l.replaceFirst("line:","").toInt
@@ -130,6 +130,6 @@ object XMLDocument {
       else
         msg
 
-    (PointLocation(path, Position(line, column)), trimmedMsg)
+    (PointLocationImpl(path.toString, PositionImpl(line, column)), trimmedMsg)
   }
 }

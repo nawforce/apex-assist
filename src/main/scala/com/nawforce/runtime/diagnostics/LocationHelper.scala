@@ -27,24 +27,23 @@
 */
 package com.nawforce.runtime.diagnostics
 
-import com.nawforce.common.documents.{Position, RangeLocation, TextRange}
+import com.nawforce.common.documents.{PositionImpl, RangeLocationImpl, TextRange}
 import com.nawforce.runtime.parsers.CodeParser.ParserRuleContext
-import com.nawforce.runtime.os.Path
 
 object LocationHelper {
   def asTextRange(context: ParserRuleContext): TextRange = {
     TextRange(
-      Position(context.start.line, context.start.charPositionInLine),
-      Position(context.stop.line, context.stop.charPositionInLine + context.stop.text.length),
+      PositionImpl(context.start.line, context.start.charPositionInLine),
+      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length),
     )
   }
 
-  def asRangeLocation(context: ParserRuleContext, lineOffset: Int=0, positionOffset: Int=0): RangeLocation = {
-    RangeLocation(
-      Path(context.start.inputStream.path),
-      Position(context.start.line, context.start.charPositionInLine)
+  def asRangeLocation(context: ParserRuleContext, lineOffset: Int=0, positionOffset: Int=0): RangeLocationImpl = {
+    RangeLocationImpl(
+      context.start.inputStream.path,
+      PositionImpl(context.start.line, context.start.charPositionInLine)
         .adjust(lineOffset, positionOffset),
-      Position(context.stop.line, context.stop.charPositionInLine + context.stop.text.length)
+      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length)
         .adjust(lineOffset, positionOffset)
     )
   }
