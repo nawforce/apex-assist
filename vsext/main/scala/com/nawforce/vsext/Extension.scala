@@ -28,31 +28,56 @@
 package com.nawforce.vsext
 
 import com.nawforce.common.api.ServerOps
-import com.nawforce.common.diagnostics.IssueLog
-import com.nawforce.vsext.vscode._
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
+
+@js.native
+trait ExtensionContext extends js.Object {
+  val subscriptions: js.Array[js.Any]
+}
 
 object Extension {
   private val delay: Double = 50
   private var diagnostics: DiagnosticCollection = _
   //private var check: Option[Check] = None
 
+
   @JSExportTopLevel("activate")
-  def activate(context: ExtensionContext): Unit = {
+  def activate(context: ExtensionContext ): Unit = {
+    // Basic setup
     OutputLogging.setup(context)
-    diagnostics = Languages.createDiagnosticCollection("apex-assist")
+    diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
     context.subscriptions.push(diagnostics)
     ServerOps.info("Apex Assist activated")
 
+    val uri = VSCode.Uri.file("/test/something.txt")
+    val range = VSCode.newRange(1,0,2,20)
+    val diagnostic = VSCode.newDiagnostic(range, "Hello", DiagnosticSeverity.WARNING)
+    diagnostics.set(uri, js.Array(diagnostic))
+
+    context.subscriptions.push(
+      VSCode.commands.registerCommand("apex-assist.clear", () => clear())
+    )
+  }
+
+  /*
+  @JSExportTopLevel("activate")
+  def activate(context: ExtensionContext): Unit = {
+    //OutputLogging.setup(context)
+    //diagnostics = Languages.createDiagnosticCollection("apex-assist")
+    //context.subscriptions.push(diagnostics)
+    ServerOps.info("Apex Assist activated")
+
+    /*
     context.subscriptions.push(
       Commands.registerCommand("apex-assist.check", () => checkWithTry(zombies = false)),
       Commands.registerCommand("apex-assist.zombies", () => checkWithTry(zombies = true)),
       Commands.registerCommand("apex-assist.clear", () => clear())
-    )
-  }
+    )*/
+  }*/
 
+  /*
   private def checkWithTry(zombies: Boolean): Unit = {
     try {
       check(zombies)
@@ -62,6 +87,7 @@ object Extension {
         ServerOps.debug(ServerOps.Trace, ex.getStackTrace.mkString("\n"))
     }
   }
+
 
   private def check(zombies: Boolean): Unit = {
     /*
@@ -82,8 +108,9 @@ object Extension {
         }
       }
     }*/
-  }
+  }*/
 
+  /*
   private def progressCheckWithTry(): Unit = {
     try {
       progressCheck()
@@ -92,8 +119,9 @@ object Extension {
         ServerOps.debug(ServerOps.Trace, ex.toString)
         ServerOps.debug(ServerOps.Trace, ex.getStackTrace.mkString("\n"))
     }
-  }
+  }*/
 
+  /*
   private def progressCheck(): Unit = {
     /*
     val log = check.get.run()
@@ -103,8 +131,9 @@ object Extension {
     } else {
       timers.setTimeout(delay)(progressCheckWithTry())
     }*/
-  }
+  }*/
 
+  /*
   private def postIssues(issues: IssueLog): Unit = {
     diagnostics.clear()
     for (pathIssues <- issues.getIssues) {
@@ -121,14 +150,15 @@ object Extension {
       diagnostics.set(URI.file(pathIssues._1.toString), js.Array(issues :_*))
     }
   }
+   */
 
   private def clear(): Unit = {
-    ServerOps.debug(ServerOps.Trace, s"Clear")
+    ServerOps.debug(ServerOps.Trace, s"Clear Diagnostics")
     diagnostics.clear()
   }
 
   @JSExportTopLevel("deactivate")
   def deactivate(): Unit = {
-    ServerOps.info("Apex Assist activated")
+    ServerOps.info("Apex Assist deactivated")
   }
 }

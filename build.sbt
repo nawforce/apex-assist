@@ -34,9 +34,6 @@ npmTask := {
   import java.nio.file.StandardCopyOption.REPLACE_EXISTING
   import java.nio.file.Files.copy
   import java.nio.file.Paths.get
-  import java.nio.file.{Paths, Files}
-
-  import java.nio.charset.StandardCharsets
 
   implicit def toPath (filename: String): Path = get(filename)
 
@@ -66,7 +63,6 @@ npmTask := {
   copy("npm/.vscodeignore", s"$targetDir/.vscodeignore", REPLACE_EXISTING)
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
   copy("npm/dist/boot.js", s"$targetDir/dist/boot.js", REPLACE_EXISTING)
-
 
   // copy optimized js library
   val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")
