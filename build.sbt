@@ -63,6 +63,7 @@ npmTask := {
   copy("npm/.vscodeignore", s"$targetDir/.vscodeignore", REPLACE_EXISTING)
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
   copy("npm/dist/boot.js", s"$targetDir/dist/boot.js", REPLACE_EXISTING)
+  copy("npm/dist/check.js", s"$targetDir/dist/check.js", REPLACE_EXISTING)
 
   // copy optimized js library
   val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")
@@ -75,7 +76,7 @@ npmTask := {
   val fileSource = List(s"$libName-fastopt.js", s"$libName-fastopt.js.map")
   for(file <- fileSource) {
     println(s"copy file $inputDir/$file")
-    copy(s"$inputDir/$file", s"$targetDir/$sourceDir/$file", REPLACE_EXISTING)
+    copy(s"$inputDir/$file", s"$targetDir/$distDir/$file", REPLACE_EXISTING)
   }
 
   // copy platform directory
