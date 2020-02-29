@@ -28,6 +28,13 @@
 package com.nawforce.vsext
 
 import com.nawforce.common.api.ServerOps
+import com.nawforce.common.diagnostics.Issue
+import com.nawforce.common.path.PathFactory
+import com.nawforce.common.sfdx.Workspace
+import io.scalajs.nodejs.child_process.{ChildProcess, ForkOptions}
+import io.scalajs.nodejs.console
+import io.scalajs.nodejs.events.IEventEmitter
+import upickle.default._
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -37,11 +44,16 @@ trait ExtensionContext extends js.Object {
   val subscriptions: js.Array[js.Any]
 }
 
-object Extension {
-  private val delay: Double = 50
-  private var diagnostics: DiagnosticCollection = _
-  //private var check: Option[Check] = None
+@js.native
+trait ForkedChild extends ChildProcess {
+  val stderr: IEventEmitter = js.native
+  val stdout: IEventEmitter = js.native
+}
 
+object Extension {
+  private var diagnostics: DiagnosticCollection = _
+  private var checkChild: Option[ChildProcess] = None
+  private val buffer = new StringBuilder()
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext ): Unit = {
@@ -51,106 +63,83 @@ object Extension {
     context.subscriptions.push(diagnostics)
     ServerOps.info("Apex Assist activated")
 
-    val uri = VSCode.Uri.file("/test/something.txt")
-    val range = VSCode.newRange(1,0,2,20)
-    val diagnostic = VSCode.newDiagnostic(range, "Hello", DiagnosticSeverity.WARNING)
-    diagnostics.set(uri, js.Array(diagnostic))
-
+    // Register our commands
     context.subscriptions.push(
-      VSCode.commands.registerCommand("apex-assist.clear", () => clear())
+      VSCode.commands.registerCommand("apex-assist.clear", () => clear()),
+      VSCode.commands.registerCommand("apex-assist.check", () => check(false)),
+      VSCode.commands.registerCommand("apex-assist.zombies", () => check(true))
     )
   }
 
-  /*
-  @JSExportTopLevel("activate")
-  def activate(context: ExtensionContext): Unit = {
-    //OutputLogging.setup(context)
-    //diagnostics = Languages.createDiagnosticCollection("apex-assist")
-    //context.subscriptions.push(diagnostics)
-    ServerOps.info("Apex Assist activated")
+  private def check(zombies: Boolean): Unit = {
+    ServerOps.debug(ServerOps.Trace, s"Check Zombies=$zombies")
 
-    /*
-    context.subscriptions.push(
-      Commands.registerCommand("apex-assist.check", () => checkWithTry(zombies = false)),
-      Commands.registerCommand("apex-assist.zombies", () => checkWithTry(zombies = true)),
-      Commands.registerCommand("apex-assist.clear", () => clear())
-    )*/
-  }*/
+    if (checkChild.nonEmpty) {
+      VSCode.window.showInformationMessage("Check command is already running")
+      return
+    }
 
-  /*
-  private def checkWithTry(zombies: Boolean): Unit = {
-    try {
-      check(zombies)
-    } catch {
-      case ex: Throwable =>
-        ServerOps.debug(ServerOps.Trace, ex.toString)
-        ServerOps.debug(ServerOps.Trace, ex.getStackTrace.mkString("\n"))
+    val workspace = getWorkspace
+    if (workspace.nonEmpty) {
+      buffer.clear()
+      val child = ChildProcess.fork("dist/check.js",
+        js.Array(workspace.get.paths.head.absolute.toString),
+        new ForkOptions(silent = true)).asInstanceOf[ForkedChild]
+      child.on("exit", (code: Int, signal: Int) => onExit(code, signal))
+      child.stdout.on("data", (data: String) => onData(data))
+      checkChild = Some(child)
     }
   }
 
-
-  private def check(zombies: Boolean): Unit = {
-    /*
-    if (check.nonEmpty) {
-      Window.showInformationMessage(s"Check command already running")
+  private def getWorkspace: Option[Workspace] = {
+    val folders: Seq[WorkspaceFolder] = VSCode.workspace.workspaceFolders.toOption.map(_.toSeq).getOrElse(Seq())
+    console.dir(folders)
+    if (folders.size != 1) {
+      VSCode.window.showInformationMessage(s"Check command requires that only a single directory is open")
+      None
     } else {
-      val folders: Seq[WorkspaceFolder] = vscode.Workspace.workspaceFolders.toOption.map(_.toSeq).getOrElse(Seq())
-      if (folders.size != 1) {
-        Window.showInformationMessage(s"Check command requires that a single directory is open")
-      } else {
-        Workspace(None, Seq(PathFactory(folders.head.uri.fsPath))) match {
-          case Left(err) =>
-            Window.showInformationMessage(err)
-          case Right(workspace) =>
-            ServerOps.debug(ServerOps.Trace, workspace.toString)
-            check = Some(new Check(workspace, zombies))
-            timers.setTimeout(delay)(progressCheckWithTry())
-        }
+      Workspace(None, Seq(PathFactory(folders.head.uri.fsPath))) match {
+        case Left(err) =>
+          VSCode.window.showInformationMessage(err)
+          None
+        case Right(workspace) =>
+          Some(workspace)
       }
-    }*/
-  }*/
-
-  /*
-  private def progressCheckWithTry(): Unit = {
-    try {
-      progressCheck()
-    } catch {
-      case ex: Throwable =>
-        ServerOps.debug(ServerOps.Trace, ex.toString)
-        ServerOps.debug(ServerOps.Trace, ex.getStackTrace.mkString("\n"))
     }
-  }*/
+  }
 
-  /*
-  private def progressCheck(): Unit = {
-    /*
-    val log = check.get.run()
-    if (log.nonEmpty) {
-      check = None
-      postIssues(log.get)
+  private def onExit(code: Int, signal: Int): Unit = {
+    checkChild = None
+    if (code == 0) {
+      ServerOps.debug(ServerOps.Trace, s"Completed data=${buffer.size}")
+      postIssues(read[Map[String, List[Issue]]](buffer.mkString))
     } else {
-      timers.setTimeout(delay)(progressCheckWithTry())
-    }*/
-  }*/
+      ServerOps.error("Check Exit: $code")
+    }
+  }
 
-  /*
-  private def postIssues(issues: IssueLog): Unit = {
+  private def onData(data: String): Unit = {
+    buffer.append(data)
+  }
+
+  private def postIssues(issues: Map[String, List[Issue]]): Unit = {
     diagnostics.clear()
-    for (pathIssues <- issues.getIssues) {
+    for (pathIssues <- issues) {
       val issues = pathIssues._2.map(issue => {
-        new Diagnostic(
-          new Range(
-            new Position(issue.location.startPosition._1-1,issue.location.startPosition._2),
-            new Position(issue.location.endPosition._1-1,issue.location.endPosition._2)
+        VSCode.newDiagnostic(
+          VSCode.newRange(
+            issue.location.startPosition._1-1,
+            issue.location.startPosition._2,
+            issue.location.endPosition._1-1,
+            issue.location.endPosition._2
           ),
           issue.category.value + " " +issue.message,
           DiagnosticSeverity.WARNING
         )
       })
-      diagnostics.set(URI.file(pathIssues._1.toString), js.Array(issues :_*))
+      diagnostics.set(VSCode.Uri.file(pathIssues._1.toString), js.Array(issues :_*))
     }
   }
-   */
 
   private def clear(): Unit = {
     ServerOps.debug(ServerOps.Trace, s"Clear Diagnostics")

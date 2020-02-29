@@ -59,8 +59,7 @@ object Check {
 
     try {
       val org = Org.newOrg().asInstanceOf[OrgImpl]
-      val pkg = org.newPackage("",
-        Array("/Users/kevin/Projects/ApexLink/samples/forcedotcom-enterprise-architecture/src/"), Array())
+      org.newPackage("", Array(workspace), Array())
 
       if (verbose) {
         val options = new IssueOptions()

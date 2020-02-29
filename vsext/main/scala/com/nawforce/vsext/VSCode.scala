@@ -103,11 +103,23 @@ trait CommandOps extends js.Object {
   def registerCommand(command: String, callback: js.Function): Disposable = js.native
 }
 
+trait WorkspaceFolder extends js.Object {
+  val index: Int
+  val name: String
+  val uri: URI
+}
+
+@js.native
+trait WorkspaceOps extends js.Object {
+  val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
+}
+
 @js.native
 trait VSCodeModule extends js.Object {
   val commands: CommandOps = js.native
   val window: WindowOps = js.native
   val languages: LanguagesOps = js.native
+  val workspace: WorkspaceOps = js.native
   val Uri: URIOps = js.native
 
   val Position: Dynamic = js.native
@@ -121,6 +133,7 @@ object VSCode {
   val commands: CommandOps = module.commands
   val window: WindowOps = module.window
   val languages: LanguagesOps = module.languages
+  val workspace: WorkspaceOps = module.workspace
   val Uri: URIOps = module.Uri
 
   def newPosition(line: Int, character: Int): Position = {
