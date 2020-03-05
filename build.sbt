@@ -17,7 +17,6 @@ scalacOptions += "-P:scalajs:sjsDefinedByDefault"
 
 resolvers += Resolver.sonatypeRepo("public")
 libraryDependencies += "io.scalajs" %%% "nodejs" % "0.4.2"
-libraryDependencies += "org.scalaz" %%% "scalaz-core" % "7.2.8"
 libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.9.0"
 
 libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.0" % "test"
