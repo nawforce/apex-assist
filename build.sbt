@@ -3,10 +3,10 @@ import java.nio.file.Path
 import org.scalajs.core.tools.linker.backend.ModuleKind.CommonJSModule
 
 name := "apex-assist"
-version := "0.6.0"
+version := "0.7.0"
 scalaVersion := "2.12.3"
 parallelExecution in Test := false
-//scalaJSOptimizerOptions ~= { _.withDisableOptimizer(true) }
+scalaJSOptimizerOptions ~= { _.withDisableOptimizer(true) }
 //jsEnv in Test := new org.scalajs.jsenv.nodejs.NodeJSEnv(org.scalajs.jsenv.nodejs.NodeJSEnv.Config().withArgs(List("--inspect-brk")))
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / "vsext/main/scala"
@@ -23,9 +23,9 @@ libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.0" % "test"
 
 val npmTargetDir = s"target/npm/" // where to generate npm
 val npmConf = "npm_config" // directory with static files for NPM package
-val npmTask = taskKey[Unit](s"Create npm package in $npmTargetDir")
+val createPackage = taskKey[Unit](s"Create npm package in $npmTargetDir")
 
-npmTask := {
+createPackage := {
   // JS libraries must first be generated
   (Compile / fastOptJS).value
   (Compile / fullOptJS).value

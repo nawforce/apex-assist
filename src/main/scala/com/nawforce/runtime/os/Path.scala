@@ -39,24 +39,22 @@ case class Path(_path: String) extends PathLike {
   val path: String = Option(_path).getOrElse(process.cwd())
 
   private lazy val pathObject = io.scalajs.nodejs.path.Path.parse(path)
+  private lazy val stat = {
+    try {
+      Some(io.scalajs.nodejs.fs.Fs.statSync(path))
+    } catch {
+      case _: js.JavaScriptException => None
+    }
+  }
+  override val native: Any = path
 
   override lazy val basename: String = pathObject.base.toOption.get
   override lazy val parent: Path = join("..")
   override lazy val absolute: Path = Path(io.scalajs.nodejs.path.Path.resolve(path))
-  override val native: Any = path
-
-  override lazy val nature: PathNature = {
-    try {
-      val stats = Fs.lstatSync(path)
-      if (stats.isDirectory()) DIRECTORY
-      else if (stats.isFile()) {
-        if (stats.size == 0) EMPTY_FILE else NONEMPTY_FILE
-      }
-      else UNKNOWN
-    } catch {
-      case _: js.JavaScriptException => DOES_NOT_EXIST
-    }
-  }
+  override lazy val exists: Boolean = stat.nonEmpty
+  override lazy val isDirectory: Boolean = stat.exists(_.isDirectory())
+  override lazy val isFile: Boolean = stat.exists(_.isFile())
+  override lazy val size: Long = stat.map(_.size.toLong).getOrElse(0)
 
   override def join(arg: String): Path = {
     if (io.scalajs.nodejs.path.Path.isAbsolute(arg))
@@ -111,7 +109,7 @@ case class Path(_path: String) extends PathLike {
 
   override def delete(): Option[String] = {
     try {
-      if (nature == DIRECTORY)
+      if (isDirectory)
         Fs.rmdirSync(path)
       else
         Fs.unlinkSync(path)
@@ -123,14 +121,14 @@ case class Path(_path: String) extends PathLike {
 
   override def createDirectory(name: String): Either[String, PathLike] = {
     val dir = join(name)
-    if (dir.nature == DOES_NOT_EXIST) {
+    if (!dir.exists) {
       try {
         Fs.mkdirSync(dir.toString)
         Right(Path(dir.toString))
       } catch {
         case ex: js.JavaScriptException => Left(ex.getMessage())
       }
-    } else if (dir.nature == DIRECTORY) {
+    } else if (dir.isDirectory) {
       Right(dir)
     } else {
       Left(s"Can not create directory '$dir', file already exists")
@@ -138,7 +136,7 @@ case class Path(_path: String) extends PathLike {
   }
 
   override def directoryList(): Either[String, Seq[String]] = {
-    if (nature == DIRECTORY) {
+    if (isDirectory) {
       try {
         Right(Fs.readdirSync(path))
       } catch {

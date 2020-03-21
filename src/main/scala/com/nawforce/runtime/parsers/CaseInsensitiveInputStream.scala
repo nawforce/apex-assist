@@ -34,6 +34,6 @@ import scala.scalajs.js.annotation.JSImport
 
 @js.native
 @JSImport("apex-parser", "CaseInsensitiveInputStream")
-class CaseInsensitiveInputStream(inputPath: String, data: String) extends ANTLRInputStream {
-  val path: String = js.native
+class CaseInsensitiveInputStream(inputPath: Any, data: String) extends ANTLRInputStream {
+  val path: Any = js.native
 }

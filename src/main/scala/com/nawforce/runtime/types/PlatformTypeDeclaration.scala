@@ -34,8 +34,8 @@ import com.nawforce.common.finding.TypeRequest.TypeRequest
 import com.nawforce.common.finding.{MissingType, WrongTypeArguments}
 import com.nawforce.common.metadata.Dependent
 import com.nawforce.common.names.{DotName, Name, TypeName}
-import com.nawforce.common.path.{DIRECTORY, FILE, PathFactory, PathLike}
-import com.nawforce.common.pkg.PackageImpl
+import com.nawforce.common.org.PackageImpl
+import com.nawforce.common.path.{PathFactory, PathLike}
 import com.nawforce.common.types._
 import com.nawforce.common.types.platform.{GenericPlatformTypeDeclaration, PlatformTypes}
 import upickle.default._
@@ -51,7 +51,7 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   override lazy val summary: TypeSummary = native.asInstanceOf[TypeSummary]
 
   override lazy val packageDeclaration: Option[PackageImpl] = None
-  override lazy val typeName: TypeName = TypeName.fromString(summary.typeName)
+  override lazy val typeName: TypeName = summary.typeName
   override lazy val name: Name = typeName.name
   override lazy val outerTypeName: Option[TypeName] = outer.map(_.typeName)
   override lazy val nature: Nature = Nature(summary.nature)
@@ -87,10 +87,8 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   }
   override lazy val blocks: Seq[BlockDeclaration] = Seq()
 
-  protected def getSuperClass: Option[TypeName] = {
-    if (summary.superClass.isEmpty) None else Some(TypeName.fromString(summary.superClass))
-  }
-  protected def getInterfaces: Seq[TypeName] = summary.interfaces.map(i => TypeName.fromString(i))
+  protected def getSuperClass: Option[TypeName] = summary.superClass
+  protected def getInterfaces: Seq[TypeName] = summary.interfaces
   protected def getFields: Seq[PlatformField] = summary.fields.map(fs => new PlatformField(fs))
   protected def getMethods: Seq[PlatformMethod] = summary.methods.map(mthd => new PlatformMethod(mthd))
 
@@ -109,7 +107,7 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
 class PlatformField(summary: FieldSummary) extends FieldDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = TypeName.fromString(summary.typeName)
+  override val typeName: TypeName = summary.typeName
   override val readAccess: Modifier = Modifier(summary.readAccess)
   override val writeAccess: Modifier = Modifier(summary.writeAccess)
 
@@ -119,7 +117,7 @@ class PlatformField(summary: FieldSummary) extends FieldDeclaration {
 class PlatformMethod(summary: MethodSummary) extends MethodDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = TypeName.fromString(summary.typeName)
+  override val typeName: TypeName = summary.typeName
   override val parameters: Seq[ParameterDeclaration] = getParameters
 
   def getGenericTypeName: TypeName = typeName
@@ -144,7 +142,7 @@ class PlatformConstructor(summary: ConstructorSummary, typeDeclaration: TypeDecl
 
 class PlatformParameter(summary: ParameterSummary) extends ParameterDeclaration {
   override val name: Name = Name(summary.name)
-  override val typeName: TypeName = TypeName.fromString(summary.typeName)
+  override val typeName: TypeName = summary.typeName
 
   override def toString: String = typeName.toString + " " + name.toString
 
@@ -245,14 +243,14 @@ object PlatformTypeDeclaration {
       case Right(contents) =>
         contents.foreach(name => {
           val entry = path.join(name)
-          if (entry.nature.isInstanceOf[FILE] && entry.basename.endsWith(".json")) {
+          if (entry.isFile && entry.basename.endsWith(".json")) {
             val dotName = prefix.append(Name(name.dropRight(".json".length)))
             if (dotName.names.head == Name.SObjects) {
               accum.put(DotName(Name.Schema +: dotName.names.tail), dotName)
             } else {
               accum.put(dotName, dotName)
             }
-          } else if (entry.nature == DIRECTORY) {
+          } else if (entry.isDirectory) {
             indexDir(entry, prefix.append(Name(name)), accum)
           }
         })

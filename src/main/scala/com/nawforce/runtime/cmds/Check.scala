@@ -69,7 +69,10 @@ object Check {
         println(write(org.issues.getIssues))
       }
     } catch {
-      case ex: js.JavaScriptException => println(s"Exception: ${ex.toString}")
+      case ex: js.JavaScriptException =>
+        println(s"Exception: ${ex.toString}\n" + ex.getStackTrace.mkString("\n"))
+      case ex: Throwable =>
+        println(s"Exception: ${ex.toString}\n" + ex.getStackTrace.mkString("\n"))
     }
   }
 }

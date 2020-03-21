@@ -27,61 +27,104 @@
 */
 package com.nawforce.runtime.parsers
 
+import com.nawforce.common.documents.{PositionImpl, RangeLocationImpl, TextRange}
 import com.nawforce.common.parsers.CSTRange
 import com.nawforce.common.path.{PathFactory, PathLike}
-import com.nawforce.runtime.parsers.ApexParser.ExpressionContext
-import com.nawforce.runtime.parsers.antlr.{CommonTokenStream, Interval}
+import com.nawforce.runtime.parsers.CodeParser.ParserRuleContext
+import com.nawforce.runtime.parsers.antlr.CommonTokenStream
 
 import scala.scalajs.js
 import scala.scalajs.js.JavaScriptException
 
-case class ClippedText(path: PathLike, text: String, line: Int, column: Int)
+class ClippedStream(val path: PathLike, data: String, start: Int, stop: Int, val line: Int, val column: Int) {
+  def parse(): Either[SyntaxException, ApexParser.BlockContext] = {
+    val clipped = data.substring(start, stop+1)
+    new CodeParser(path, clipped).parseBlock()
+  }
+}
 
-object CodeParser {
-  type ParserRuleContext = com.nawforce.runtime.parsers.antlr.ParserRuleContext
-  type TerminalNode = com.nawforce.runtime.parsers.antlr.TerminalNode
+class CodeParser (val path: PathLike, data: String) {
+  // We would like to extend this but it angers the JavaScript gods
+  val cis = new CaseInsensitiveInputStream(this, data)
 
-  def parseClass(path: PathLike, data: String): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
+  // CommonTokenStream is buffered so we can access to retrieve token sequence if needed
+  val tokenStream = new CommonTokenStream(new ApexLexer(cis))
+  tokenStream.fill()
+
+  def parseClass(): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
     try {
-      Right(createParser(Some(path), data).compilationUnit())
+      Right(getParser.compilationUnit())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
   }
 
-  def parseTrigger(path: PathLike, data: String): Either[SyntaxException, ApexParser.TriggerUnitContext] = {
+  def parseTrigger(): Either[SyntaxException, ApexParser.TriggerUnitContext] = {
     try {
-      Right(createParser(Some(path), data).triggerUnit())
+      Right(getParser.triggerUnit())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
   }
 
-  def parseBlock(path: PathLike, data: String): Either[SyntaxException, ApexParser.BlockContext] = {
+  def parseBlock(): Either[SyntaxException, ApexParser.BlockContext] = {
     try {
-      Right(createParser(Some(path), data).block())
+      Right(getParser.block())
     } catch {
       case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
     }
   }
 
-  def parseTypeRef(data: String): Either[SyntaxException, ApexParser.TypeRefContext] = {
-    try {
-      Right(createParser(None, data).typeRef())
-    } catch {
-      case ex: JavaScriptException => Left(ex.exception.asInstanceOf[SyntaxException])
-    }
+  // Test use only
+  def parseLiteral(): ApexParser.LiteralContext = {
+    getParser.literal()
+  }
+
+  private def getParser: ApexParser = {
+    val parser = new ApexParser(tokenStream)
+    parser.removeErrorListeners()
+    parser.addErrorListener(new ThrowingErrorListener())
+    parser
   }
 
   def getRange(context: ParserRuleContext): CSTRange = {
     CSTRange(
-      context.start.inputStream.path,
+      path.toString,
       context.start.line,
       context.start.charPositionInLine,
       context.stop.line,
       context.stop.charPositionInLine + context.stop.text.length)
   }
 
+  def getTextRange(context: ParserRuleContext): TextRange = {
+    TextRange(
+      PositionImpl(context.start.line, context.start.charPositionInLine),
+      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length),
+    )
+  }
+
+  def getRangeLocation(context: ParserRuleContext, lineOffset: Int=0, positionOffset: Int=0): RangeLocationImpl = {
+    RangeLocationImpl(
+      path.toString,
+      PositionImpl(context.start.line, context.start.charPositionInLine)
+        .adjust(lineOffset, positionOffset),
+      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length)
+        .adjust(lineOffset, positionOffset)
+    )
+  }
+
+  def clipStream(context: ParserRuleContext): ClippedStream = {
+    new ClippedStream(PathFactory(path.toString), data,
+      context.start.startIndex, context.stop.stopIndex,
+      context.start.line-1, context.start.charPositionInLine)
+  }
+}
+
+object CodeParser {
+  type ParserRuleContext = com.nawforce.runtime.parsers.antlr.ParserRuleContext
+  type TerminalNode = com.nawforce.runtime.parsers.antlr.TerminalNode
+
+  // Helper for JS Portability
   def getText(context: ParserRuleContext): String = {
     if (context.childCount == 0) return ""
 
@@ -92,48 +135,42 @@ object CodeParser {
     builder.toString
   }
 
+  // Helper for JS Portability
   def getText(node: TerminalNode): String = {
     node.text
   }
 
-  def clipText(context: ParserRuleContext): ClippedText = {
-    val is = context.start.inputStream
-    val text = is.getText(new Interval(context.start.startIndex, context.stop.stopIndex))
-    val path = is.path
-
-    ClippedText(PathFactory(path), text, context.start.line-1, context.start.charPositionInLine)
-  }
-
-  def getTerminals(from: ExpressionContext, index: Integer): String = {
-    if (index < from.childCount) {
-      from.getChild(index) match {
-        case tn: TerminalNode => tn.text + getTerminals(from, index + 1)
-        case _ => ""
-      }
-    } else {
-      ""
-    }
-  }
-
+  // Helper for JS Portability
   def toScala[T](collection: js.Array[T]): Seq[T] = {
     collection
   }
 
+  // Helper for JS Portability
   def toScala[T](value: js.UndefOr[T]): Option[T] = {
     value.toOption
   }
 
-  def createParser(path: Option[PathLike], data: String): ApexParser = {
-    val listener = new ThrowingErrorListener()
-    val cis = new CaseInsensitiveInputStream(path.map(_.toString).getOrElse("<Unknown>"), data)
-    val lexer = new ApexLexer(cis)
+  // TODO: Remove this when we have CodeParser access in right places
+  def getRange(context: ParserRuleContext): CSTRange = {
+    codeParser(context).getRange(context)
+  }
 
-    val tokens = new CommonTokenStream(lexer)
-    tokens.fill()
+  // TODO: Remove this when we have CodeParser access in right places
+  def getTextRange(context: ParserRuleContext): TextRange = {
+    codeParser(context).getTextRange(context)
+  }
 
-    val parser: ApexParser = new ApexParser(tokens)
-    parser.removeErrorListeners()
-    parser.addErrorListener(listener)
-    parser
+  // TODO: Remove this when we have CodeParser access in right places
+  def getRangeLocation(context: ParserRuleContext, lineOffset: Int=0, positionOffset: Int=0): RangeLocationImpl = {
+    codeParser(context).getRangeLocation(context, lineOffset, positionOffset)
+  }
+
+  // TODO: Remove this when we have CodeParser access in right places
+  def clipStream(context: ParserRuleContext): ClippedStream = {
+    codeParser(context).clipStream(context)
+  }
+
+  private def codeParser(context: ParserRuleContext): CodeParser = {
+    context.start.inputStream.asInstanceOf[CaseInsensitiveInputStream].path.asInstanceOf[CodeParser]
   }
 }

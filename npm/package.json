@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Salesforce Apex language code analysis tools",
   "publisher": "KevinJones",
   "main": "dist/boot.js",
@@ -12,7 +12,7 @@
   "dependencies": {
     "xmldom": "0.1.27",
     "antlr4ts": "0.5.0-alpha.3",
-    "apex-parser": "2.1.0"
+    "apex-parser": "2.2.0"
   },
   "devDependencies": {
     "fs-monkey": "0.3.3",

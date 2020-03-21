@@ -1,13 +1,16 @@
 
 # Apex Assist
 
-This extension provides advanced tools for supporting Salesforce Apex development. Currently it demos the ability to
-find unused methods & fields. This version is *Experimental* in two ways:
+This extension provides advanced tools for supporting Salesforce Apex development. This version is *Experimental* in 
+that it only supports finding unused methods & fields as an example analysis, the extension will highlight other code 
+problems but only those that might impact this analysis.
 
-* It does not rely on having a JVM installed, the language analysis code  has been cross compiled to JavaScript for use with VSCode. This has reduced the performance so it should only be used with smaller projects.
-* Finding unused methods & fields is just an example analysis, the extension will highlight other code problems but only those that might impact this analysis.
+## Performance
 
-Performance improvements and more analysis features will be added in future releases.
+The extension is written in Scala and cross compiled to JavaScript. This means there is no need to have Java installed
+but the use of just JavaScript does impact performance. This version adds a filesystem cache to reduce analysis time. 
+The first time you run over a new product the cache will be empty and it may take a few minutes for
+the analysis to complete, subsequent analysis on the same or similar projects should complete in a few seconds. 
 
 ## QuickStart
 
@@ -27,13 +30,18 @@ You can monitor progress of the analysis in the VSCode Output Window, select 'Ap
 ## FAQ
 
 1. *What Apex files are used in the analysis?*
-For directories with a sfdx-project.json file the analysis scans the directories identified by 'packageDirectory'. If there is no sfdx-package.json then all sub-directories are scanned for metadata. For sfdx format projects the .forceignore file directives are honoured.
+For directories with a sfdx-project.json file the analysis scans the directories identified by 'packageDirectory'. If 
+there is no sfdx-package.json then all sub-directories are scanned for metadata. For sfdx format projects the 
+.forceignore file directives are honoured.
 
 2. *How are namespaces handled?*
-For sfdx projects the namespace is read from sfdx-project.json if available, otherwise it is assumed that the package metadata can be deployed 'unmanged' without an explicit namespace.
+For sfdx projects the namespace is read from sfdx-project.json if available, otherwise it is assumed that the package 
+metadata can be deployed 'unmanged' without an explicit namespace.
 
 3. *Can I reference other managed packaged such as CPQ?*
-The base analysis code supports multi-package analysis but it's not yet possible via this extension, See [ApexLink](https://github.com/nawforce/ApexLink).
+The base analysis code supports multi-package analysis but it's not yet possible via this extension, See 
+[ApexLink](https://github.com/nawforce/ApexLink).
 
 4. *I get an error for feature/field Y implemented in API XX, why?*
-The analysis contains a description of the platform types and SObjects that is checks against. These could either be a little out of date or I may have missed something. Create an issue at [ApexLink](https://github.com/nawforce/ApexLink).        
+The analysis contains a description of the platform types and SObjects that is checks against. These could either be 
+a little out of date or I may have missed something. Create an issue at [ApexLink](https://github.com/nawforce/ApexLink).        
