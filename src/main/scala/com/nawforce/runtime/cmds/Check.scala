@@ -28,51 +28,18 @@
 
 package com.nawforce.runtime.cmds
 
-import com.nawforce.common.api.{IssueOptions, Org, ServerOps}
-import com.nawforce.common.org.OrgImpl
-import io.scalajs.nodejs.process
-import upickle.default.write
+import com.nawforce.common.api.ServerOps
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 object Check {
+
   @JSExportTopLevel("check")
   def run(args: js.Array[String]): Unit = {
+    // Disable lazy blocks for JS, does not work well
+    ServerOps.setLazyBlocks(false)
 
-    var workspace = ""
-    var verbose = false
-
-    args.size match {
-      case 3 =>
-        workspace = args(2)
-      case 4 if args(2) == "-verbose" =>
-        verbose = true
-        workspace = args(3)
-      case _ =>
-        println("Usage: [-verbose] <workspace>")
-        process.exit(-1)
-    }
-
-    if (verbose)
-      ServerOps.setDebugLogging(Array("ALL"))
-
-    try {
-      val org = Org.newOrg().asInstanceOf[OrgImpl]
-      org.newPackage("", Array(workspace), Array())
-
-      if (verbose) {
-        val options = new IssueOptions()
-        options.includeZombies = true
-        println(org.getIssues(options))
-      } else {
-        println(write(org.issues.getIssues))
-      }
-    } catch {
-      case ex: js.JavaScriptException =>
-        println(s"Exception: ${ex.toString}\n" + ex.getStackTrace.mkString("\n"))
-      case ex: Throwable =>
-        println(s"Exception: ${ex.toString}\n" + ex.getStackTrace.mkString("\n"))
-    }
+    com.nawforce.common.cmds.Check.main("Check", args.takeRight(args.length-2).toArray)
   }
 }
