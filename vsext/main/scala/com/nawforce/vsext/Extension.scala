@@ -28,11 +28,10 @@
 package com.nawforce.vsext
 
 import com.nawforce.common.api.ServerOps
-import com.nawforce.common.diagnostics.Issue
+import com.nawforce.common.diagnostics._
 import com.nawforce.common.path.PathFactory
 import com.nawforce.common.sfdx.Workspace
 import io.scalajs.nodejs.child_process.{ChildProcess, ForkOptions}
-import io.scalajs.nodejs.console
 import io.scalajs.nodejs.events.IEventEmitter
 import upickle.default._
 
@@ -53,14 +52,23 @@ trait ForkedChild extends ChildProcess {
 object Extension {
   private var diagnostics: DiagnosticCollection = _
   private var checkChild: Option[ChildProcess] = None
-  private val buffer = new StringBuilder()
+  private var output: Option[OutputChannel] = None
+  private var buffer = new StringBuilder()
+  private var statusBar: StatusBar = _
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext ): Unit = {
     // Basic setup
-    OutputLogging.setup(context)
+    output = Some(OutputLogging.setup(context))
     diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
     context.subscriptions.push(diagnostics)
+    buffer = new StringBuilder()
+    checkChild = None
+    statusBar = VSCode.window.createStatusBarItem()
+    statusBar.text = "$(refresh) Apex Assist"
+    statusBar.hide()
+    context.subscriptions.push(statusBar)
+
     ServerOps.info("Apex Assist activated")
 
     // Register our commands
@@ -73,6 +81,7 @@ object Extension {
 
   private def check(zombies: Boolean): Unit = {
     ServerOps.debug(ServerOps.Trace, s"Check Zombies=$zombies")
+    diagnostics.clear()
 
     if (checkChild.nonEmpty) {
       VSCode.window.showInformationMessage("Check command is already running")
@@ -81,24 +90,35 @@ object Extension {
 
     val workspace = getWorkspace
     if (workspace.nonEmpty) {
+      ServerOps.debug(ServerOps.Trace, s"Workspace: ${workspace.toString}")
+      statusBar.show()
+
       buffer.clear()
-      val child = ChildProcess.fork("dist/check.js",
-        js.Array(workspace.get.paths.head.absolute.toString),
+      val args = new js.Array[String]()
+      args.push("-verbose")
+      args.push("-pickle")
+      if (zombies)
+        args.push("-zombie")
+      workspace.get.rootPaths.map(p => args.push(p.absolute.toString))
+
+      val child = ChildProcess.fork("dist/check.js", args,
         new ForkOptions(silent = true)).asInstanceOf[ForkedChild]
       child.on("exit", (code: Int, signal: Int) => onExit(code, signal))
-      child.stdout.on("data", (data: String) => onData(data))
+      child.stdout.on("data", (data: String) => onResult(data))
+      child.stderr.on("data", (data: String) => onMessage(data))
       checkChild = Some(child)
     }
   }
 
   private def getWorkspace: Option[Workspace] = {
     val folders: Seq[WorkspaceFolder] = VSCode.workspace.workspaceFolders.toOption.map(_.toSeq).getOrElse(Seq())
-    console.dir(folders)
     if (folders.size != 1) {
       VSCode.window.showInformationMessage(s"Check command requires that only a single directory is open")
       None
     } else {
-      Workspace(None, Seq(PathFactory(folders.head.uri.fsPath))) match {
+      val dir = PathFactory(folders.head.uri.fsPath)
+      ServerOps.debug(ServerOps.Trace, s"Opening workspace: ${dir.toString}")
+      Workspace(None, Seq(dir)) match {
         case Left(err) =>
           VSCode.window.showInformationMessage(err)
           None
@@ -110,6 +130,7 @@ object Extension {
 
   private def onExit(code: Int, signal: Int): Unit = {
     checkChild = None
+    statusBar.hide()
     if (code == 0) {
       ServerOps.debug(ServerOps.Trace, s"Completed data=${buffer.size}")
       postIssues(read[Map[String, List[Issue]]](buffer.mkString))
@@ -118,8 +139,12 @@ object Extension {
     }
   }
 
-  private def onData(data: String): Unit = {
-    buffer.append(data)
+  private def onResult(data: String): Unit = {
+    buffer.append(data.toString)
+  }
+
+  private def onMessage(data: String): Unit = {
+    output.foreach(_.append(data.toString))
   }
 
   private def postIssues(issues: Map[String, List[Issue]]): Unit = {
@@ -133,8 +158,14 @@ object Extension {
             issue.location.endPosition._1-1,
             issue.location.endPosition._2
           ),
-          issue.category.value + " " +issue.message,
-          DiagnosticSeverity.WARNING
+          issue.message,
+          issue.category match {
+            case ERROR_CATEGORY => DiagnosticSeverity.ERROR
+            case MISSING_CATEGORY => DiagnosticSeverity.ERROR
+            case WARNING_CATEGORY => DiagnosticSeverity.WARNING
+            case UNUSED_CATEGORY => DiagnosticSeverity.WARNING
+            case _ => DiagnosticSeverity.ERROR
+          }
         )
       })
       diagnostics.set(VSCode.Uri.file(pathIssues._1.toString), js.Array(issues :_*))

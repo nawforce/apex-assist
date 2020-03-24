@@ -47,9 +47,18 @@ trait OutputChannel extends Disposable {
 }
 
 @js.native
+trait StatusBar extends Disposable {
+  var text: String = js.native
+
+  def show(): Unit = js.native
+  def hide(): Unit = js.native
+}
+
+@js.native
 trait WindowOps extends js.Object {
   def createOutputChannel(name: String): OutputChannel = js.native
   def showInformationMessage(msg: String): Unit = js.native
+  def createStatusBarItem(): StatusBar = js.native
 }
 
 @js.native

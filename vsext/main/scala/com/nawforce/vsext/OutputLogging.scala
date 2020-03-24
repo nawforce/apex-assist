@@ -30,16 +30,17 @@ package com.nawforce.vsext
 import com.nawforce.common.api.{Logger, ServerOps}
 
 class OutputLogging(channel: OutputChannel) extends Logger {
-  def error(message: String): Unit = {channel.appendLine("[error]: " + message)}
-  def info(message: String): Unit = {channel.appendLine("[info]: " + message)}
-  def debug(message: String): Unit = {channel.appendLine("[debug]: " + message)}
+  def info(message: String): Unit = {channel.appendLine(message)}
+  def debug(message: String): Unit = {channel.appendLine("[debug] " + message)}
+  def error(message: String): Unit = {channel.appendLine("[error] " + message)}
 }
 
 object OutputLogging {
-  def setup(context: ExtensionContext): Unit = {
+  def setup(context: ExtensionContext): OutputChannel = {
     val output = VSCode.window.createOutputChannel("Apex Assist")
     context.subscriptions.push(output)
     ServerOps.setLogger(new OutputLogging(output))
     ServerOps.setDebugLogging(Array("ALL"))
+    output
   }
 }
