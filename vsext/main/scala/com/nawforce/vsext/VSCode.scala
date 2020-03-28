@@ -112,6 +112,7 @@ trait CommandOps extends js.Object {
   def registerCommand(command: String, callback: js.Function): Disposable = js.native
 }
 
+@js.native
 trait WorkspaceFolder extends js.Object {
   val index: Int
   val name: String
@@ -119,8 +120,15 @@ trait WorkspaceFolder extends js.Object {
 }
 
 @js.native
+trait WorkspaceConfiguration extends js.Object {
+  def get(section: String): Any = js.native
+}
+
+@js.native
 trait WorkspaceOps extends js.Object {
   val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
+
+  def getConfiguration(): WorkspaceConfiguration = js.native
 }
 
 @js.native

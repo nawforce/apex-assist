@@ -40,7 +40,18 @@
         "command": "apex-assist.clear",
         "title": "ApexAssist: Clear diagnostics"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "Object",
+      "title": "Apex Assist",
+      "properties": {
+        "apexAssist.extraNamespaces": {
+          "type": "string",
+          "default": "",
+          "description": "Comma separated list of external namespaces"
+        }
+      }
+    }
   },
   "scripts": {}
 }

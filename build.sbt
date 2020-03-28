@@ -6,8 +6,11 @@ name := "apex-assist"
 version := "0.7.0"
 scalaVersion := "2.12.3"
 parallelExecution in Test := false
-scalaJSOptimizerOptions ~= { _.withDisableOptimizer(true) }
-//jsEnv in Test := new org.scalajs.jsenv.nodejs.NodeJSEnv(org.scalajs.jsenv.nodejs.NodeJSEnv.Config().withArgs(List("--inspect-brk")))
+scalaJSOptimizerOptions ~= { _.withDisableOptimizer(false) }
+
+//Uncomment to break for debugging
+// jsEnv in Test := new org.scalajs.jsenv.nodejs.NodeJSEnv(
+// org.scalajs.jsenv.nodejs.NodeJSEnv.Config().withArgs(List("--inspect-brk")))
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / "vsext/main/scala"
 

@@ -31,6 +31,7 @@ import com.nawforce.common.api.ServerOps
 import com.nawforce.common.diagnostics._
 import com.nawforce.common.path.PathFactory
 import com.nawforce.common.sfdx.Workspace
+import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.child_process.{ChildProcess, ForkOptions}
 import io.scalajs.nodejs.events.IEventEmitter
 import upickle.default._
@@ -70,6 +71,7 @@ object Extension {
     context.subscriptions.push(statusBar)
 
     ServerOps.info("Apex Assist activated")
+    ServerOps.info(s"Extra namespaces: ${getExtraNamespaces.map(_.toString).mkString(", ")}")
 
     // Register our commands
     context.subscriptions.push(
@@ -99,15 +101,21 @@ object Extension {
       args.push("-pickle")
       if (zombies)
         args.push("-zombie")
+      getExtraNamespaces.foreach(ns => args.push(s"$ns="))
       workspace.get.rootPaths.map(p => args.push(p.absolute.toString))
 
       val child = ChildProcess.fork("dist/check.js", args,
         new ForkOptions(silent = true)).asInstanceOf[ForkedChild]
       child.on("exit", (code: Int, signal: Int) => onExit(code, signal))
       child.stdout.on("data", (data: String) => onResult(data))
-      child.stderr.on("data", (data: String) => onMessage(data))
+      child.stderr.on("data", (data: Buffer) => onMessage(data))
       checkChild = Some(child)
     }
+  }
+
+  private def getExtraNamespaces: Array[String] = {
+    val config = VSCode.workspace.getConfiguration().get("apexAssist.extraNamespaces").asInstanceOf[String]
+    config.split(",").map(_.trim)
   }
 
   private def getWorkspace: Option[Workspace] = {
@@ -143,8 +151,8 @@ object Extension {
     buffer.append(data.toString)
   }
 
-  private def onMessage(data: String): Unit = {
-    output.foreach(_.append(data.toString))
+  private def onMessage(data: Buffer): Unit = {
+    output.foreach(_.append(data.toString()))
   }
 
   private def postIssues(issues: Map[String, List[Issue]]): Unit = {
