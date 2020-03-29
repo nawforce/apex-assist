@@ -5,12 +5,19 @@ This extension provides advanced tools for supporting Salesforce Apex developmen
 that it only supports finding unused methods & fields as an example analysis, the extension will highlight other code 
 problems but only those that might impact this analysis.
 
-## Performance
+## Performance & Memory Use
 
-The extension is written in Scala and cross compiled to JavaScript. This means there is no need to have Java installed
-but the use of just JavaScript does impact performance. This version adds a filesystem cache to reduce analysis time. 
-The first time you run over a new project the cache will be empty and it may take a few minutes for
-the analysis to complete, subsequent analysis on the same or similar projects should complete in a few seconds. 
+Unlike most other code analysis extensions this one is implemented using just Javascript so there no need to have Java
+installed to use it. To improve performance a filesystem cache is used to store previously analysed data. The first time
+you run over a new project the cache will be empty and it may take a few minutes for the analysis to complete, 
+subsequent analysis on the same or similar projects should complete in a few seconds. 
+
+The first time analysis can consume quite a lot of memory for large projects. The default maximum heap size for nodejs
+can be too small for this. You can increase the amount of memory available by setting the NODE_OPTIONS environment 
+variable before starting VSCode:
+
+    NODE_OPTIONS = "--max_old_space_size=4096"
+ 
 
 ## QuickStart
 
