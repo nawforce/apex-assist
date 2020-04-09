@@ -51,7 +51,7 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   override lazy val summary: TypeSummary = native.asInstanceOf[TypeSummary]
 
   override lazy val packageDeclaration: Option[PackageImpl] = None
-  override lazy val typeName: TypeName = summary.typeName
+  override lazy val typeName: TypeName = TypeName(summary.typeName)
   override lazy val name: Name = typeName.name
   override lazy val outerTypeName: Option[TypeName] = outer.map(_.typeName)
   override lazy val nature: Nature = Nature(summary.nature)
@@ -87,8 +87,8 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   }
   override lazy val blocks: Seq[BlockDeclaration] = Seq()
 
-  protected def getSuperClass: Option[TypeName] = summary.superClass
-  protected def getInterfaces: Seq[TypeName] = summary.interfaces
+  protected def getSuperClass: Option[TypeName] = summary.superClass.map(TypeName(_))
+  protected def getInterfaces: Seq[TypeName] = summary.interfaces.map(TypeName(_))
   protected def getFields: Seq[PlatformField] = summary.fields.map(fs => new PlatformField(fs))
   protected def getMethods: Seq[PlatformMethod] = summary.methods.map(mthd => new PlatformMethod(mthd))
 
@@ -107,7 +107,7 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
 class PlatformField(summary: FieldSummary) extends FieldDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = summary.typeName
+  override val typeName: TypeName = TypeName(summary.typeName)
   override val readAccess: Modifier = Modifier(summary.readAccess)
   override val writeAccess: Modifier = Modifier(summary.writeAccess)
 
@@ -117,7 +117,7 @@ class PlatformField(summary: FieldSummary) extends FieldDeclaration {
 class PlatformMethod(summary: MethodSummary) extends MethodDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = summary.typeName
+  override val typeName: TypeName = TypeName(summary.typeName)
   override val parameters: Seq[ParameterDeclaration] = getParameters
 
   def getGenericTypeName: TypeName = typeName
@@ -142,7 +142,7 @@ class PlatformConstructor(summary: ConstructorSummary, typeDeclaration: TypeDecl
 
 class PlatformParameter(summary: ParameterSummary) extends ParameterDeclaration {
   override val name: Name = Name(summary.name)
-  override val typeName: TypeName = summary.typeName
+  override val typeName: TypeName = TypeName(summary.typeName)
 
   override def toString: String = typeName.toString + " " + name.toString
 

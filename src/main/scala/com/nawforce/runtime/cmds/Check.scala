@@ -28,7 +28,7 @@
 
 package com.nawforce.runtime.cmds
 
-import com.nawforce.common.api.ServerOps
+import com.nawforce.common.api.{Org, ServerOps}
 import io.scalajs.nodejs.process
 
 import scala.scalajs.js
@@ -41,7 +41,8 @@ object Check {
     // Disable lazy blocks for JS, does not work well
     ServerOps.setLazyBlocks(false)
 
-    val status = com.nawforce.common.cmds.Check.main("Check", args.takeRight(args.length-2).toArray)
+    val org = Org.newOrg()
+    val status = com.nawforce.common.cmds.Check.main("Check", args.takeRight(args.length-2).toArray, org)
     if (status != 0)
       process.exit(status)
   }
