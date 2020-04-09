@@ -31,12 +31,14 @@ import com.nawforce.common.api.ServerOps
 import com.nawforce.common.diagnostics._
 import com.nawforce.common.path.PathFactory
 import com.nawforce.common.sfdx.Workspace
+import com.nawforce.runtime.os.Path
 import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.child_process.{ChildProcess, ForkOptions}
 import io.scalajs.nodejs.events.IEventEmitter
 import upickle.default._
 
 import scala.scalajs.js
+import scala.scalajs.js.Dynamic.{global => g}
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 @js.native
@@ -104,7 +106,9 @@ object Extension {
       getExtraNamespaces.foreach(ns => args.push(s"$ns="))
       workspace.get.rootPaths.map(p => args.push(p.absolute.toString))
 
-      val child = ChildProcess.fork("dist/check.js", args,
+      val path = g.__dirname + Path.separator + "check.js"
+      ServerOps.debug(ServerOps.Trace, s"Running: $path")
+      val child = ChildProcess.fork(path, args,
         new ForkOptions(silent = true)).asInstanceOf[ForkedChild]
       child.on("exit", (code: Int, signal: Int) => onExit(code, signal))
       child.stdout.on("data", (data: String) => onResult(data))
