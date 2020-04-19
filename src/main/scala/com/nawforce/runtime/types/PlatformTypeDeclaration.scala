@@ -110,6 +110,7 @@ class PlatformField(summary: FieldSummary) extends FieldDeclaration {
   override val typeName: TypeName = TypeName(summary.typeName)
   override val readAccess: Modifier = Modifier(summary.readAccess)
   override val writeAccess: Modifier = Modifier(summary.writeAccess)
+  override lazy val idTarget: Option[TypeName] = None
 
   def getGenericTypeName: TypeName = typeName
 }

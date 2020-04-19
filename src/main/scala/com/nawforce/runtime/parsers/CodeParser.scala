@@ -27,29 +27,37 @@
 */
 package com.nawforce.runtime.parsers
 
-import com.nawforce.common.documents.{PositionImpl, RangeLocationImpl, TextRange}
-import com.nawforce.common.parsers.CSTRange
-import com.nawforce.common.path.{PathFactory, PathLike}
+import com.nawforce.common.documents.{PositionImpl, RangeLocationImpl}
+import com.nawforce.common.path.PathLike
 import com.nawforce.runtime.parsers.CodeParser.ParserRuleContext
 import com.nawforce.runtime.parsers.antlr.CommonTokenStream
 
 import scala.scalajs.js
 import scala.scalajs.js.JavaScriptException
+import scala.util.hashing.MurmurHash3
 
-class ClippedStream(val path: PathLike, data: String, start: Int, stop: Int, val line: Int, val column: Int) {
-  def parse(): Either[SyntaxException, ApexParser.BlockContext] = {
-    val clipped = data.substring(start, stop+1)
-    new CodeParser(path, clipped).parseBlock()
+/** A line & column position in a source block */
+case class SourcePosition(lineOffset: Int=0, columnOffset: Int=0)
+
+/** Encapsulation of a chunk of Apex code, position tells you where it came from in path */
+case class Source(path: PathLike, code: String, position: SourcePosition, outer: Option[Source]) {
+  lazy val hash: Int = MurmurHash3.stringHash(code)
+
+  /** Find a location for a rule, adapts based on source offsets to give absolute position in file */
+  def getRangeLocation(context: ParserRuleContext): RangeLocationImpl = {
+    RangeLocationImpl(
+      path.toString,
+      PositionImpl(context.start.line, context.start.charPositionInLine)
+        .adjust(position.lineOffset, position.columnOffset),
+      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length)
+        .adjust(position.lineOffset, position.columnOffset)
+    )
   }
 }
 
-class CodeParser (val path: PathLike, data: String) {
+class CodeParser (val source: Source) {
   // We would like to extend this but it angers the JavaScript gods
-  val cis = new CaseInsensitiveInputStream(this, data)
-
-  // CommonTokenStream is buffered so we can access to retrieve token sequence if needed
-  val tokenStream = new CommonTokenStream(new ApexLexer(cis))
-  tokenStream.fill()
+  val cis = new CaseInsensitiveInputStream(this, source.code)
 
   def parseClass(): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
     try {
@@ -80,49 +88,35 @@ class CodeParser (val path: PathLike, data: String) {
     getParser.literal()
   }
 
+  /** Find a location for a rule, adapts based on source offsets to give absolute position in file */
+  def getRangeLocation(context: ParserRuleContext): RangeLocationImpl = {
+    source.getRangeLocation(context)
+  }
+
+  /** Extract the source used for a parser rule */
+  def extractSource(context: ParserRuleContext): Source = {
+    val clipped = source.code.substring(context.start.startIndex, context.stop.stopIndex+1)
+    Source(source.path, clipped, SourcePosition(context.start.line-1, context.start.charPositionInLine), Some(source))
+  }
+
   private def getParser: ApexParser = {
+    val tokenStream = new CommonTokenStream(new ApexLexer(cis))
+    tokenStream.fill()
+
     val parser = new ApexParser(tokenStream)
     parser.removeErrorListeners()
     parser.addErrorListener(new ThrowingErrorListener())
     parser
-  }
-
-  def getRange(context: ParserRuleContext): CSTRange = {
-    CSTRange(
-      path.toString,
-      context.start.line,
-      context.start.charPositionInLine,
-      context.stop.line,
-      context.stop.charPositionInLine + context.stop.text.length)
-  }
-
-  def getTextRange(context: ParserRuleContext): TextRange = {
-    TextRange(
-      PositionImpl(context.start.line, context.start.charPositionInLine),
-      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length),
-    )
-  }
-
-  def getRangeLocation(context: ParserRuleContext, lineOffset: Int=0, positionOffset: Int=0): RangeLocationImpl = {
-    RangeLocationImpl(
-      path.toString,
-      PositionImpl(context.start.line, context.start.charPositionInLine)
-        .adjust(lineOffset, positionOffset),
-      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length)
-        .adjust(lineOffset, positionOffset)
-    )
-  }
-
-  def clipStream(context: ParserRuleContext): ClippedStream = {
-    new ClippedStream(PathFactory(path.toString), data,
-      context.start.startIndex, context.stop.stopIndex,
-      context.start.line-1, context.start.charPositionInLine)
   }
 }
 
 object CodeParser {
   type ParserRuleContext = com.nawforce.runtime.parsers.antlr.ParserRuleContext
   type TerminalNode = com.nawforce.runtime.parsers.antlr.TerminalNode
+
+  def apply(path: PathLike, code: String): CodeParser = {
+    new CodeParser(Source(path, code, SourcePosition(), None))
+  }
 
   // Helper for JS Portability
   def getText(context: ParserRuleContext): String = {
@@ -148,29 +142,5 @@ object CodeParser {
   // Helper for JS Portability
   def toScala[T](value: js.UndefOr[T]): Option[T] = {
     value.toOption
-  }
-
-  // TODO: Remove this when we have CodeParser access in right places
-  def getRange(context: ParserRuleContext): CSTRange = {
-    codeParser(context).getRange(context)
-  }
-
-  // TODO: Remove this when we have CodeParser access in right places
-  def getTextRange(context: ParserRuleContext): TextRange = {
-    codeParser(context).getTextRange(context)
-  }
-
-  // TODO: Remove this when we have CodeParser access in right places
-  def getRangeLocation(context: ParserRuleContext, lineOffset: Int=0, positionOffset: Int=0): RangeLocationImpl = {
-    codeParser(context).getRangeLocation(context, lineOffset, positionOffset)
-  }
-
-  // TODO: Remove this when we have CodeParser access in right places
-  def clipStream(context: ParserRuleContext): ClippedStream = {
-    codeParser(context).clipStream(context)
-  }
-
-  private def codeParser(context: ParserRuleContext): CodeParser = {
-    context.start.inputStream.asInstanceOf[CaseInsensitiveInputStream].path.asInstanceOf[CodeParser]
   }
 }
