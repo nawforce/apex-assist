@@ -28,6 +28,7 @@
 package com.nawforce.vsext
 
 import com.nawforce.common.api.ServerOps
+import com.nawforce.common.cmds.Check
 import com.nawforce.common.diagnostics._
 import com.nawforce.common.path.PathFactory
 import com.nawforce.common.sfdx.Workspace
@@ -143,11 +144,15 @@ object Extension {
   private def onExit(code: Int, signal: Int): Unit = {
     checkChild = None
     statusBar.hide()
-    if (code == 0) {
+    if (code == Check.STATUS_OK || code == Check.STATUS_ISSUES) {
       ServerOps.debug(ServerOps.Trace, s"Completed data=${buffer.size}")
       postIssues(read[Map[String, List[Issue]]](buffer.mkString))
+    } else if (code == Check.STATUS_ARGS) {
+      ServerOps.error(s"Check Exit: Invalid arguments ($code)")
+    } else if (code == Check.STATUS_EXCEPTION) {
+      ServerOps.error(s"Check Exit: Exception ($code)")
     } else {
-      ServerOps.error("Check Exit: $code")
+      ServerOps.error(s"Check Exit: Unexpected exit code ($code)")
     }
   }
 

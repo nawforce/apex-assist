@@ -43,7 +43,6 @@ object Check {
 
     val org = Org.newOrg()
     val status = com.nawforce.common.cmds.Check.main("Check", args.takeRight(args.length-2).toArray, org)
-    if (status != 0)
-      process.exit(status)
+    process.exitCode = status
   }
 }
