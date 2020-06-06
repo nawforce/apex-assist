@@ -31,33 +31,15 @@ import com.nawforce.common.documents.{PositionImpl, RangeLocationImpl}
 import com.nawforce.common.path.PathLike
 import com.nawforce.runtime.parsers.CodeParser.ParserRuleContext
 import com.nawforce.runtime.parsers.antlr.CommonTokenStream
+import io.scalajs.nodejs.console
 
 import scala.scalajs.js
 import scala.scalajs.js.JavaScriptException
 import scala.util.hashing.MurmurHash3
 
-/** A line & column position in a source block */
-case class SourcePosition(lineOffset: Int=0, columnOffset: Int=0)
-
-/** Encapsulation of a chunk of Apex code, position tells you where it came from in path */
-case class Source(path: PathLike, code: String, position: SourcePosition, outer: Option[Source]) {
-  lazy val hash: Int = MurmurHash3.stringHash(code)
-
-  /** Find a location for a rule, adapts based on source offsets to give absolute position in file */
-  def getRangeLocation(context: ParserRuleContext): RangeLocationImpl = {
-    RangeLocationImpl(
-      path.toString,
-      PositionImpl(context.start.line, context.start.charPositionInLine)
-        .adjust(position.lineOffset, position.columnOffset),
-      PositionImpl(context.stop.line, context.stop.charPositionInLine + context.stop.text.length)
-        .adjust(position.lineOffset, position.columnOffset)
-    )
-  }
-}
-
 class CodeParser (val source: Source) {
   // We would like to extend this but it angers the JavaScript gods
-  val cis = new CaseInsensitiveInputStream(this, source.code)
+  val cis = source.asStream
 
   def parseClass(): Either[SyntaxException, ApexParser.CompilationUnitContext] = {
     try {
@@ -95,8 +77,7 @@ class CodeParser (val source: Source) {
 
   /** Extract the source used for a parser rule */
   def extractSource(context: ParserRuleContext): Source = {
-    val clipped = source.code.substring(context.start.startIndex, context.stop.stopIndex+1)
-    Source(source.path, clipped, SourcePosition(context.start.line-1, context.start.charPositionInLine), Some(source))
+    source.extractSource(context)
   }
 
   private def getParser: ApexParser = {
@@ -114,8 +95,12 @@ object CodeParser {
   type ParserRuleContext = com.nawforce.runtime.parsers.antlr.ParserRuleContext
   type TerminalNode = com.nawforce.runtime.parsers.antlr.TerminalNode
 
-  def apply(path: PathLike, code: String): CodeParser = {
-    new CodeParser(Source(path, code, SourcePosition(), None))
+  def apply(path: PathLike, code: SourceData): CodeParser = {
+    new CodeParser(Source(path, code, 0, 0, None))
+  }
+
+  def clearCaches(): Unit = {
+    // Not supported
   }
 
   // Helper for JS Portability

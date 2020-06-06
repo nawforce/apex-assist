@@ -31,7 +31,7 @@ import com.nawforce.common.api.ServerOps
 import com.nawforce.common.cmds.Check
 import com.nawforce.common.diagnostics._
 import com.nawforce.common.path.PathFactory
-import com.nawforce.common.sfdx.Workspace
+import com.nawforce.common.sfdx.{MDAPIWorkspace, Project, SFDXWorkspace, Workspace}
 import com.nawforce.runtime.os.Path
 import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.child_process.{ChildProcess, ForkOptions}
@@ -105,7 +105,7 @@ object Extension {
       if (zombies)
         args.push("-zombie")
       getExtraNamespaces.foreach(ns => args.push(s"$ns="))
-      workspace.get.rootPaths.map(p => args.push(p.absolute.toString))
+      workspace.get.rootPaths.map(p => args.push(p.toString))
 
       val path = g.__dirname + Path.separator + "check.js"
       ServerOps.debug(ServerOps.Trace, s"Running: $path")
@@ -129,14 +129,14 @@ object Extension {
       VSCode.window.showInformationMessage(s"Check command requires that only a single directory is open")
       None
     } else {
-      val dir = PathFactory(folders.head.uri.fsPath)
-      ServerOps.debug(ServerOps.Trace, s"Opening workspace: ${dir.toString}")
-      Workspace(None, Seq(dir)) match {
+      val path = PathFactory(folders.head.uri.fsPath)
+      ServerOps.debug(ServerOps.Trace, s"Opening workspace: ${path.toString}")
+      Project(path) match {
         case Left(err) =>
-          VSCode.window.showInformationMessage(err)
-          None
-        case Right(workspace) =>
-          Some(workspace)
+          Some(new MDAPIWorkspace(None, Seq(path)))
+          throw new IllegalArgumentException(err)
+        case Right(project) =>
+          Some(new SFDXWorkspace(path, project))
       }
     }
   }

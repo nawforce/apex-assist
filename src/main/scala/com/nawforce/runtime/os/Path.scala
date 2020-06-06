@@ -28,6 +28,7 @@
 package com.nawforce.runtime.os
 
 import com.nawforce.common.path._
+import com.nawforce.runtime.parsers.SourceData
 import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.fs.Fs
 import io.scalajs.nodejs.process
@@ -35,8 +36,7 @@ import io.scalajs.nodejs.process
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
-case class Path(_path: String) extends PathLike {
-  val path: String = Option(_path).getOrElse(process.cwd())
+case class Path private (val path: String) extends PathLike {
 
   private lazy val pathObject = io.scalajs.nodejs.path.Path.parse(path)
   private lazy val stat = {
@@ -50,8 +50,8 @@ case class Path(_path: String) extends PathLike {
 
   override lazy val basename: String = pathObject.base.toOption.get
   override lazy val parent: Path = join("..")
-  override lazy val absolute: Path = Path(io.scalajs.nodejs.path.Path.resolve(path))
   override lazy val exists: Boolean = stat.nonEmpty
+  override lazy val isRoot: Boolean = this.toString == parent.toString
   override lazy val isDirectory: Boolean = stat.exists(_.isDirectory())
   override lazy val isFile: Boolean = stat.exists(_.isFile())
   override lazy val size: Long = stat.map(_.size.toLong).getOrElse(0)
@@ -86,6 +86,10 @@ case class Path(_path: String) extends PathLike {
     } catch {
       case ex: js.JavaScriptException => Left(ex.getMessage())
     }
+  }
+
+  override def readSourceData(): Either[String, SourceData] = {
+    readBytes().map(SourceData(_))
   }
 
   override def write(data: String): Option[String] = {
@@ -168,6 +172,11 @@ case class Path(_path: String) extends PathLike {
 
 object Path {
   val separator: String = io.scalajs.nodejs.path.Path.sep
+
+  def apply(path: String): Path = {
+    val safePath = Option(path).getOrElse(process.cwd())
+    new Path(io.scalajs.nodejs.path.Path.resolve(safePath))
+  }
 }
 
 

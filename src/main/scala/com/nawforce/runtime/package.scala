@@ -1,6 +1,6 @@
 /*
  [The "BSD licence"]
- Copyright (c) 2019 Kevin Jones
+ Copyright (c) 2020 Kevin Jones
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -25,47 +25,22 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package com.nawforce
 
-package com.nawforce.runtime.os
+import java.nio.charset.StandardCharsets
 
-import io.scalajs.nodejs.process
+/** Platform specific handling for Node execution.
+ *
+ * Contains a number of abstractions for handling the differences between JVM & Node execution. This is just the JVM
+ * implementation, the node version of the same abstraction is not in this project. See [[com.nawforce.common]] for
+ * the analysis code.
+ **/
+package object runtime {
+  type SourceBlob = Array[Byte]
 
-import scala.scalajs.js
-import scala.scalajs.js.annotation.JSImport
-
-object Environment {
-  def gc: Unit = {
-    // Not implemented
-  }
-
-  def homedir: Option[Path] = {
-    Option(OSExtra.homedir()).filter(_.nonEmpty).map(Path(_))
-  }
-
-  def variable(name: String): Option[String] = {
-    process.env.get(name)
-  }
-
-  def setVariable(name: String, value: String): Boolean = {
-    try {
-      if (value == null)
-        process.env -= name
-      else
-        process.env.update(name, value)
-      true
-    } catch {
-      case _: SecurityException => false
+  object SourceBlob {
+    def apply(value: String): SourceBlob = {
+      value.getBytes(StandardCharsets.UTF_8)
     }
   }
 }
-
-@js.native
-trait OSExtra extends js.Object {
-  def homedir(): String = js.native
-}
-
-@js.native
-@JSImport("os", JSImport.Namespace)
-object OSExtra extends OSExtra
-
-

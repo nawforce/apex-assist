@@ -28,16 +28,16 @@
 
 package com.nawforce.runtime.types
 
-import com.nawforce.common.api._
+import com.nawforce.common.api.{TypeName, _}
 import com.nawforce.common.cst.Modifier
 import com.nawforce.common.finding.TypeRequest.TypeRequest
 import com.nawforce.common.finding.{MissingType, WrongTypeArguments}
-import com.nawforce.common.metadata.Dependent
-import com.nawforce.common.names.{DotName, Name, TypeName}
+import com.nawforce.common.names.{DotName, Names, TypeNames, _}
 import com.nawforce.common.org.PackageImpl
 import com.nawforce.common.path.{PathFactory, PathLike}
-import com.nawforce.common.types._
+import com.nawforce.common.types.core._
 import com.nawforce.common.types.platform.{GenericPlatformTypeDeclaration, PlatformTypes}
+import com.nawforce.common.types.synthetic.{CustomFieldDeclaration, CustomMethodDeclaration, CustomParameterDeclaration}
 import upickle.default._
 
 import scala.collection.immutable.HashMap
@@ -48,16 +48,17 @@ class PlatformTypeException(msg: String) extends Exception
 
 case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclaration]) extends TypeDeclaration {
 
-  override lazy val summary: TypeSummary = native.asInstanceOf[TypeSummary]
+  val summary: TypeSummary = native.asInstanceOf[TypeSummary]
 
-  override lazy val packageDeclaration: Option[PackageImpl] = None
-  override lazy val typeName: TypeName = TypeName(summary.typeName)
-  override lazy val name: Name = typeName.name
-  override lazy val outerTypeName: Option[TypeName] = outer.map(_.typeName)
-  override lazy val nature: Nature = Nature(summary.nature)
+  override val paths: Seq[PathLike] = Seq.empty
+  override val packageDeclaration: Option[PackageImpl] = None
+  override lazy val typeName: TypeName = summary.typeName
+  override val name: Name = typeName.name
+  override val outerTypeName: Option[TypeName] = outer.map(_.typeName)
+  override val nature: Nature = Nature(summary.nature)
 
   override val isComplete: Boolean = true
-  override val isExternallyVisible: Boolean = true
+  override lazy val isExternallyVisible: Boolean = true
 
   override lazy val superClass: Option[TypeName] = getSuperClass
   override lazy val interfaces: Seq[TypeName] = getInterfaces
@@ -87,17 +88,36 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
   }
   override lazy val blocks: Seq[BlockDeclaration] = Seq()
 
-  protected def getSuperClass: Option[TypeName] = summary.superClass.map(TypeName(_))
-  protected def getInterfaces: Seq[TypeName] = summary.interfaces.map(TypeName(_))
+  protected def getSuperClass: Option[TypeName] = summary.superClass
+  protected def getInterfaces: Seq[TypeName] = summary.interfaces
   protected def getFields: Seq[PlatformField] = summary.fields.map(fs => new PlatformField(fs))
   protected def getMethods: Seq[PlatformMethod] = summary.methods.map(mthd => new PlatformMethod(mthd))
 
   override def findField(name: Name, staticContext: Option[Boolean]): Option[FieldDeclaration] = {
     if (isSObject) {
-      super.findFieldSObject(name, staticContext)
+      findFieldSObject(name, staticContext)
     } else {
       super.findField(name, staticContext)
     }
+  }
+
+  override protected def findFieldSObject(name: Name, staticContext: Option[Boolean]): Option[FieldDeclaration] = {
+    val field = super.findFieldSObject(name, staticContext)
+
+    // If SObjectField if Id replace with SObjectFields over SObject so can access nested fields
+    field.map(f =>{
+      val isIdLike = f.name.value.endsWith("Id") && f.name.value.length>2
+      if (isIdLike && staticContext.contains(true)) {
+        val relationshipField = super.findFieldSObject(Name(f.name.value.dropRight(2)), staticContext)
+        relationshipField match {
+          case Some(CustomFieldDeclaration(_, TypeName(Names.SObjectFields$, Seq(sObject), Some(TypeNames.Internal)), _, _)) =>
+            CustomFieldDeclaration(f.name, TypeNames.sObjectFields$(sObject), None, asStatic = true)
+          case _ => f
+        }
+      } else {
+        f
+      }
+    })
   }
 
   override def validate(): Unit = {}
@@ -107,7 +127,7 @@ case class PlatformTypeDeclaration(native: Any, outer: Option[PlatformTypeDeclar
 class PlatformField(summary: FieldSummary) extends FieldDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = TypeName(summary.typeName)
+  override val typeName: TypeName = summary.typeName
   override val readAccess: Modifier = Modifier(summary.readAccess)
   override val writeAccess: Modifier = Modifier(summary.writeAccess)
   override lazy val idTarget: Option[TypeName] = None
@@ -118,7 +138,7 @@ class PlatformField(summary: FieldSummary) extends FieldDeclaration {
 class PlatformMethod(summary: MethodSummary) extends MethodDeclaration {
   override val name: Name = Name(summary.name)
   override val modifiers: Seq[Modifier] = summary.modifiers.map(m => Modifier(m))
-  override val typeName: TypeName = TypeName(summary.typeName)
+  override val typeName: TypeName = summary.typeName
   override val parameters: Seq[ParameterDeclaration] = getParameters
 
   def getGenericTypeName: TypeName = typeName
@@ -143,7 +163,7 @@ class PlatformConstructor(summary: ConstructorSummary, typeDeclaration: TypeDecl
 
 class PlatformParameter(summary: ParameterSummary) extends ParameterDeclaration {
   override val name: Name = Name(summary.name)
-  override val typeName: TypeName = TypeName(summary.typeName)
+  override val typeName: TypeName = summary.typeName
 
   override def toString: String = typeName.toString + " " + name.toString
 
@@ -152,7 +172,7 @@ class PlatformParameter(summary: ParameterSummary) extends ParameterDeclaration 
 
 object PlatformTypeDeclaration {
   /* Get a Path that leads to platform classes */
-  lazy val platformPackagePath: PathLike = PathFactory(js.Dynamic.global.__dirname + "../../platform").absolute
+  lazy val platformPackagePath: PathLike = PathFactory(js.Dynamic.global.__dirname + "../../platform")
 
   /* Get a type, in general don't call this direct, use TypeRequest which will delegate here if
    * needed. If needed this will construct a GenericPlatformTypeDeclaration to specialise a
@@ -226,7 +246,7 @@ object PlatformTypeDeclaration {
 
   /* All the namespaces - excluding our special ones! */
   lazy val namespaces: Set[Name] = classNameMap.keys.filter(_.isCompound).map(_.firstName)
-    .filterNot(name => name == Name.SObjects || name == Name.Internal).toSet
+    .filterNot(name => name == Names.SObjects || name == Names.Internal).toSet
 
   /* Map of class names, it's a map just to allow easy recovery of the original case by looking at value */
   private lazy val classNameMap: HashMap[DotName, DotName] = {
@@ -246,8 +266,8 @@ object PlatformTypeDeclaration {
           val entry = path.join(name)
           if (entry.isFile && entry.basename.endsWith(".json")) {
             val dotName = prefix.append(Name(name.dropRight(".json".length)))
-            if (dotName.names.head == Name.SObjects) {
-              accum.put(DotName(Name.Schema +: dotName.names.tail), dotName)
+            if (dotName.names.head == Names.SObjects) {
+              accum.put(DotName(Names.Schema +: dotName.names.tail), dotName)
             } else {
               accum.put(dotName, dotName)
             }
@@ -261,12 +281,12 @@ object PlatformTypeDeclaration {
   /* Standard methods to be exposed on enums */
   private lazy val enumMethods: Seq[MethodDeclaration] =
     Seq(
-      CustomMethodDeclaration(Name("name"), TypeName.String, Seq()),
-      CustomMethodDeclaration(Name("original"), TypeName.Integer, Seq()),
-      CustomMethodDeclaration(Name("values"), TypeName.listOf(TypeName.String), Seq(), asStatic = true),
-      CustomMethodDeclaration(Name("equals"), TypeName.Boolean,
-        Seq(CustomParameterDeclaration(Name("other"), TypeName.InternalObject))),
-      CustomMethodDeclaration(Name("hashCode"), TypeName.Integer, Seq())
+      CustomMethodDeclaration(None, Name("name"), TypeNames.String, Seq()),
+      CustomMethodDeclaration(None, Name("original"), TypeNames.Integer, Seq()),
+      CustomMethodDeclaration(None, Name("values"), TypeNames.listOf(TypeNames.String), Seq(), asStatic = true),
+      CustomMethodDeclaration(None, Name("equals"), TypeNames.Boolean,
+        Seq(CustomParameterDeclaration(Name("other"), TypeNames.InternalObject))),
+      CustomMethodDeclaration(None, Name("hashCode"), TypeNames.Integer, Seq())
     )
 }
 
