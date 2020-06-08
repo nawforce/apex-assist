@@ -134,7 +134,6 @@ object Extension {
       Project(path) match {
         case Left(err) =>
           Some(new MDAPIWorkspace(None, Seq(path)))
-          throw new IllegalArgumentException(err)
         case Right(project) =>
           Some(new SFDXWorkspace(path, project))
       }

@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "0.8.0",
+  "version": "0.9.1",
   "description": "Salesforce Apex language code analysis tools",
   "publisher": "KevinJones",
   "main": "dist/boot.js",

@@ -30,11 +30,14 @@ package com.nawforce.runtime
 import com.nawforce.common.documents.ParsedCache
 import com.nawforce.common.path.{PathFactory, PathLike}
 import com.nawforce.imports.{FSMonkey, Memfs}
-import com.nawforce.runtime.os.Environment
+import com.nawforce.runtime.os.{Environment, Path}
 import com.nawforce.runtime.types.PlatformTypeDeclaration
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
+import io.scalajs.nodejs.{fs, os}
+import io.scalajs.nodejs.fs.Fs
+import io.scalajs.nodejs.os.OS
 
 object FileSystemHelper {
 
@@ -61,6 +64,36 @@ object FileSystemHelper {
       if (setupCache) {
         Environment.setVariable("APEXLINK_CACHE_DIR", null)
       }
+    }
+  }
+
+  private def makeDir(path: PathLike): Unit = {
+    if (!path.isDirectory) {
+      makeDir(path.parent)
+      path.parent.createDirectory(path.basename)
+    }
+  }
+
+  // Temp directory based model
+  def runTempDir[T](files: Map[String, String], setupCache: Boolean = false)(verify: PathLike => T): T = {
+    val tempDir = PathFactory(OS.tmpdir()).join("apexlinktest")
+    files.foreach(kv => {
+      val path = tempDir.join(kv._1)
+      makeDir(path.parent)
+      path.write(kv._2)
+    })
+
+    // Make sure cache is empty if we are going to use it
+    if (setupCache)
+      ParsedCache.clear()
+
+    try {
+      verify(tempDir)
+    } finally {
+      files.foreach(kv => {
+        val path = tempDir.join(kv._1)
+        path.delete()
+      })
     }
   }
 }
