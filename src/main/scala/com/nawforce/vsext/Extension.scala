@@ -28,9 +28,13 @@
 package com.nawforce.vsext
 
 import com.nawforce.common.api.LoggerOps
+import com.nawforce.rpc.Server
+import io.scalajs.nodejs.setTimeout
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
+import scala.util.{Failure, Success}
 
 @js.native
 trait ExtensionContext extends js.Object {
@@ -56,13 +60,11 @@ object Extension {
     LoggerOps.info("Apex Assist activated")
 
     // Start server
-    try {
-      val server = Server()
-      LoggerOps.info("Server running")
-    } catch {
-      case ex: Throwable => LoggerOps.debug(LoggerOps.Trace, ex.getMessage)
+    val server = Server()
+    server.identifier().onComplete {
+      case Success(identifier) => LoggerOps.info(s"Server ID: $identifier")
+      case Failure(ex) =>  LoggerOps.debug(LoggerOps.Trace, s"Server ID: error = ${ex.getMessage}")
     }
-
   }
 
   @JSExportTopLevel("deactivate")

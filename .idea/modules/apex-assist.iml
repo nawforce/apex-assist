@@ -12,35 +12,37 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="sbt: com.lihaoyi:geny_sjs1_2.13:0.6.2:jar" level="project" />
-    <orderEntry type="library" name="sbt: net.exoego:scala-js-nodejs-v12_sjs1_2.13:0.12.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: net.exoego:scala-js-nodejs-v14_sjs1_2.13:0.12.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: com.lihaoyi:ujson_sjs1_2.13:1.2.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: com.lihaoyi:upack_sjs1_2.13:1.2.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: com.lihaoyi:upickle-core_sjs1_2.13:1.2.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: com.lihaoyi:upickle-implicits_sjs1_2.13:1.2.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: com.lihaoyi:upickle_sjs1_2.13:1.2.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: com.thoughtworks.enableIf:enableif_2.13:1.1.7:jar" level="project" />
-    <orderEntry type="library" name="sbt: net.exoego:scala-js-nodejs-core_sjs1_2.13:0.12.0:jar" level="project" />
-    <orderEntry type="library" name="sbt: org.scala-js:scalajs-library_2.13:1.1.1:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scala-js:scalajs-test-bridge_2.13:1.1.1:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scala-js:scalajs-test-interface_2.13:1.1.1:jar" level="project" />
-    <orderEntry type="library" name="sbt: org.scala-lang:scala-library:2.13.3:jar" level="project" />
-    <orderEntry type="library" name="sbt: org.scala-lang:scala-reflect:2.13.3:jar" level="project" />
-    <orderEntry type="library" name="sbt: org.scala-lang.modules:scala-collection-compat_sjs1_2.13:2.1.4:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalactic:scalactic_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-core_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-diagrams_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-featurespec_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-flatspec_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-freespec_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-funspec_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-funsuite_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-matchers-core_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-mustmatchers_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-propspec_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-shouldmatchers_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-wordspec_sjs1_2.13:3.2.0:jar" level="project" />
-    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.github.nawforce:scala-json-rpc_sjs1_2.13:1.0.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.github.nawforce:scala-json-rpc-upickle-json-serializer_sjs1_2.13:1.0.0:jar" level="project" />
     <orderEntry type="library" name="sbt: com.github.nawforce:pkgforce_sjs1_2.13:1.1.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-wordspec_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-shouldmatchers_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-propspec_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-mustmatchers_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-matchers-core_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-funsuite_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-funspec_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-freespec_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-flatspec_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-featurespec_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-diagrams_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-core_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalactic:scalactic_sjs1_2.13:3.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang.modules:scala-collection-compat_sjs1_2.13:2.1.4:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-reflect:2.13.3:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-library:2.13.3:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scala-js:scalajs-test-interface_2.13:1.1.1:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scala-js:scalajs-test-bridge_2.13:1.1.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-js:scalajs-library_2.13:1.1.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: net.exoego:scala-js-nodejs-core_sjs1_2.13:0.12.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.thoughtworks.enableIf:enableif_2.13:1.1.7:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.lihaoyi:upickle_sjs1_2.13:1.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.lihaoyi:upickle-implicits_sjs1_2.13:1.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.lihaoyi:upickle-core_sjs1_2.13:1.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.lihaoyi:upack_sjs1_2.13:1.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.lihaoyi:ujson_sjs1_2.13:1.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: net.exoego:scala-js-nodejs-v14_sjs1_2.13:0.12.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: net.exoego:scala-js-nodejs-v12_sjs1_2.13:0.12.0:jar" level="project" />
   </component>
 </module>
