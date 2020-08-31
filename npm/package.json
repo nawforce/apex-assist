@@ -1,7 +1,7 @@
 {
   "name": "apex-assist",
-  "version": "0.9.1",
-  "description": "Salesforce Apex language code analysis tools",
+  "version": "1.0.0",
+  "description": "Salesforce Apex code analysis tools",
   "publisher": "KevinJones",
   "main": "dist/boot.js",
   "repository": "nawforce/apexlink",
@@ -12,46 +12,16 @@
   "dependencies": {
     "xmldom": "0.1.27",
     "antlr4ts": "0.5.0-alpha.3",
-    "apex-parser": "2.3.0"
-  },
-  "devDependencies": {
-    "fs-monkey": "0.3.3",
-    "memfs": "3.0.5"
+    "apex-parser": "2.4.0"
   },
   "engines": {
     "vscode": "^1.41.0"
   },
   "activationEvents": [
-    "onCommand:apex-assist.check",
-    "onCommand:apex-assist.zombies",
-    "onCommand:apex-assist.clear"
+    "workspaceContains:sfdx-project.json"
   ],
   "contributes": {
-    "commands": [
-      {
-        "command": "apex-assist.check",
-        "title": "ApexAssist: Check code"
-      },
-      {
-        "command": "apex-assist.zombies",
-        "title": "ApexAssist: Find zombies"
-      },
-      {
-        "command": "apex-assist.clear",
-        "title": "ApexAssist: Clear diagnostics"
-      }
-    ],
-    "configuration": {
-      "type": "Object",
-      "title": "Apex Assist",
-      "properties": {
-        "apexAssist.extraNamespaces": {
-          "type": "string",
-          "default": "",
-          "description": "Comma separated list of external namespaces"
-        }
-      }
-    }
+    "commands": [],
   },
   "scripts": {}
 }

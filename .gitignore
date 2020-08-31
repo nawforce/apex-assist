@@ -1,5 +1,3 @@
 target/
-samples
-common
-common-test
+npm/jars
 

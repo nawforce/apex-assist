@@ -1,28 +1,22 @@
 import java.nio.file.Path
 
-import org.scalajs.core.tools.linker.backend.ModuleKind.CommonJSModule
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.{ModuleKind, scalaJSLinkerConfig}
 
 name := "apex-assist"
-version := "0.7.0"
-scalaVersion := "2.12.3"
+version := "1.0.0"
+scalaVersion := "2.13.3"
+scalacOptions += "-deprecation"
 parallelExecution in Test := false
-scalaJSOptimizerOptions ~= { _.withDisableOptimizer(false) }
-
-//Uncomment to break for debugging
-// jsEnv in Test := new org.scalajs.jsenv.nodejs.NodeJSEnv(
-// org.scalajs.jsenv.nodejs.NodeJSEnv.Config().withArgs(List("--inspect-brk")))
-
-unmanagedSourceDirectories in Compile += baseDirectory.value / "vsext/main/scala"
 
 enablePlugins(ScalaJSPlugin)
-scalaJSModuleKind := CommonJSModule
-scalacOptions += "-P:scalajs:sjsDefinedByDefault"
+scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
 
 resolvers += Resolver.sonatypeRepo("public")
-libraryDependencies += "io.scalajs" %%% "nodejs" % "0.4.2"
-libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.9.0"
+libraryDependencies += "net.exoego" %%% "scala-js-nodejs-v12" % "0.12.0"
+libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.0"
+libraryDependencies += "com.github.nawforce" %%% "pkgforce" % "1.1.0"
 
-libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.0" % "test"
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.0" % "test"
 
 val npmTargetDir = s"target/npm/" // where to generate npm
 val npmConf = "npm_config" // directory with static files for NPM package
@@ -46,15 +40,15 @@ createPackage := {
 
   val libName = name.value.toLowerCase()
 
-  val inputDir = "target/scala-2.12"
+  val inputDir = "target/scala-2.13"
   val targetDir = s"$npmTargetDir/$libName"
   val sourceDir = "source"
   val distDir = "dist"
-  val platformDir = "platform"
+  val jarsDir = "jars"
 
   // Create module directory structure
   new File(targetDir).mkdirs()
-  List(".vscode", distDir, sourceDir, platformDir)
+  List(".vscode", distDir, sourceDir, jarsDir)
     .foreach(d => new File(s"$targetDir/$d").mkdirs())
 
   // copy static files
@@ -81,14 +75,11 @@ createPackage := {
     copy(s"$inputDir/$file", s"$targetDir/$distDir/$file", REPLACE_EXISTING)
   }
 
-  // copy platform directory
-  val platformNamespaces = new File(platformDir).listFiles().map(_.name)
-  for(namespace <- platformNamespaces) {
-    println(s"copying platform namespace '$namespace'")
-    new File(s"$targetDir/platform/$namespace").mkdirs()
-    new File(s"$platformDir/$namespace").listFiles().foreach(name =>{
-      copy(s"$name", s"$targetDir/$name", REPLACE_EXISTING)
-    })
+  // copy jars directory
+  val jarFiles = new File("npm/jars").listFiles().map(_.name)
+  for(jarFile <- jarFiles) {
+    println(s"copy file $jarFile")
+    copy(s"npm/jars/$jarFile", s"$targetDir/$jarsDir/$jarFile", REPLACE_EXISTING)
   }
 
   println(s"NPM package created in $npmTargetDir")
