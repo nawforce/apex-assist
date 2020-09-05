@@ -31,8 +31,8 @@ import com.nawforce.common.api.{Logger, LoggerOps}
 
 class OutputLogging(channel: OutputChannel) extends Logger {
   def info(message: String): Unit = {channel.appendLine(message)}
-  def debug(message: String): Unit = {channel.appendLine("[debug] " + message)}
-  def error(message: String): Unit = {channel.appendLine("[error] " + message)}
+  def debug(message: String): Unit = {channel.appendLine("Client: [debug] " + message)}
+  def error(message: String): Unit = {channel.appendLine("Client: [error] " + message)}
 }
 
 object OutputLogging {

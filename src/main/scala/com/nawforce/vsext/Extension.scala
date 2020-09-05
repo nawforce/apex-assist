@@ -29,12 +29,10 @@ package com.nawforce.vsext
 
 import com.nawforce.common.api.LoggerOps
 import com.nawforce.rpc.Server
-import io.scalajs.nodejs.setTimeout
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
-import scala.util.{Failure, Success}
 
 @js.native
 trait ExtensionContext extends js.Object {
@@ -43,13 +41,13 @@ trait ExtensionContext extends js.Object {
 
 object Extension {
   private var diagnostics: DiagnosticCollection = _
-  private var output: Option[OutputChannel] = None
+  private var output: OutputChannel = _
   private var statusBar: StatusBar = _
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext ): Unit = {
     // Basic setup
-    output = Some(OutputLogging.setup(context))
+    output = OutputLogging.setup(context)
     diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
     context.subscriptions.push(diagnostics)
 
@@ -59,88 +57,27 @@ object Extension {
     context.subscriptions.push(statusBar)
     LoggerOps.info("Apex Assist activated")
 
-    // Start server
-    val server = Server()
-    server.identifier().onComplete {
-      case Success(identifier) => LoggerOps.info(s"Server ID: $identifier")
-      case Failure(ex) =>  LoggerOps.debug(LoggerOps.Trace, s"Server ID: error = ${ex.getMessage}")
-    }
+    startServer(output)
+  }
+
+  private def startServer(outputChannel: OutputChannel): Server = {
+    val server = Server(outputChannel)
+    server
+      .identifier().map(identifier => {
+      LoggerOps.info(s"Server ID: $identifier")
+    })
+
+    // Load workspaces
+    val workspaceFolders = VSCode.workspace.workspaceFolders.getOrElse(js.Array())
+    workspaceFolders.map(folder => {
+      server.addPackage(folder.uri.fsPath)
+    })
+
+    server
   }
 
   @JSExportTopLevel("deactivate")
   def deactivate(): Unit = {
     LoggerOps.info("Apex Assist deactivated")
   }
-
-  /*
-  private def getWorkspace: Option[Workspace] = {
-    val folders: Seq[WorkspaceFolder] = VSCode.workspace.workspaceFolders.toOption.map(_.toSeq).getOrElse(Seq())
-    if (folders.size != 1) {
-      VSCode.window.showInformationMessage(s"Check command requires that only a single directory is open")
-      None
-    } else {
-      val path = PathFactory(folders.head.uri.fsPath)
-      LoggerOps.debug(LoggerOps.Trace, s"Opening workspace: ${path.toString}")
-      Project(path) match {
-        case Left(err) =>
-          Some(new MDAPIWorkspace(None, Seq(path)))
-        case Right(project) =>
-          Some(new SFDXWorkspace(path, project))
-      }
-    }
-  }*/
-
-  /*
-  private def onExit(code: Int, signal: Int): Unit = {
-    checkChild = None
-    statusBar.hide()
-    /* TODO
-    if (code == Check.STATUS_OK || code == Check.STATUS_ISSUES) {
-      ServerOps.debug(ServerOps.Trace, s"Completed data=${buffer.size}")
-      postIssues(read[Map[String, List[Issue]]](buffer.mkString))
-    } else if (code == Check.STATUS_ARGS) {
-      ServerOps.error(s"Check Exit: Invalid arguments ($code)")
-    } else if (code == Check.STATUS_EXCEPTION) {
-      ServerOps.error(s"Check Exit: Exception ($code)")
-    } else {
-      ServerOps.error(s"Check Exit: Unexpected exit code ($code)")
-    }*/
-  }*/
-
-/*
-  private def onMessage(data: Buffer): Unit = {
-    output.foreach(_.append(data.toString()))
-  }
-
-  private def postIssues(issues: Map[String, List[Issue]]): Unit = {
-    diagnostics.clear()
-    for (pathIssues <- issues) {
-      val issues = pathIssues._2.map(issue => {
-        VSCode.newDiagnostic(
-          VSCode.newRange(
-            issue.location.startPosition._1-1,
-            issue.location.startPosition._2,
-            issue.location.endPosition._1-1,
-            issue.location.endPosition._2
-          ),
-          issue.message,
-          issue.category match {
-            case ERROR_CATEGORY => DiagnosticSeverity.ERROR
-            case MISSING_CATEGORY => DiagnosticSeverity.ERROR
-            case WARNING_CATEGORY => DiagnosticSeverity.WARNING
-            case UNUSED_CATEGORY => DiagnosticSeverity.WARNING
-            case _ => DiagnosticSeverity.ERROR
-          }
-        )
-      })
-      diagnostics.set(VSCode.Uri.file(pathIssues._1.toString), js.Array(issues :_*))
-    }
-  }
-
-  private def clear(): Unit = {
-    LoggerOps.debug(LoggerOps.Trace, s"Clear Diagnostics")
-    diagnostics.clear()
-  }
- */
-
 }
