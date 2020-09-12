@@ -24,7 +24,7 @@
  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 package com.nawforce.vsext
 
 import scala.scalajs.js
@@ -72,14 +72,10 @@ trait URIOps extends js.Object {
 }
 
 @js.native
-trait Position extends js.Object {
-
-}
+trait Position extends js.Object {}
 
 @js.native
-trait Range extends js.Object {
-
-}
+trait Range extends js.Object {}
 
 object DiagnosticSeverity {
   val ERROR: Int = 0
@@ -89,8 +85,7 @@ object DiagnosticSeverity {
 }
 
 @js.native
-trait Diagnostic extends js.Object {
-}
+trait Diagnostic extends js.Object {}
 
 @js.native
 trait DiagnosticCollection extends Disposable {
@@ -129,6 +124,11 @@ trait WorkspaceOps extends js.Object {
   val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
 
   def getConfiguration(): WorkspaceConfiguration = js.native
+
+  def createFileSystemWatcher(globPattern: String,
+                              ignoreCreateEvents: Boolean,
+                              ignoreChangeEvents: Boolean,
+                              ignoreDeleteEvents: Boolean): FileSystemWatcher = js.native
 }
 
 @js.native
@@ -142,6 +142,21 @@ trait VSCodeModule extends js.Object {
   val Position: Dynamic = js.native
   val Range: Dynamic = js.native
   val Diagnostic: Dynamic = js.native
+  val Event: Dynamic = js.native
+}
+
+@js.native
+trait Event[T] extends js.Object {
+  def apply(listener: js.Function1[T, js.Any],
+            args: js.Any,
+            disposables: js.Array[Disposable]): Event[T] = js.native
+}
+
+@js.native
+trait FileSystemWatcher extends Disposable {
+  val onDidCreate: Event[URI]
+  val onDidChange: Event[URI]
+  val onDidDelete: Event[URI]
 }
 
 object VSCode {
@@ -158,7 +173,9 @@ object VSCode {
   }
 
   def newRange(startLine: Int, startCharacter: Int, endLine: Int, endCharacter: Int): Range = {
-    js.Dynamic.newInstance(module.Range)(startLine, startCharacter, endLine, endCharacter).asInstanceOf[Range]
+    js.Dynamic
+      .newInstance(module.Range)(startLine, startCharacter, endLine, endCharacter)
+      .asInstanceOf[Range]
   }
 
   def newDiagnostic(range: Range, message: String, severity: Int): Diagnostic = {

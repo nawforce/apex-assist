@@ -88,8 +88,12 @@ class Server(output: stream.IWritable, input: stream.IReadable) {
     orgAPI.addPackage(directory: String)
   }
 
-  def refresh(path: PathLike, contents: Option[String]): Future[Unit] = {
-    orgAPI.refresh(path.toString, contents)
+  def getIssues: Future[GetIssuesResult] = {
+    orgAPI.getIssues()
+  }
+
+  def refresh(path: String, contents: Option[String]): Future[Unit] = {
+    orgAPI.refresh(path, contents)
   }
 
   private def encodeJSON(json: String): String = {
@@ -104,7 +108,7 @@ class Server(output: stream.IWritable, input: stream.IReadable) {
 object Server {
   def apply(outputChannel: OutputChannel): Server = {
     val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
-    val args = js.Array("-cp", "jars/apexlink-1.1.0.jar", "com.nawforce.common.cmds.Server")
+    val args = js.Array("-cp", "jars/apexlink-1.1.0-SNAPSHOT.jar", "com.nawforce.common.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")
     val child = ChildProcess.spawn("java", args, new SpawnOptions {cwd=path.toString; detached=true; windowsHide=true})

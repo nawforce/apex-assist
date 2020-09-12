@@ -24,20 +24,24 @@
  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 package com.nawforce.vsext
 
-import com.nawforce.common.api.LoggerOps
-import com.nawforce.rpc.Server
+import com.nawforce.common.api._
+import com.nawforce.rpc.{APIError, Server}
 
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
+import scala.util.{Failure, Success, Try}
 
 @js.native
 trait ExtensionContext extends js.Object {
   val subscriptions: js.Array[js.Any]
 }
+
+class WorkspaceException(error: APIError) extends Throwable(error.message)
 
 object Extension {
   private var diagnostics: DiagnosticCollection = _
@@ -45,7 +49,7 @@ object Extension {
   private var statusBar: StatusBar = _
 
   @JSExportTopLevel("activate")
-  def activate(context: ExtensionContext ): Unit = {
+  def activate(context: ExtensionContext): Unit = {
     // Basic setup
     output = OutputLogging.setup(context)
     diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
@@ -57,27 +61,48 @@ object Extension {
     context.subscriptions.push(statusBar)
     LoggerOps.info("Apex Assist activated")
 
-    startServer(output)
+    startServer(output) map {
+      case Failure(ex) => VSCode.window.showInformationMessage(ex.getMessage)
+      case Success(server) =>
+        val issueLog = IssueLog(server, diagnostics)
+        Watchers(server, issueLog)
+        issueLog.refreshDiagnostics()
+    }
   }
 
-  private def startServer(outputChannel: OutputChannel): Server = {
+  private def startServer(outputChannel: OutputChannel): Future[Try[Server]] = {
     val server = Server(outputChannel)
     server
-      .identifier().map(identifier => {
-      LoggerOps.info(s"Server ID: $identifier")
-    })
+      .identifier()
+      .map(identifier => {
+        LoggerOps.info(s"Server ID: $identifier")
+      })
 
     // Load workspaces
-    val workspaceFolders = VSCode.workspace.workspaceFolders.getOrElse(js.Array())
-    workspaceFolders.map(folder => {
-      server.addPackage(folder.uri.fsPath)
-    })
+    val workspaceFolders = VSCode.workspace.workspaceFolders.getOrElse(js.Array()).toSeq
+    waitAll(workspaceFolders.map(folder => server.addPackage(folder.uri.fsPath))).map(results => {
+      val failures = results.collect { case Failure(ex) => ex }
+      if (failures.nonEmpty) {
+        Failure(failures.head)
+      } else {
 
-    server
+        val errors = results.collect { case Success(result) => result.error }.flatten
+        if (errors.nonEmpty)
+          Failure(new WorkspaceException(errors.head))
+
+        Success(server)
+      }
+    })
   }
 
   @JSExportTopLevel("deactivate")
   def deactivate(): Unit = {
     LoggerOps.info("Apex Assist deactivated")
   }
+
+  private def waitAll[T](futures: Seq[Future[T]]): Future[Seq[Try[T]]] =
+    Future.sequence(lift(futures))
+
+  private def lift[T](futures: Seq[Future[T]]): Seq[Future[Try[T]]] =
+    futures.map(_.map { Success(_) }.recover { case t => Failure(t) })
 }
