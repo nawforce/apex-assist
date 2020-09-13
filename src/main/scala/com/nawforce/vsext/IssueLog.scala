@@ -57,9 +57,9 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
   }
 
   private def locationToRange(location: Location): Range = {
-    VSCode.newRange(location.startLine-1,
+    VSCode.newRange(location.startLine - 1,
                     location.startPosition,
-                    location.endLine-1,
+                    location.endLine - 1,
                     location.endPosition)
   }
 

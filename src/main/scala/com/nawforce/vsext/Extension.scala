@@ -38,34 +38,38 @@ import scala.util.{Failure, Success, Try}
 
 @js.native
 trait ExtensionContext extends js.Object {
-  val subscriptions: js.Array[js.Any]
+  val subscriptions: js.Array[Disposable]
 }
 
 class WorkspaceException(error: APIError) extends Throwable(error.message)
 
 object Extension {
+  private var context: ExtensionContext = _
   private var diagnostics: DiagnosticCollection = _
   private var output: OutputChannel = _
   private var statusBar: StatusBar = _
+  private var server: Option[Server] = None
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext): Unit = {
     // Basic setup
+    this.context = context
     output = OutputLogging.setup(context)
     diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
     context.subscriptions.push(diagnostics)
+    LoggerOps.info("Apex Assist activated")
 
     statusBar = VSCode.window.createStatusBarItem()
     statusBar.text = "$(refresh) Apex Assist"
     statusBar.hide()
     context.subscriptions.push(statusBar)
-    LoggerOps.info("Apex Assist activated")
 
     startServer(output) map {
       case Failure(ex) => VSCode.window.showInformationMessage(ex.getMessage)
       case Success(server) =>
+        this.server = Some(server)
         val issueLog = IssueLog(server, diagnostics)
-        Watchers(server, issueLog)
+        Watchers(context, server, issueLog)
         issueLog.refreshDiagnostics()
     }
   }
@@ -97,7 +101,13 @@ object Extension {
 
   @JSExportTopLevel("deactivate")
   def deactivate(): Unit = {
-    LoggerOps.info("Apex Assist deactivated")
+    server.foreach(_.stop())
+    context.subscriptions.foreach(_.dispose())
+  }
+
+  def reset(): Unit = {
+    deactivate()
+    activate(context)
   }
 
   private def waitAll[T](futures: Seq[Future[T]]): Future[Seq[Try[T]]] =

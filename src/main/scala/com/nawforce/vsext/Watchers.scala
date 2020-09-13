@@ -33,19 +33,30 @@ import io.scalajs.nodejs.{clearTimeout, setTimeout}
 
 import scala.scalajs.js
 
-class Watchers(server: Server, issueLog: IssueLog, watchers: Array[FileSystemWatcher]) {
+class Watchers(server: Server,
+               issueLog: IssueLog,
+               resetWatchers: Array[FileSystemWatcher],
+               refreshWatchers: Array[FileSystemWatcher]) {
   val issueUpdater = new IssueUpdater(issueLog)
 
-  watchers.foreach(watcher => {
-    watcher.onDidCreate(onWatchedRefresh, js.undefined, js.Array())
-    watcher.onDidChange(onWatchedRefresh, js.undefined, js.Array())
-    watcher.onDidDelete(onWatchedRefresh, js.undefined, js.Array())
-  })
+  resetWatchers.foreach(watcher => installWatcher(watcher, onWatchedReset))
+  refreshWatchers.foreach(watcher => installWatcher(watcher, onWatchedRefresh))
+
+  private def onWatchedReset(uri: URI): js.Promise[Unit] = {
+    Extension.reset()
+    js.Promise.resolve[Unit](())
+  }
 
   private def onWatchedRefresh(uri: URI): js.Promise[Unit] = {
     server.refresh(uri.fsPath, None)
     issueUpdater.restart()
     js.Promise.resolve[Unit](())
+  }
+
+  private def installWatcher(watcher: FileSystemWatcher, action: URI => js.Promise[Unit]): Unit = {
+    watcher.onDidCreate(action, js.undefined, js.Array())
+    watcher.onDidChange(action, js.undefined, js.Array())
+    watcher.onDidDelete(action, js.undefined, js.Array())
   }
 }
 
@@ -64,11 +75,25 @@ class IssueUpdater(issueLog: IssueLog) {
 }
 
 object Watchers {
-  def apply(server: Server, issueLog: IssueLog): Watchers = {
-    val watcher = VSCode.workspace.createFileSystemWatcher("**/*.cls",
-                                                           ignoreCreateEvents = false,
-                                                           ignoreChangeEvents = false,
-                                                           ignoreDeleteEvents = false)
-    new Watchers(server, issueLog, Array(watcher))
+  private val resetGlobs = Array("**/sfdx-project.json", "**/.forceIgnore")
+  private val changedGlobs = Array("**/*.cls", "**/*.labels", "**/*.labels-meta.xml")
+
+  def apply(context: ExtensionContext, server: Server, issueLog: IssueLog): Watchers = {
+    new Watchers(server,
+                 issueLog,
+                 createWatchers(context, resetGlobs),
+                 createWatchers(context, changedGlobs))
+  }
+
+  private def createWatchers(context: ExtensionContext,
+                             globs: Array[String]): Array[FileSystemWatcher] = {
+    globs.map(glob => {
+      val watcher = VSCode.workspace.createFileSystemWatcher(glob,
+                                                             ignoreCreateEvents = false,
+                                                             ignoreChangeEvents = false,
+                                                             ignoreDeleteEvents = false)
+      context.subscriptions.push(watcher)
+      watcher
+    })
   }
 }

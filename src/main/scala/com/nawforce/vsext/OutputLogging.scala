@@ -24,15 +24,15 @@
  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 package com.nawforce.vsext
 
 import com.nawforce.common.api.{Logger, LoggerOps}
 
 class OutputLogging(channel: OutputChannel) extends Logger {
-  def info(message: String): Unit = {channel.appendLine(message)}
-  def debug(message: String): Unit = {channel.appendLine("Client: [debug] " + message)}
-  def error(message: String): Unit = {channel.appendLine("Client: [error] " + message)}
+  def info(message: String): Unit = { channel.appendLine(message) }
+  def debug(message: String): Unit = { channel.appendLine("Client: [debug] " + message) }
+  def error(message: String): Unit = { channel.appendLine("Client: [error] " + message) }
 }
 
 object OutputLogging {

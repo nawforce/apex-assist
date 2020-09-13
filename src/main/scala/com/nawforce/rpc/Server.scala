@@ -24,18 +24,17 @@
  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 package com.nawforce.rpc
 
 import com.nawforce.common.api.LoggerOps
-import com.nawforce.common.path.{PathFactory, PathLike}
+import com.nawforce.common.path.PathFactory
 import com.nawforce.vsext.OutputChannel
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer._
 import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.child_process.{ChildProcess, SpawnOptions}
-import io.scalajs.nodejs.stream
 
 import scala.collection.mutable
 import scala.concurrent.{Future, Promise}
@@ -43,7 +42,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.{global => g}
 
-class Server(output: stream.IWritable, input: stream.IReadable) {
+class Server(child: ChildProcess) {
   private val serializer = new UpickleJSONSerializer()
   private val client = JSONRPCClient(serializer, (json: String) => sender(json))
   private val orgAPI = client.createAPI[OrgAPI]
@@ -51,12 +50,16 @@ class Server(output: stream.IWritable, input: stream.IReadable) {
   private val inboundQueue = mutable.Queue[Promise[Option[String]]]()
   private var inboundData = new mutable.StringBuilder()
 
-  input.onData((data: Buffer) => receiver(data.toString()))
+  child.stdout.onData((data: Buffer) => receiver(data.toString()))
+
+  def stop(): Unit = {
+    child.kill()
+  }
 
   private def sender(json: String): Future[Option[String]] = {
     LoggerOps.debug(LoggerOps.Trace, s"Sent: $json")
-    output.write(encodeJSON(json))
-    output.write("\n\n")
+    child.stdin.write(encodeJSON(json))
+    child.stdin.write("\n\n")
     val promise = Promise[Option[String]]()
     inboundQueue.enqueue(promise)
     promise.future
@@ -108,16 +111,21 @@ class Server(output: stream.IWritable, input: stream.IReadable) {
 object Server {
   def apply(outputChannel: OutputChannel): Server = {
     val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
-    val args = js.Array("-cp", "jars/apexlink-1.1.0-SNAPSHOT.jar", "com.nawforce.common.cmds.Server")
+    val args =
+      js.Array("-cp", "jars/apexlink-1.1.0-SNAPSHOT.jar", "com.nawforce.common.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")
-    val child = ChildProcess.spawn("java", args, new SpawnOptions {cwd=path.toString; detached=true; windowsHide=true})
+    val child = ChildProcess.spawn("java", args, new SpawnOptions {
+      cwd = path.toString; detached = true; windowsHide = true
+    })
 
-    child.on("exit", (code: Int, signal: Int) =>
-      outputChannel.appendLine(s"Server died! code: $code, signal: $signal"))
-    child.stderr.on("data", (data: Buffer) =>
-      data.toString().split("\n").map(d => outputChannel.appendLine(s"Server: $d")))
+    child.on("exit",
+             (code: Int, signal: Int) =>
+               outputChannel.appendLine(s"Server died! code: $code, signal: $signal"))
+    child.stderr.on("data",
+                    (data: Buffer) =>
+                      data.toString().split("\n").map(d => outputChannel.appendLine(s"Server: $d")))
 
-    new Server(child.stdin, child.stdout)
+    new Server(child)
   }
 }
