@@ -31,6 +31,7 @@ import com.nawforce.common.api.{Location, UNUSED_CATEGORY, WARNING_CATEGORY}
 import com.nawforce.common.diagnostics.Issue
 import com.nawforce.rpc.Server
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.JSConverters._
 
@@ -44,6 +45,10 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
         diagnostics.set(VSCode.Uri.file(path), issueMap(path).map(issueToDiagnostic).toJSArray)
       })
     })
+  }
+
+  def setDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {
+    diagnostics.set(td.uri, issues.map(issueToDiagnostic).toJSArray)
   }
 
   private def issueToDiagnostic(issue: Issue): com.nawforce.vsext.Diagnostic = {

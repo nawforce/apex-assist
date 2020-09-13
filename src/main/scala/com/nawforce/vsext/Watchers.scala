@@ -76,7 +76,8 @@ class IssueUpdater(issueLog: IssueLog) {
 
 object Watchers {
   private val resetGlobs = Array("**/sfdx-project.json", "**/.forceIgnore")
-  private val changedGlobs = Array("**/*.cls", "**/*.labels", "**/*.labels-meta.xml")
+  private val changedGlobs =
+    Array("**/*.cls", "**/*.trigger", "**/*.labels", "**/*.labels-meta.xml")
 
   def apply(context: ExtensionContext, server: Server, issueLog: IssueLog): Watchers = {
     new Watchers(server,

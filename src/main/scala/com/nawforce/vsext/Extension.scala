@@ -70,6 +70,7 @@ object Extension {
         this.server = Some(server)
         val issueLog = IssueLog(server, diagnostics)
         Watchers(context, server, issueLog)
+        Summary(context, issueLog)
         issueLog.refreshDiagnostics()
     }
   }

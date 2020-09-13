@@ -21,7 +21,7 @@
     "workspaceContains:sfdx-project.json"
   ],
   "contributes": {
-    "commands": [],
+    "commands": []
   },
   "scripts": {}
 }

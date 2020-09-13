@@ -120,8 +120,21 @@ trait WorkspaceConfiguration extends js.Object {
 }
 
 @js.native
+trait TextDocument extends js.Object {
+  val uri: URI = js.native
+  def getText(): String = js.native
+}
+
+@js.native
+trait TextDocumentChangeEvent extends js.Object {
+  val document: TextDocument = js.native
+}
+
+@js.native
 trait WorkspaceOps extends js.Object {
   val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
+  val onDidOpenTextDocument: Event[TextDocument] = js.native
+  val onDidChangeTextDocument: Event[TextDocumentChangeEvent] = js.native
 
   def getConfiguration(): WorkspaceConfiguration = js.native
 
