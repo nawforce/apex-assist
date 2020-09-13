@@ -1,4 +1,4 @@
 // Expose some globals we need
 global.__dirname = __dirname;
 global.require = require;
-module.exports = require('./apex-assist-fastopt.js');
+module.exports = require('./apex-assist-opt.js');

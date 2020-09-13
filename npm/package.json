@@ -1,7 +1,8 @@
 {
   "name": "apex-assist",
   "version": "1.0.0",
-  "description": "Salesforce Apex code analysis tools",
+  "displayName": "Apex Assist",
+  "description": "Instant Apex Validation",
   "publisher": "KevinJones",
   "main": "dist/boot.js",
   "repository": "nawforce/apexlink",

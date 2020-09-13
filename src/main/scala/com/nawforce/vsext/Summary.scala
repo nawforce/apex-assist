@@ -50,7 +50,8 @@ class Summary(context: ExtensionContext, issueLog: IssueLog) {
           case Left(issues) => ArraySeq.unsafeWrapArray(issues)
           case Right(cu)    => ApexNode(parser, cu).collectIssues()
         }
-        issueLog.setDiagnostics(td, issues)
+        if (issues.nonEmpty)
+          issueLog.setDiagnostics(td, issues)
       }
     }).toJSPromise
   }

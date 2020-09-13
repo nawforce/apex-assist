@@ -1,4 +1,3 @@
-import java.nio.file.Files.copy
 import java.nio.file.Path
 
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.{ModuleKind, scalaJSLinkerConfig}
@@ -30,15 +29,15 @@ createPackage := {
   (Compile / fastOptJS).value
   (Compile / fullOptJS).value
 
-  import java.nio.file.StandardCopyOption.REPLACE_EXISTING
   import java.nio.file.Files.copy
   import java.nio.file.Paths.get
+  import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
-  implicit def toPath (filename: String): Path = get(filename)
+  implicit def toPath(filename: String): Path = get(filename)
 
-  def copyToDir(filePathName:String, dirName:String) = {
+  def copyToDir(filePathName: String, dirName: String) = {
     val fileName = new File(filePathName).getName
-    copy (s"$filePathName", s"$dirName/$fileName", REPLACE_EXISTING)
+    copy(s"$filePathName", s"$dirName/$fileName", REPLACE_EXISTING)
   }
 
   val libName = name.value.toLowerCase()
@@ -57,32 +56,31 @@ createPackage := {
 
   // copy static files
   copyToDir(s"LICENSE", targetDir)
-  copyToDir(s"README.md", targetDir)
   copy("npm/package.json", s"$targetDir/package.json", REPLACE_EXISTING)
+  copy("npm/README.md", s"$targetDir/README.md", REPLACE_EXISTING)
   copy("npm/logo.png", s"$targetDir/logo.png", REPLACE_EXISTING)
   copy("npm/.vscodeignore", s"$targetDir/.vscodeignore", REPLACE_EXISTING)
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
   copy("npm/dist/boot.js", s"$targetDir/dist/boot.js", REPLACE_EXISTING)
-  copy("npm/dist/check.js", s"$targetDir/dist/check.js", REPLACE_EXISTING)
   copy("npm/grammars/apex.tmLanguage", s"$targetDir/grammars/apex.tmLanguage", REPLACE_EXISTING)
 
   // copy optimized js library
   val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")
-  for(file <- fileDist) {
+  for (file <- fileDist) {
     println(s"copy file $inputDir/$file")
     copy(s"$inputDir/$file", s"$targetDir/$distDir/$file", REPLACE_EXISTING)
   }
 
   // copy non optimized js library (for debug purpose)
   val fileSource = List(s"$libName-fastopt.js", s"$libName-fastopt.js.map")
-  for(file <- fileSource) {
+  for (file <- fileSource) {
     println(s"copy file $inputDir/$file")
     copy(s"$inputDir/$file", s"$targetDir/$distDir/$file", REPLACE_EXISTING)
   }
 
   // copy jars directory
   val jarFiles = new File("npm/jars").listFiles().map(_.name)
-  for(jarFile <- jarFiles) {
+  for (jarFile <- jarFiles) {
     println(s"copy file $jarFile")
     copy(s"npm/jars/$jarFile", s"$targetDir/$jarsDir/$jarFile", REPLACE_EXISTING)
   }
