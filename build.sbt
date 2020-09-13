@@ -1,3 +1,4 @@
+import java.nio.file.Files.copy
 import java.nio.file.Path
 
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.{ModuleKind, scalaJSLinkerConfig}
@@ -47,10 +48,11 @@ createPackage := {
   val sourceDir = "source"
   val distDir = "dist"
   val jarsDir = "jars"
+  val grammarsDir = "grammars"
 
   // Create module directory structure
   new File(targetDir).mkdirs()
-  List(".vscode", distDir, sourceDir, jarsDir)
+  List(".vscode", distDir, sourceDir, jarsDir, grammarsDir)
     .foreach(d => new File(s"$targetDir/$d").mkdirs())
 
   // copy static files
@@ -62,6 +64,7 @@ createPackage := {
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)
   copy("npm/dist/boot.js", s"$targetDir/dist/boot.js", REPLACE_EXISTING)
   copy("npm/dist/check.js", s"$targetDir/dist/check.js", REPLACE_EXISTING)
+  copy("npm/grammars/apex.tmLanguage", s"$targetDir/grammars/apex.tmLanguage", REPLACE_EXISTING)
 
   // copy optimized js library
   val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")
