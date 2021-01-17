@@ -27,24 +27,48 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.common.api.{Location, UNUSED_CATEGORY, WARNING_CATEGORY}
+import com.nawforce.common.api.{Location, LoggerOps, UNUSED_CATEGORY, WARNING_CATEGORY}
 import com.nawforce.common.diagnostics.Issue
 import com.nawforce.rpc.Server
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
 class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
+
+  private val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings";
+
+  VSCode.workspace.onDidChangeConfiguration(onConfigChanged, js.undefined, js.Array())
+
+  def onConfigChanged(event: ConfigurationChangeEvent): Unit = {
+    if (event.affectsConfiguration(showWarningsConfig)) {
+      LoggerOps.info(s"$showWarningsConfig Configuration Changed")
+      refreshDiagnostics()
+    }
+  }
+
   def refreshDiagnostics(): Unit = {
     server.getIssues.map(issuesResult => {
       diagnostics.clear()
 
-      val issueMap = issuesResult.issues.groupBy(_.path).map { case (x, xs) => (x, xs) }
+      val issueMap =
+        filterIssues(issuesResult.issues).groupBy(_.path).map { case (x, xs) => (x, xs) }
       issueMap.keys.foreach(path => {
         diagnostics.set(VSCode.Uri.file(path), issueMap(path).map(issueToDiagnostic).toJSArray)
       })
     })
+  }
+
+  def filterIssues(issues: Array[Issue]): Array[Issue] = {
+    val showWarnings =
+      VSCode.workspace.getConfiguration().get[Boolean](showWarningsConfig).getOrElse(true)
+    if (showWarnings)
+      issues
+    else
+      issues.filter(issues =>
+        issues.diagnostic.category != WARNING_CATEGORY && issues.diagnostic.category != UNUSED_CATEGORY)
   }
 
   def setDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {

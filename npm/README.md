@@ -1,22 +1,29 @@
 
 # Apex Assist
 
-This is a developer productibity extension that provides immediate validation of Apex source code without 
+Apex Assists is a developer productivity extension that provides immediate validation of Apex source code without 
 the need to wait for files to be deployed to an org. You can use it in addition to the Salesforce Apex
-extension or standlone if you want to significantly reduce the CPU and Memory needs of VSCode which can be
-very helpful on larger projects.
+extension or as an alternative.
 
-The extension currently implements two levels of validation:
-* As you type, each Apex file change is checked for basic errors
-* When you Save, the change to the file is fully checked for errors but also other Apex classes are checked to show other code that may be broken by a change such as renaming a function.
+* TODO: Image here *
 
-The 'On Save' full validation is only performed on files that need checking, how many is determined by a dependency analysis of the Apex classes.
+The extension implements two levels of validation:
+- **As you type** each Apex file change is checked for basic errors
+- **When you Save** the change to the Apex file is fully checked for errors and other other Apex files are re-checked 
+to show any other code that may be broken, such as by renaming a function.
 
-## Quick Setup
+## Tutorial
+
+* Link here *
+
+## Setup
 
 The extension is activated on any workspace which contains a sfdx-project.json file. It reads the 
 packageDirectory entries to locate Salesforce metadata and honours .forceignore entries. It will read both
 SFDX (source format) or MDAPI metadata and it not fussy about which you provide.
+
+When your project is loaded you are likely to see some warnings. You can disable the display of warning in the the 
+VSCode settings for 'Apex Assist' so these are not shown by default. 
 
 ## Cache Management
 
@@ -27,7 +34,8 @@ subsequent workspace loading will be significantly quicker.
 ## Multi-Package Analysis
 
 If you are working with Apex classes that reference managed packages then references to these
-will initially show up as errors. You can declare the namespaces as known within you sfdx-project.json which will surpress these errors.
+will initially show up as errors. You can declare the namespaces as known within you sfdx-project.json which will 
+suppress these errors.
 
 To do this add for the "aa" namespace add:
 

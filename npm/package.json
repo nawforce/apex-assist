@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "displayName": "Apex Assist",
   "description": "Instant Apex Validation",
   "publisher": "KevinJones",
@@ -13,7 +13,7 @@
   "dependencies": {
     "xmldom": "0.1.27",
     "antlr4ts": "0.5.0-alpha.3",
-    "apex-parser": "2.4.0"
+    "apex-parser": "2.6.1"
   },
   "engines": {
     "vscode": "^1.41.0"
@@ -22,6 +22,16 @@
     "workspaceContains:sfdx-project.json"
   ],
   "contributes": {
+    "configuration": {
+      "title": "ApexAssist",
+      "properties": {
+        "apex-assist.errorsAndWarnings.showWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show warnings as well as errors in diagnostics."
+        }
+      }
+    },
     "languages": [
       {
         "id": "apex",

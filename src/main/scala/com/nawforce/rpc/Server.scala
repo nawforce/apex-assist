@@ -112,7 +112,7 @@ object Server {
   def apply(outputChannel: OutputChannel): Server = {
     val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
     val args =
-      js.Array("-cp", "jars/apexlink-1.1.0-SNAPSHOT.jar", "com.nawforce.common.cmds.Server")
+      js.Array("-cp", "jars/apexlink-1.2.2.jar", "com.nawforce.common.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")
     val child = ChildProcess.spawn("java", args, new SpawnOptions {

@@ -116,7 +116,7 @@ trait WorkspaceFolder extends js.Object {
 
 @js.native
 trait WorkspaceConfiguration extends js.Object {
-  def get(section: String): Any = js.native
+  def get[T](section: String): js.UndefOr[T] = js.native
 }
 
 @js.native
@@ -131,10 +131,16 @@ trait TextDocumentChangeEvent extends js.Object {
 }
 
 @js.native
+trait ConfigurationChangeEvent extends js.Object {
+  def affectsConfiguration(section: String): Boolean = js.native
+}
+
+@js.native
 trait WorkspaceOps extends js.Object {
   val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
   val onDidOpenTextDocument: Event[TextDocument] = js.native
   val onDidChangeTextDocument: Event[TextDocumentChangeEvent] = js.native
+  val onDidChangeConfiguration: Event[ConfigurationChangeEvent] = js.native
 
   def getConfiguration(): WorkspaceConfiguration = js.native
 
