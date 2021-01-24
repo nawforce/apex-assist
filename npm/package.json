@@ -32,6 +32,12 @@
         }
       }
     },
+    "commands": [
+      {
+        "command":  "apex-assist.dependencyGraph",
+        "title": "Assist: Show Dependency Graph"
+      }
+    ],
     "languages": [
       {
         "id": "apex",

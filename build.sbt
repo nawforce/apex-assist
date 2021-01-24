@@ -1,4 +1,5 @@
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
+import scala.collection.JavaConverters._
 
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.{ModuleKind, scalaJSLinkerConfig}
 
@@ -40,6 +41,16 @@ createPackage := {
     copy(s"$filePathName", s"$dirName/$fileName", REPLACE_EXISTING)
   }
 
+  def copyDir(src: Path, dest: Path): Unit = {
+    Files.walk(src).iterator().asScala.foreach(sourceFile => {
+      if (Files.isRegularFile(sourceFile)) {
+        val destFile = dest.resolve(src.relativize(sourceFile))
+        destFile.getParent.toFile.mkdirs()
+        copy(sourceFile, dest.resolve(src.relativize(sourceFile)), REPLACE_EXISTING)
+      }
+    })
+  }
+
   val libName = name.value.toLowerCase()
 
   val inputDir = "target/scala-2.13"
@@ -48,10 +59,11 @@ createPackage := {
   val distDir = "dist"
   val jarsDir = "jars"
   val grammarsDir = "grammars"
+  val webviewDir = "webview"
 
   // Create module directory structure
   new File(targetDir).mkdirs()
-  List(".vscode", distDir, sourceDir, jarsDir, grammarsDir)
+  List(".vscode", distDir, sourceDir, jarsDir, grammarsDir, webviewDir)
     .foreach(d => new File(s"$targetDir/$d").mkdirs())
 
   // copy static files
@@ -84,6 +96,10 @@ createPackage := {
     println(s"copy file $jarFile")
     copy(s"npm/jars/$jarFile", s"$targetDir/$jarsDir/$jarFile", REPLACE_EXISTING)
   }
+
+  // copy webview directory
+  copyDir("npm/webview/build", s"$targetDir/$webviewDir")
+
 
   println(s"NPM package created in $npmTargetDir")
 }

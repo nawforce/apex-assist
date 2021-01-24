@@ -55,15 +55,58 @@ trait StatusBar extends Disposable {
 }
 
 @js.native
+trait Webview extends js.Object {
+  var html: String = js.native
+}
+
+@js.native
+trait WebviewPanel extends js.Object {
+  val webview: Webview = js.native
+}
+
+object ViewColumn {
+  val ACTIVE: Int = -1
+  val BESIDE: Int = -2
+  val ONE: Int = 1
+  val TWO: Int = 2
+  val THREE: Int = 3
+  val FOUR: Int = 4
+  val FIVE: Int = 5
+  val SIX: Int = 6
+  val SEVEN: Int = 7
+  val EIGHT: Int = 8
+  val NINE: Int = 9
+}
+
+class WebviewOptions extends js.Object {
+  var enableScripts: js.UndefOr[Boolean] = true
+}
+
+@js.native
 trait WindowOps extends js.Object {
   def createOutputChannel(name: String): OutputChannel = js.native
   def showInformationMessage(msg: String): Unit = js.native
   def createStatusBarItem(): StatusBar = js.native
+  def createWebviewPanel(viewType: String,
+                         title: String,
+                         viewColumn: Int,
+                         options: WebviewOptions): WebviewPanel = js.native
+}
+
+class ChangeOptions extends js.Object {
+  var authority: js.UndefOr[String] = js.undefined
+  var fragment: js.UndefOr[String] = js.undefined
+  var path: js.UndefOr[String] = js.undefined
+  var query: js.UndefOr[String] = js.undefined
+  var scheme: js.UndefOr[String] = js.undefined
 }
 
 @js.native
 trait URI extends js.Object {
   val fsPath: String
+
+  def `with`(change: ChangeOptions): URI= js.native
+  def toString(skipEncoding: Boolean): String = js.native
 }
 
 @js.native

@@ -28,16 +28,20 @@
 package com.nawforce.vsext
 
 import com.nawforce.common.api._
+import com.nawforce.common.path.PathFactory
 import com.nawforce.rpc.{APIError, Server}
+import com.nawforce.runtime.platform.Path
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
+import scala.scalajs.js.JSON
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.util.{Failure, Success, Try}
 
 @js.native
 trait ExtensionContext extends js.Object {
+  val extensionPath: String
   val subscriptions: js.Array[Disposable]
 }
 
@@ -63,6 +67,16 @@ object Extension {
     statusBar.text = "$(refresh) Apex Assist"
     statusBar.hide()
     context.subscriptions.push(statusBar)
+
+    context.subscriptions.push(
+      VSCode.commands.registerCommand("apex-assist.dependencyGraph", () => {
+        val panel = VSCode.window.createWebviewPanel("dependencyGraph",
+                                                     "Dependency Graph",
+                                                     ViewColumn.ONE,
+                                                     new WebviewOptions)
+        panel.webview.html = webContent(context)
+
+      }))
 
     startServer(output) map {
       case Failure(ex) => VSCode.window.showInformationMessage(ex.getMessage)
@@ -116,4 +130,63 @@ object Extension {
 
   private def lift[T](futures: Seq[Future[T]]): Seq[Future[Try[T]]] =
     futures.map(_.map { Success(_) }.recover { case t => Failure(t) })
+
+  private def webContent(context: ExtensionContext): String = {
+    val extensionPath = PathFactory(context.extensionPath)
+
+    val webviewPath = extensionPath.join("webview")
+    val assetManifest = webviewPath.join("asset-manifest.json").read() match {
+      case Left(err)   => throw new Error(err)
+      case Right(data) => JSON.parse(data)
+    }
+
+    val files = assetManifest.files
+    val main = files.`main.js`.asInstanceOf[String]
+    val style = files.`main.css`.asInstanceOf[String]
+    val runtime = files.`runtime-main.js`.asInstanceOf[String]
+    val chunks = js.Object
+      .keys(files.asInstanceOf[js.Object])
+      .filter(_.endsWith("chunk.js"))
+      .map(k => files.selectDynamic(k).asInstanceOf[String])
+
+    val changeScheme = new ChangeOptions { scheme = "vscode-resource" }
+    val mainUri =
+      VSCode.Uri.file(webviewPath.join(parseManifestPath(main)).toString).`with`(changeScheme)
+    val styleUri =
+      VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString).`with`(changeScheme)
+    val runtimeUri =
+      VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString).`with`(changeScheme)
+    val chunksUri =
+      chunks.map(p =>
+        VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
+    val chunksScripts = chunksUri.map(chunkUri => {
+      s"""<script crossorigin="anonymous" src="${chunkUri.toString(true)}"></script>"""
+    })
+
+
+    s"""
+      |<!DOCTYPE html>
+      |<html lang="en">
+      | <head>
+      |   <meta charset="UTF-8">
+      |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      |   <title>Dependency Graph</title>
+      |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
+      | </head>
+      | <body>
+      |   <div id="root"></div>
+      |   <script crossorigin="anonymous" src="${runtimeUri.toString(true)}"></script>
+      |   ${chunksScripts.mkString("\n")}
+      |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
+      | </body>
+      |</html>
+      |""".stripMargin
+  }
+
+  //   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
+  //
+
+  private def parseManifestPath(path: String): String = {
+    path.split('/').tail.mkString(Path.separator)
+  }
 }
