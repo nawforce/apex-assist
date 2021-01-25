@@ -11,6 +11,10 @@
 # production
 /build
 
+# themes
+public/dark-theme.css
+public/light-theme.css
+
 # misc
 .DS_Store
 .env.local

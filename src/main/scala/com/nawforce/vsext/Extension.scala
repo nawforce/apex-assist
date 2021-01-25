@@ -71,11 +71,10 @@ object Extension {
     context.subscriptions.push(
       VSCode.commands.registerCommand("apex-assist.dependencyGraph", () => {
         val panel = VSCode.window.createWebviewPanel("dependencyGraph",
-                                                     "Dependency Graph",
+                                                     "Dependency Explorer",
                                                      ViewColumn.ONE,
                                                      new WebviewOptions)
         panel.webview.html = webContent(context)
-
       }))
 
     startServer(output) map {
@@ -144,9 +143,13 @@ object Extension {
     val main = files.`main.js`.asInstanceOf[String]
     val style = files.`main.css`.asInstanceOf[String]
     val runtime = files.`runtime-main.js`.asInstanceOf[String]
-    val chunks = js.Object
+    val chunksJS = js.Object
       .keys(files.asInstanceOf[js.Object])
       .filter(_.endsWith("chunk.js"))
+      .map(k => files.selectDynamic(k).asInstanceOf[String])
+    val chunksCSS = js.Object
+      .keys(files.asInstanceOf[js.Object])
+      .filter(_.endsWith("chunk.css"))
       .map(k => files.selectDynamic(k).asInstanceOf[String])
 
     val changeScheme = new ChangeOptions { scheme = "vscode-resource" }
@@ -156,24 +159,40 @@ object Extension {
       VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString).`with`(changeScheme)
     val runtimeUri =
       VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString).`with`(changeScheme)
-    val chunksUri =
-      chunks.map(p =>
+    val chunksJSUri =
+      chunksJS.map(p =>
         VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
-    val chunksScripts = chunksUri.map(chunkUri => {
+    val chunksCSSUri =
+      chunksCSS.map(p =>
+        VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
+
+    val chunksCSSMarkup = chunksCSSUri.map(chunkUri => {
+      s"""<link rel="stylesheet" type="text/css" href="${chunkUri.toString(true)}">"""
+    })
+    val chunksScripts = chunksJSUri.map(chunkUri => {
       s"""<script crossorigin="anonymous" src="${chunkUri.toString(true)}"></script>"""
     })
 
+    val lightTheme =
+      VSCode.Uri.file(webviewPath.join("light-theme.css").toString).`with`(changeScheme)
+    val darkTheme =
+      VSCode.Uri.file(webviewPath.join("dark-theme.css").toString).`with`(changeScheme)
 
-    s"""
+    val content = s"""
       |<!DOCTYPE html>
       |<html lang="en">
       | <head>
       |   <meta charset="UTF-8">
       |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
       |   <title>Dependency Graph</title>
+      |   ${chunksCSSMarkup.mkString("\n")}
       |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
+      |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
+                       .toString(true)}">
+      |   <link rel="prefetch" type="text/css" id="theme-prefetch-dark" href="${darkTheme.toString(
+                       true)}">
       | </head>
-      | <body>
+      | <body data-theme="light" style="padding: 0">
       |   <div id="root"></div>
       |   <script crossorigin="anonymous" src="${runtimeUri.toString(true)}"></script>
       |   ${chunksScripts.mkString("\n")}
@@ -181,10 +200,9 @@ object Extension {
       | </body>
       |</html>
       |""".stripMargin
+    LoggerOps.info(content)
+    content
   }
-
-  //   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
-  //
 
   private def parseManifestPath(path: String): String = {
     path.split('/').tail.mkString(Path.separator)
