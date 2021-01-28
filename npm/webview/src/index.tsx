@@ -22,9 +22,18 @@ if (lightPrefetch && darkPrefetch) {
   themes.dark = darkPrefetch;
 }
 
-ReactDOM.render(
-  <ThemeSwitcherProvider themeMap={themes} defaultTheme="light">
-    <App />
-  </ThemeSwitcherProvider>,
-  document.getElementById("root")
-);
+window.addEventListener("message", (event) => {
+  const isTest: boolean = event.data.isTest;
+  const initialTarget: string = event.data.initialTarget
+
+  ReactDOM.render(
+    <ThemeSwitcherProvider
+      themeMap={themes}
+      defaultTheme="light"
+      insertionPoint="inject-styles-here"
+    >
+      <App isTest={isTest} initialTarget={initialTarget}/>
+    </ThemeSwitcherProvider>,
+    document.getElementById("root")
+  );
+});

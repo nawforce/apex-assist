@@ -1,6 +1,5 @@
 import "./App.css";
-import data from "./data.json";
-import Graph from "./components/Graph";
+import Graph, { GraphProps } from "./components/Graph";
 import {
   AutoComplete,
   Button,
@@ -12,23 +11,40 @@ import {
   Switch,
 } from "antd";
 import { Header, Content } from "antd/lib/layout/layout";
-import React from "react";
+import React, { FC } from "react";
 import { CaretLeftOutlined, CaretRightOutlined } from "@ant-design/icons";
 import { useThemeSwitcher } from "react-css-theme-switcher";
+import { Reciever } from "./messages/Receiver";
+import { Handler } from "./messages/Handler";
+import { TestHandler } from "./messages/TestHandler";
+import { VSCHandler } from "./messages/VSCHandler";
 
-function App() {
+interface AppProps {
+  isTest: boolean;
+  initialTarget: string;
+}
+
+const App: FC<AppProps> = ({ isTest, initialTarget }) => {
+  const themeContext = useThemeSwitcher();
+  const [graphData, setGraphData] = React.useState<GraphProps>({
+    nodeData: [],
+    linkData: [],
+  });
+  React.useState<Handler>(() => {
+    const handler = isTest
+      ? new TestHandler(new Reciever(setGraphData))
+      : new VSCHandler(new Reciever(setGraphData));
+    handler.requestDependents(initialTarget);
+    return handler;
+  });
   const [isDarkMode, setIsDarkMode] = React.useState();
-  const { switcher, currentTheme, status, themes } = useThemeSwitcher();
 
   const toggleTheme = (isChecked: any) => {
     setIsDarkMode(isChecked);
-    switcher({ theme: isChecked ? themes.dark : themes.light });
+    themeContext.switcher({
+      theme: isChecked ? themeContext.themes.dark : themeContext.themes.light,
+    });
   };
-
-  // Avoid theme change flicker
-  //if (status === "loading") {
-  //  return null;
-  //}
 
   return (
     <div className="App">
@@ -60,30 +76,31 @@ function App() {
                 <Input.Search placeholder="class name" enterButton />
               </AutoComplete>
             </Col>
-            <Col span={1} offset={8} style={{ color: "white" }}>
-              Depth
-            </Col>
-            <Col span={3}>
+            <Col span={4} offset={8}>
               <Slider
                 defaultValue={3}
                 min={1}
                 max={20}
                 style={{ width: "100px" }}
-                tooltipVisible={true}
                 tooltipPlacement={"right"}
               />
             </Col>
-            <Col span = {1}>
-              <Switch checked={isDarkMode} checkedChildren="Light" unCheckedChildren="Dark" onChange={toggleTheme} />
+            <Col span={1}>
+              <Switch
+                checked={isDarkMode}
+                checkedChildren="Light"
+                unCheckedChildren="Dark"
+                onChange={toggleTheme}
+              />
             </Col>
           </Row>
         </Header>
         <Content>
-          <Graph nodeData={data.nodes} linkData={data.links} />
+          <Graph nodeData={graphData.nodeData} linkData={graphData.linkData} />
         </Content>
       </Layout>
     </div>
   );
-}
+};
 
 export default App;

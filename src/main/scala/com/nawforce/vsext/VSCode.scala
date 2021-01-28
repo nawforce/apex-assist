@@ -58,7 +58,8 @@ trait StatusBar extends Disposable {
 trait Webview extends js.Object {
   var html: String = js.native
 
-  def postMessage(message: String): Unit = js.native
+  def postMessage(message: Any): Unit = js.native
+  def onDidReceiveMessage: Event[Any] = js.native
 }
 
 @js.native
@@ -82,6 +83,7 @@ object ViewColumn {
 
 class WebviewOptions extends js.Object {
   var enableScripts: js.UndefOr[Boolean] = true
+  var retainContextWhenHidden: js.UndefOr[Boolean] = true
 }
 
 @js.native
