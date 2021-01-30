@@ -33,6 +33,7 @@ import io.github.shogowada.scala.jsonrpc.api
 import io.github.shogowada.scala.jsonrpc.serializers.JSONRPCPickler.{macroRW, ReadWriter => RW}
 
 import scala.concurrent.Future
+import scala.scalajs.js
 
 case class APIError(message: String, stack: Array[String])
 
@@ -64,9 +65,22 @@ object GetIssuesResult {
   implicit val rwLocation: RW[Location] = macroRW
 }
 
+case class NodeData(id: Int, name: String)
+case class LinkData(source: Int, target: Int)
+case class DependencyGraphResult(nodeData: Array[NodeData], linkData: Array[LinkData])
+
+object DependencyGraphResult {
+  implicit val rw: RW[DependencyGraphResult] = macroRW
+  implicit val rwNodeData: RW[NodeData] = macroRW
+  implicit val rwLinkData: RW[LinkData] = macroRW
+}
+
 trait OrgAPI {
   @api.JSONRPCMethod(name = "identifier")
   def identifier(): Future[String]
+
+  @api.JSONRPCMethod(name = "reset")
+  def reset(): Future[Unit]
 
   @api.JSONRPCMethod(name = "addPackage")
   def addPackage(directory: String): Future[AddPackageResult]
@@ -76,4 +90,7 @@ trait OrgAPI {
 
   @api.JSONRPCMethod(name = "refresh")
   def refresh(path: String, contents: Option[String]): Future[Unit]
+
+  @api.JSONRPCMethod(name = "dependencyGraph")
+  def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult]
 }

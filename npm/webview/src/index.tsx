@@ -24,7 +24,7 @@ if (lightPrefetch && darkPrefetch) {
 
 window.addEventListener("message", (event) => {
   const isTest: boolean = event.data.isTest;
-  const initialTarget: string = event.data.initialTarget
+  const identifier: string = event.data.initialTarget
 
   ReactDOM.render(
     <ThemeSwitcherProvider
@@ -32,7 +32,7 @@ window.addEventListener("message", (event) => {
       defaultTheme="light"
       insertionPoint="inject-styles-here"
     >
-      <App isTest={isTest} initialTarget={initialTarget}/>
+      <App isTest={isTest} identifer={identifier}/>
     </ThemeSwitcherProvider>,
     document.getElementById("root")
   );

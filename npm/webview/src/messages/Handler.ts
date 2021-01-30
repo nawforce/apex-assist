@@ -2,7 +2,7 @@ import { Reciever } from "./Receiver";
 import { TestHandler } from "./TestHandler";
 
 export interface Handler {
-    requestDependents(name: string): void
+    requestDependents(identifier: string, depth: number): void
 }
 
 export function createHandler(reciever: Reciever): Handler {

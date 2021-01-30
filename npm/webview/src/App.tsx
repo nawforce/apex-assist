@@ -1,5 +1,5 @@
 import "./App.css";
-import Graph, { GraphProps } from "./components/Graph";
+import Graph, { GraphData } from "./components/Graph";
 import {
   AutoComplete,
   Button,
@@ -8,6 +8,7 @@ import {
   Layout,
   Row,
   Slider,
+  Space,
   Switch,
 } from "antd";
 import { Header, Content } from "antd/lib/layout/layout";
@@ -18,26 +19,33 @@ import { Reciever } from "./messages/Receiver";
 import { Handler } from "./messages/Handler";
 import { TestHandler } from "./messages/TestHandler";
 import { VSCHandler } from "./messages/VSCHandler";
+import { debounce } from "ts-debounce";
 
 interface AppProps {
   isTest: boolean;
-  initialTarget: string;
+  identifer: string;
 }
 
-const App: FC<AppProps> = ({ isTest, initialTarget }) => {
+interface Focus {
+  identifer: string;
+  depth: number;
+}
+
+const App: FC<AppProps> = ({ isTest, identifer }) => {
   const themeContext = useThemeSwitcher();
-  const [graphData, setGraphData] = React.useState<GraphProps>({
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const [focus, setFocus] = React.useState<Focus>({ identifer, depth: 3 });
+  const [graphData, setGraphData] = React.useState<GraphData>({
     nodeData: [],
     linkData: [],
   });
-  React.useState<Handler>(() => {
+  const [handler] = React.useState<Handler>(() => {
     const handler = isTest
       ? new TestHandler(new Reciever(setGraphData))
       : new VSCHandler(new Reciever(setGraphData));
-    handler.requestDependents(initialTarget);
+    handler.requestDependents(identifer, 3);
     return handler;
   });
-  const [isDarkMode, setIsDarkMode] = React.useState();
 
   const toggleTheme = (isChecked: any) => {
     setIsDarkMode(isChecked);
@@ -46,26 +54,38 @@ const App: FC<AppProps> = ({ isTest, initialTarget }) => {
     });
   };
 
+  const changeDepth = (depth: number) => {
+    setFocus({ identifer: focus.identifer, depth });
+    handler.requestDependents(focus.identifer, depth);
+  };
+
+  const onRefocus = (identifer: string) => {
+    setFocus({ identifer: identifer, depth: focus.depth });
+    handler.requestDependents(identifer, focus.depth);
+  };
+
+  const debouncedChangeDepth = debounce(changeDepth, 300);
+
   return (
     <div className="App">
       <Layout style={{ minHeight: "100vh" }}>
         <Header>
           <Row align="middle">
             <Col span={1}>
-              <Button
-                type="primary"
-                shape="circle"
-                icon={<CaretLeftOutlined />}
-              />
+              <Space>
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={<CaretLeftOutlined />}
+                />
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={<CaretRightOutlined />}
+                />
+              </Space>
             </Col>
-            <Col span={1}>
-              <Button
-                type="primary"
-                shape="circle"
-                icon={<CaretRightOutlined />}
-              />
-            </Col>
-            <Col span={8} offset={1}>
+            <Col span={8} offset={2}>
               <AutoComplete
                 dropdownMatchSelectWidth={252}
                 style={{ width: 400, display: "block" }}
@@ -83,6 +103,7 @@ const App: FC<AppProps> = ({ isTest, initialTarget }) => {
                 max={20}
                 style={{ width: "100px" }}
                 tooltipPlacement={"right"}
+                onAfterChange={debouncedChangeDepth}
               />
             </Col>
             <Col span={1}>
@@ -96,7 +117,12 @@ const App: FC<AppProps> = ({ isTest, initialTarget }) => {
           </Row>
         </Header>
         <Content>
-          <Graph nodeData={graphData.nodeData} linkData={graphData.linkData} />
+          <Graph
+            nodeData={graphData.nodeData}
+            linkData={graphData.linkData}
+            isDark={isDarkMode}
+            onRefocus={onRefocus}
+          />
         </Content>
       </Layout>
     </div>

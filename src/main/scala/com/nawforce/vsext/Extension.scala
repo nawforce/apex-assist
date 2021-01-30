@@ -66,9 +66,6 @@ object Extension {
     statusBar.hide()
     context.subscriptions.push(statusBar)
 
-    // Webviews
-    DependencyExplorer(context)
-
     // And finally the server
     startServer(output) map {
       case Failure(ex) => VSCode.window.showInformationMessage(ex.getMessage)
@@ -77,6 +74,7 @@ object Extension {
         val issueLog = IssueLog(server, diagnostics)
         Watchers(context, server, issueLog)
         Summary(context, issueLog)
+        DependencyExplorer(context, server)
         issueLog.refreshDiagnostics()
     }
   }

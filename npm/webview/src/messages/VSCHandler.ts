@@ -1,4 +1,4 @@
-import { GraphProps } from "../components/Graph";
+import { GraphData } from "../components/Graph";
 import { Handler } from "./Handler";
 import { Reciever } from "./Receiver";
 
@@ -16,11 +16,11 @@ export class VSCHandler implements Handler {
     this.reciever = reciever;
     window.addEventListener("message", (event) => {
         console.log(event)
-        this.reciever.onDependents(event.data as GraphProps)
+        this.reciever.onDependents(event.data as GraphData)
     })
   }
 
-  requestDependents(name: string): void {
-    this.vscodeAPI.postMessage({ cmd: "dependents", name: name });
+  requestDependents(identifier: string, depth: number): void {
+    this.vscodeAPI.postMessage({ cmd: "dependents", identifier, depth });
   }
 }

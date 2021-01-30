@@ -12,3 +12,33 @@
   padding-left: 30px;
   padding-right: 30px;
 }
+
+.graph-font {
+  font-size: 10px;
+  fill: #000;
+}
+
+.graph-font-dark {
+  font-size: 10px;
+  fill: #FFF;
+}
+
+.graph-marker {
+  fill: #888;
+}
+
+.graph-marker-dark {
+  fill: #888;
+}
+
+.graph-node {
+  stroke: #888;
+  stroke-width: 2;
+  fill: #9D00A0
+}
+
+.graph-node-dark {
+  stroke: #888;
+  stroke-width: 2;
+  fill: #9D00A0
+}

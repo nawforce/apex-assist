@@ -99,6 +99,10 @@ class Server(child: ChildProcess) {
     orgAPI.refresh(path, contents)
   }
 
+  def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult] = {
+    orgAPI.dependencyGraph(path, depth)
+  }
+
   private def encodeJSON(json: String): String = {
     // New lines are used as message terminator so we best remove any used in formatting
     if (json.indexOf('\n') == 1)

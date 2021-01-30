@@ -2,21 +2,25 @@ package com.nawforce.vsext
 
 import com.nawforce.common.api.LoggerOps
 import com.nawforce.common.path.PathFactory
+import com.nawforce.rpc.Server
 import com.nawforce.runtime.platform.Path
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.scalajs.js
 import scala.scalajs.js.JSON
-
-class NodeData(val id: Integer, val name: String) extends js.Object
-class LinkData(val source: Integer, val target: Integer) extends js.Object
+import js.JSConverters._
 
 class IncomingMessage(val cmd: String) extends js.Object
-class GetDependentsMessage(val name: String) extends IncomingMessage("dependents")
+class GetDependentsMessage(val identifier: String, val depth: Int) extends IncomingMessage("dependents")
 
 class InitMessage(val isTest: Boolean, val initialTarget: String) extends js.Object
-class ReplayDependentsMessage(val nodeData: js.Array[NodeData], val linkData: js.Array[LinkData]) extends js.Object
+class ReplyNodeData(val id: Integer, val name: String) extends js.Object
+class ReplyLinkData(val source: Integer, val target: Integer) extends js.Object
+class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData], val linkData: js.Array[ReplyLinkData]) extends js.Object
 
-class DependencyExplorer(context: ExtensionContext) {
+
+class DependencyExplorer(context: ExtensionContext, server: Server) {
 
   context.subscriptions.push(
     VSCode.commands.registerCommand("apex-assist.dependencyGraph", () => createView()))
@@ -30,16 +34,19 @@ class DependencyExplorer(context: ExtensionContext) {
       event => {
         val cmd = event.asInstanceOf[IncomingMessage]
         if (cmd.cmd == "dependents") {
-          LoggerOps.info(s"Get Dependents: ${cmd.asInstanceOf[GetDependentsMessage].name}")
-          panel.webview.postMessage(
-            new ReplayDependentsMessage(js.Array(new NodeData(1, "A"), new NodeData(2, "B"), new NodeData(3, "C")),
-                                        js.Array(new LinkData(1, 2), new LinkData(1, 3))))
+          val msg = cmd.asInstanceOf[GetDependentsMessage]
+          server.dependencyGraph(msg.identifier, msg.depth).foreach(graph => {
+            panel.webview.postMessage(new ReplyDependentsMessage(
+              graph.nodeData.map(d => new ReplyNodeData(d.id, d.name)).toJSArray,
+              graph.linkData.map(d => new ReplyLinkData(d.target, d.source)).toJSArray
+            ))
+          })
         }
       },
       js.undefined,
       js.Array())
     panel.webview.html = webContent()
-    panel.webview.postMessage(new InitMessage(isTest = false, "target"))
+    panel.webview.postMessage(new InitMessage(isTest = false, "Contestants"))
   }
 
   private def webContent(): String = {
@@ -125,7 +132,7 @@ class DependencyExplorer(context: ExtensionContext) {
 }
 
 object DependencyExplorer {
-  def apply(context: ExtensionContext): DependencyExplorer = {
-    new DependencyExplorer(context)
+  def apply(context: ExtensionContext, server: Server): DependencyExplorer = {
+    new DependencyExplorer(context, server)
   }
 }

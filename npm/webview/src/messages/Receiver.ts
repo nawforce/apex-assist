@@ -1,15 +1,15 @@
-import { GraphProps } from "../components/Graph";
+import { GraphData } from "../components/Graph";
 
 export class Reciever {
-  private setGraphData: (value: GraphProps) => void;
+  private setGraphData: (value: GraphData) => void;
 
-  constructor(setGraphData: (value: GraphProps) => void) {
+  constructor(setGraphData: (value: GraphData) => void) {
     this.setGraphData = setGraphData;
   }
 
   onRoots(names: string[]): void {}
 
-  onDependents(dependents: GraphProps): void {
+  onDependents(dependents: GraphData): void {
     this.setGraphData(dependents);
   }
 }
