@@ -27,14 +27,19 @@ interface AppProps {
 }
 
 interface Focus {
-  identifer: string;
+  current: number;
+  history: string[];
   depth: number;
 }
 
 const App: FC<AppProps> = ({ isTest, identifer }) => {
   const themeContext = useThemeSwitcher();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
-  const [focus, setFocus] = React.useState<Focus>({ identifer, depth: 3 });
+  const [focus, setFocus] = React.useState<Focus>({
+    current: 0,
+    history: [identifer],
+    depth: 3,
+  });
   const [graphData, setGraphData] = React.useState<GraphData>({
     nodeData: [],
     linkData: [],
@@ -55,16 +60,41 @@ const App: FC<AppProps> = ({ isTest, identifer }) => {
   };
 
   const changeDepth = (depth: number) => {
-    setFocus({ identifer: focus.identifer, depth });
-    handler.requestDependents(focus.identifer, depth);
+    setFocus({ current: focus.current, history: focus.history, depth });
+    handler.requestDependents(focus.history[focus.current], depth);
   };
 
   const onRefocus = (identifer: string) => {
-    setFocus({ identifer: identifer, depth: focus.depth });
+    let stack: string[] = focus.history.slice(0, focus.current + 1);
+    let length = stack.push(identifer);
+    setFocus({ current: length - 1, history: stack, depth: focus.depth });
     handler.requestDependents(identifer, focus.depth);
   };
 
   const debouncedChangeDepth = debounce(changeDepth, 300);
+
+  const canBackward = () => focus.current > 0;
+  const canForward = () => focus.current < focus.history.length - 1;
+
+  const goBackward = () => {
+    setFocus({
+      current: focus.current - 1,
+      history: focus.history,
+      depth: focus.depth,
+    });
+    handler.requestDependents(focus.history[focus.current - 1], focus.depth);
+  };
+
+  const goForward = () => {
+    setFocus({
+      current: focus.current + 1,
+      history: focus.history,
+      depth: focus.depth,
+    });
+    handler.requestDependents(focus.history[focus.current + 1], focus.depth);
+  };
+
+  console.log(focus.history[focus.current]);
 
   return (
     <div className="App">
@@ -76,11 +106,15 @@ const App: FC<AppProps> = ({ isTest, identifer }) => {
                 <Button
                   type="primary"
                   shape="circle"
+                  disabled={!canBackward()}
+                  onClick={goBackward}
                   icon={<CaretLeftOutlined />}
                 />
                 <Button
                   type="primary"
                   shape="circle"
+                  disabled={!canForward()}
+                  onClick={goForward}
                   icon={<CaretRightOutlined />}
                 />
               </Space>
@@ -122,6 +156,7 @@ const App: FC<AppProps> = ({ isTest, identifer }) => {
             linkData={graphData.linkData}
             isDark={isDarkMode}
             onRefocus={onRefocus}
+            focusIdentifier={focus.history[focus.current]}
           />
         </Content>
       </Layout>

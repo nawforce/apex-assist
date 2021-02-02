@@ -17,7 +17,8 @@ export interface GraphData {
 
 interface GraphProps extends GraphData {
   isDark: boolean;
-  onRefocus: (identifier: string) => void
+  focusIdentifier: string;
+  onRefocus: (identifier: string) => void;
 }
 
 class GraphResizer {
@@ -97,7 +98,7 @@ export default class Graph extends Component<GraphProps> {
     if (this.timeout) clearTimeout(this.timeout);
 
     this.timeout = setTimeout(() => {
-      this.props.onRefocus(nodeData.name)
+      this.props.onRefocus(nodeData.name);
     }, 300);
   }
 
@@ -116,6 +117,7 @@ export default class Graph extends Component<GraphProps> {
     const nodes = nodeData.map((d) => Object.assign({}, d));
     const links = linkData.map((d) => Object.assign({}, d));
     const darkPostfix = this.props.isDark ? "-dark" : "";
+    const focusIdentifier = this.props.focusIdentifier;
 
     const simulation = d3
       .forceSimulation(nodes)
@@ -123,8 +125,7 @@ export default class Graph extends Component<GraphProps> {
         "link",
         d3.forceLink(links).id((d) => (d as any).id)
       )
-      .force("charge", d3.forceManyBody().strength(-350))
-      .alphaDecay(0.015);
+      .force("charge", d3.forceManyBody().strength(-350));
 
     const svg = d3.select(container).append("svg").attr("id", "graph-svg");
 
@@ -148,29 +149,45 @@ export default class Graph extends Component<GraphProps> {
 
     const link = svg
       .append("g")
-      .attr("class", "graph-link" + darkPostfix)
-      .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
       .selectAll(".link")
       .data(links)
       .join("line")
-      .attr("stroke-width", 2)
-      .attr("marker-end", "url(#end)");
+      .attr("class", "graph-link" + darkPostfix);
 
     const node = svg
       .selectAll(".node")
       .data(simulation.nodes())
       .enter()
-      .append("g");
+      .append("g")
+      .call(
+        d3
+          .drag<SVGGElement, NodeData>()
+          .on("start", function (event: any, d: NodeData) {})
+          .on("drag", function (event: any, d: NodeData) {
+            simulation.alpha(1).restart();
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on("end", function (event: any, d: NodeData) {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+      );
 
     node
       .append("circle")
       .attr("r", 7)
-      .attr("class", "graph-node" + darkPostfix)
-      .on("click", function (i: any, n: NodeData) {
+      .attr("class", function (n) {
+        return (
+          (n.name === focusIdentifier ? "focus-node" : "graph-node") +
+          darkPostfix
+        );
+      })
+      .on("click", function (event: Event, n: NodeData) {
+        if (event.defaultPrevented) return;
         me.onClick(n);
       })
-      .on("dblclick", function (i: any, n: NodeData) {
+      .on("dblclick", function (event: Event, n: NodeData) {
         me.onClick(n);
       });
 
@@ -193,22 +210,13 @@ export default class Graph extends Component<GraphProps> {
     );
 
     simulation.on("tick", () => {
-      //update link positions
       link
         .attr("x1", (d) => (d.source as any).x)
         .attr("y1", (d) => (d.source as any).y)
         .attr("x2", (d) => (d.target as any).x)
         .attr("y2", (d) => (d.target as any).y);
 
-      // update node positions
       node.attr("transform", (d) => "translate(" + [d.x, d.y] + ")");
-
-      // update label positions
-      /*
-            label
-                .attr("x", d => { return ' ' + d.x; })
-                .attr("y", d => { return ' ' + d.y; })
-                */
     });
   }
 }

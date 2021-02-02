@@ -31,6 +31,20 @@
   fill: #888;
 }
 
+.graph-link {
+  stroke: #999;
+  stroke-opacity: 0.6;
+  stroke-width: 1.5;
+  marker-end: url(#end)
+}
+
+.graph-link-dark {
+  stroke: #999;
+  stroke-opacity: 0.6;
+  stroke-width: 1.5;
+  marker-end: url(#end)
+}
+
 .graph-node {
   stroke: #888;
   stroke-width: 2;
@@ -41,4 +55,16 @@
   stroke: #888;
   stroke-width: 2;
   fill: #9D00A0
+}
+
+.focus-node {
+  stroke: #888;
+  stroke-width: 2;
+  fill: #1890ff
+}
+
+.focus-node-dark {
+  stroke: #888;
+  stroke-width: 2;
+  fill: #1890ff
 }
