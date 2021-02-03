@@ -73,8 +73,14 @@ export default class Graph extends Component<GraphProps> {
     this.renderGraph();
   }
 
-  componentDidUpdate(prevProps: any) {
-    this.renderGraph();
+  componentDidUpdate(prevProps: GraphProps) {
+    if (
+      this.props.nodeData !== prevProps.nodeData ||
+      this.props.linkData !== prevProps.linkData ||
+      this.props.isDark !== prevProps.isDark ||
+      this.props.focusIdentifier !== prevProps.focusIdentifier
+    )
+      this.renderGraph();
   }
 
   onResize(contentRect: ContentRect) {

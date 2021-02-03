@@ -6,19 +6,21 @@ import com.nawforce.rpc.Server
 import com.nawforce.runtime.platform.Path
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.JSON
-import js.JSConverters._
 
 class IncomingMessage(val cmd: String) extends js.Object
-class GetDependentsMessage(val identifier: String, val depth: Int) extends IncomingMessage("dependents")
+class GetDependentsMessage(val identifier: String, val depth: Int)
+    extends IncomingMessage("dependents")
 
-class InitMessage(val isTest: Boolean, val initialTarget: String) extends js.Object
+class InitMessage(val isTest: Boolean, val identifier: String, val allIdentifiers: js.Array[String])
+    extends js.Object
 class ReplyNodeData(val id: Integer, val name: String) extends js.Object
 class ReplyLinkData(val source: Integer, val target: Integer) extends js.Object
-class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData], val linkData: js.Array[ReplyLinkData]) extends js.Object
-
+class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
+                             val linkData: js.Array[ReplyLinkData])
+    extends js.Object
 
 class DependencyExplorer(context: ExtensionContext, server: Server) {
 
@@ -26,27 +28,34 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     VSCode.commands.registerCommand("apex-assist.dependencyGraph", () => createView()))
 
   private def createView(): Unit = {
-    val panel = VSCode.window.createWebviewPanel("dependencyGraph",
-                                                 "Dependency Explorer",
-                                                 ViewColumn.ONE,
-                                                 new WebviewOptions)
-    panel.webview.onDidReceiveMessage(
-      event => {
-        val cmd = event.asInstanceOf[IncomingMessage]
-        if (cmd.cmd == "dependents") {
-          val msg = cmd.asInstanceOf[GetDependentsMessage]
-          server.dependencyGraph(msg.identifier, msg.depth).foreach(graph => {
-            panel.webview.postMessage(new ReplyDependentsMessage(
-              graph.nodeData.map(d => new ReplyNodeData(d.id, d.name)).toJSArray,
-              graph.linkData.map(d => new ReplyLinkData(d.target, d.source)).toJSArray
-            ))
-          })
-        }
-      },
-      js.undefined,
-      js.Array())
-    panel.webview.html = webContent()
-    panel.webview.postMessage(new InitMessage(isTest = false, "Contestants"))
+    server
+      .getTypeIdentifiers()
+      .map(typeIdentifiers => {
+
+        val panel = VSCode.window.createWebviewPanel("dependencyGraph",
+                                                     "Dependency Explorer",
+                                                     ViewColumn.ONE,
+                                                     new WebviewOptions)
+        panel.webview.onDidReceiveMessage(event => {
+          val cmd = event.asInstanceOf[IncomingMessage]
+          if (cmd.cmd == "dependents") {
+            val msg = cmd.asInstanceOf[GetDependentsMessage]
+            server
+              .dependencyGraph(msg.identifier, msg.depth)
+              .foreach(graph => {
+                panel.webview.postMessage(
+                  new ReplyDependentsMessage(
+                    graph.nodeData.map(d => new ReplyNodeData(d.id, d.name)).toJSArray,
+                    graph.linkData.map(d => new ReplyLinkData(d.target, d.source)).toJSArray))
+              })
+          }
+        }, js.undefined, js.Array())
+        panel.webview.html = webContent()
+        panel.webview.postMessage(
+          new InitMessage(isTest = false,
+                          identifier = "Contestants",
+                          typeIdentifiers.identifiers.toJSArray))
+      })
   }
 
   private def webContent(): String = {

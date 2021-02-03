@@ -37,9 +37,10 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <!-- inject-styles-here -->
     <script>
       setTimeout(() => {
-        window.postMessage({isTest: true, initialTarget: 'target'})
+        window.postMessage({isTest: true, identifier: 'A', allIdentifiers: ["A", "B", "C"]})
       },1000)
     </script>
   </body>

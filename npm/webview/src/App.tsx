@@ -23,7 +23,8 @@ import { debounce } from "ts-debounce";
 
 interface AppProps {
   isTest: boolean;
-  identifer: string;
+  identifier: string;
+  allIdentifiers: string[];
 }
 
 interface Focus {
@@ -32,14 +33,20 @@ interface Focus {
   depth: number;
 }
 
-const App: FC<AppProps> = ({ isTest, identifer }) => {
+const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
   const themeContext = useThemeSwitcher();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
   const [focus, setFocus] = React.useState<Focus>({
     current: 0,
-    history: [identifer],
+    history: [identifier],
     depth: 3,
   });
+  const [identifiers] = React.useState<{ value: string }[]>(() => {
+    return allIdentifiers.map((id) => {
+      return { value: id };
+    });
+  });
+
   const [graphData, setGraphData] = React.useState<GraphData>({
     nodeData: [],
     linkData: [],
@@ -48,7 +55,7 @@ const App: FC<AppProps> = ({ isTest, identifer }) => {
     const handler = isTest
       ? new TestHandler(new Reciever(setGraphData))
       : new VSCHandler(new Reciever(setGraphData));
-    handler.requestDependents(identifer, 3);
+    handler.requestDependents(identifier, 3);
     return handler;
   });
 
@@ -60,14 +67,22 @@ const App: FC<AppProps> = ({ isTest, identifer }) => {
   };
 
   const changeDepth = (depth: number) => {
-    setFocus({ current: focus.current, history: focus.history, depth });
+    setFocus({
+      current: focus.current,
+      history: focus.history,
+      depth,
+    });
     handler.requestDependents(focus.history[focus.current], depth);
   };
 
   const onRefocus = (identifer: string) => {
     let stack: string[] = focus.history.slice(0, focus.current + 1);
     let length = stack.push(identifer);
-    setFocus({ current: length - 1, history: stack, depth: focus.depth });
+    setFocus({
+      current: length - 1,
+      history: stack,
+      depth: focus.depth,
+    });
     handler.requestDependents(identifer, focus.depth);
   };
 
@@ -94,7 +109,12 @@ const App: FC<AppProps> = ({ isTest, identifer }) => {
     handler.requestDependents(focus.history[focus.current + 1], focus.depth);
   };
 
-  console.log(focus.history[focus.current]);
+  const [options, setOptions] = React.useState<{ value: string }[]>([]);
+
+  const onSearch = (value: string) => {
+    if (value.length === 0) setOptions(identifiers);
+    else setOptions(identifiers.filter((id) => id.value.startsWith(value)));
+  };
 
   return (
     <div className="App">
@@ -121,11 +141,9 @@ const App: FC<AppProps> = ({ isTest, identifer }) => {
             </Col>
             <Col span={8} offset={2}>
               <AutoComplete
-                dropdownMatchSelectWidth={252}
+                options={options}
                 style={{ width: 400, display: "block" }}
-                onSearch={(value: string) => {
-                  console.log(value);
-                }}
+                onSearch={onSearch}
               >
                 <Input.Search placeholder="class name" enterButton />
               </AutoComplete>

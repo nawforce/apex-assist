@@ -65,6 +65,12 @@ object GetIssuesResult {
   implicit val rwLocation: RW[Location] = macroRW
 }
 
+case class GetTypeIdentifiersResult(identifiers: Array[String])
+
+object GetTypeIdentifiersResult {
+  implicit val rw: RW[GetTypeIdentifiersResult] = macroRW
+}
+
 case class NodeData(id: Int, name: String)
 case class LinkData(source: Int, target: Int)
 case class DependencyGraphResult(nodeData: Array[NodeData], linkData: Array[LinkData])
@@ -90,6 +96,9 @@ trait OrgAPI {
 
   @api.JSONRPCMethod(name = "refresh")
   def refresh(path: String, contents: Option[String]): Future[Unit]
+
+  @api.JSONRPCMethod(name = "getTypeIdentifiers")
+  def getTypeIdentifiers(): Future[GetTypeIdentifiersResult]
 
   @api.JSONRPCMethod(name = "dependencyGraph")
   def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult]

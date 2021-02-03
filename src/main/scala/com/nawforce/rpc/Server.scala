@@ -99,6 +99,10 @@ class Server(child: ChildProcess) {
     orgAPI.refresh(path, contents)
   }
 
+  def getTypeIdentifiers(): Future[GetTypeIdentifiersResult] = {
+    orgAPI.getTypeIdentifiers()
+  }
+
   def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult] = {
     orgAPI.dependencyGraph(path, depth)
   }
