@@ -34,10 +34,30 @@
     },
     "commands": [
       {
-        "command":  "apex-assist.dependencyGraph",
+        "command": "apex-assist.dependencyGraph",
         "title": "Assist: Show Dependency Graph"
       }
     ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "apex-assist.dependencyGraph",
+          "when": "resourceExtname == '.cls'"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "apex-assist.dependencyGraph",
+          "when": "resourceExtname == '.cls'"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "apex-assist.dependencyGraph",
+          "when": "resourceExtname == '.cls'"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "apex",

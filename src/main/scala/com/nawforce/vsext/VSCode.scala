@@ -88,6 +88,8 @@ class WebviewOptions extends js.Object {
 
 @js.native
 trait WindowOps extends js.Object {
+  var activeTextEditor: js.UndefOr[TextEditor] = js.native
+
   def createOutputChannel(name: String): OutputChannel = js.native
   def showInformationMessage(msg: String): Unit = js.native
   def createStatusBarItem(): StatusBar = js.native
@@ -95,6 +97,14 @@ trait WindowOps extends js.Object {
                          title: String,
                          viewColumn: Int,
                          options: WebviewOptions): WebviewPanel = js.native
+  def showTextDocument(textDocument: TextDocument): js.Promise[Any] = js.native
+}
+
+@js.native
+trait TextEditor extends js.Object {
+  var document: TextDocument = js.native
+
+  def revealRange(range: Range): Unit = js.native
 }
 
 class ChangeOptions extends js.Object {
@@ -185,11 +195,14 @@ trait ConfigurationChangeEvent extends js.Object {
 @js.native
 trait WorkspaceOps extends js.Object {
   val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
+
   val onDidOpenTextDocument: Event[TextDocument] = js.native
   val onDidChangeTextDocument: Event[TextDocumentChangeEvent] = js.native
   val onDidChangeConfiguration: Event[ConfigurationChangeEvent] = js.native
 
   def getConfiguration(): WorkspaceConfiguration = js.native
+
+  def openTextDocument(uri: URI): js.Promise[TextDocument] = js.native
 
   def createFileSystemWatcher(globPattern: String,
                               ignoreCreateEvents: Boolean,

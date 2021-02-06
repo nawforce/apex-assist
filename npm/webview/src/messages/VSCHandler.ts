@@ -12,15 +12,31 @@ export class VSCHandler implements Handler {
   private vscodeAPI = acquireVsCodeApi();
   private reciever: Reciever;
 
-  constructor(reciever: Reciever) {
+  constructor(reciever: Reciever, document: Document) {
     this.reciever = reciever;
     window.addEventListener("message", (event) => {
-        console.log(event)
-        this.reciever.onDependents(event.data as GraphData)
-    })
+      this.reciever.onDependents(event.data as GraphData);
+    });
+
+    reciever.onTheme(document.body.className);
+
+    var observer = new MutationObserver((mutations) => {
+      mutations.forEach((record) => {
+        reciever.onTheme((record.target as Element).className);
+      });
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
   }
 
   requestDependents(identifier: string, depth: number): void {
     this.vscodeAPI.postMessage({ cmd: "dependents", identifier, depth });
+  }
+
+  openIdentifier(identifier: string): void {
+    this.vscodeAPI.postMessage({ cmd: "open", identifier });
   }
 }

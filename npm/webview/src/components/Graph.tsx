@@ -19,6 +19,7 @@ interface GraphProps extends GraphData {
   isDark: boolean;
   focusIdentifier: string;
   onRefocus: (identifier: string) => void;
+  onOpen: (identifier: string) => void;
 }
 
 class GraphResizer {
@@ -111,7 +112,7 @@ export default class Graph extends Component<GraphProps> {
   private onDblClick(nodeData: NodeData): void {
     if (this.timeout) clearTimeout(this.timeout);
 
-    console.log("Double click" + nodeData);
+    this.props.onOpen(nodeData.name)
   }
 
   private createGraph(
@@ -194,7 +195,7 @@ export default class Graph extends Component<GraphProps> {
         me.onClick(n);
       })
       .on("dblclick", function (event: Event, n: NodeData) {
-        me.onClick(n);
+        me.onDblClick(n);
       });
 
     node

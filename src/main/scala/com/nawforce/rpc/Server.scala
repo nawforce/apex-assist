@@ -30,6 +30,7 @@ package com.nawforce.rpc
 import com.nawforce.common.api.LoggerOps
 import com.nawforce.common.path.PathFactory
 import com.nawforce.vsext.OutputChannel
+import io.github.shogowada.scala.jsonrpc.api
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer._
@@ -105,6 +106,14 @@ class Server(child: ChildProcess) {
 
   def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult] = {
     orgAPI.dependencyGraph(path, depth)
+  }
+
+  def identifierLocation(identifier: String): Future[IdentifierLocationResult] = {
+    orgAPI.identifierLocation(identifier)
+  }
+
+  def identifierForPath(path: String): Future[Option[String]] = {
+    orgAPI.identifierForPath(path)
   }
 
   private def encodeJSON(json: String): String = {

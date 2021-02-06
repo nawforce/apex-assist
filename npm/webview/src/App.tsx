@@ -39,7 +39,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
   const [focus, setFocus] = React.useState<Focus>({
     current: 0,
     history: [identifier],
-    depth: 3,
+    depth: 2,
   });
   const [identifiers] = React.useState<{ value: string }[]>(() => {
     return allIdentifiers.map((id) => {
@@ -52,19 +52,23 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     linkData: [],
   });
   const [handler] = React.useState<Handler>(() => {
+    const reciever = new Reciever(setGraphData,setIsDarkMode)
     const handler = isTest
-      ? new TestHandler(new Reciever(setGraphData))
-      : new VSCHandler(new Reciever(setGraphData));
-    handler.requestDependents(identifier, 3);
+      ? new TestHandler(reciever)
+      : new VSCHandler(reciever, document);
+    handler.requestDependents(identifier, 2);
     return handler;
   });
 
   const toggleTheme = (isChecked: any) => {
     setIsDarkMode(isChecked);
-    themeContext.switcher({
-      theme: isChecked ? themeContext.themes.dark : themeContext.themes.light,
-    });
   };
+
+  React.useEffect(() => {
+    themeContext.switcher({
+      theme: isDarkMode ? themeContext.themes.dark : themeContext.themes.light,
+    });
+  })
 
   const changeDepth = (depth: number) => {
     setFocus({
@@ -85,6 +89,10 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     });
     handler.requestDependents(identifer, focus.depth);
   };
+
+  const onOpen = (identifier: string) => {
+    handler.openIdentifier(identifier)
+  }
 
   const debouncedChangeDepth = debounce(changeDepth, 300);
 
@@ -116,6 +124,12 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     else setOptions(identifiers.filter((id) => id.value.startsWith(value)));
   };
 
+  const onChange = (value: string) => {
+    if (identifiers.filter((id) => id.value === value).length > 0) {
+      onRefocus(value)
+    }
+  };
+
   return (
     <div className="App">
       <Layout style={{ minHeight: "100vh" }}>
@@ -141,18 +155,20 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
             </Col>
             <Col span={8} offset={2}>
               <AutoComplete
+                defaultValue={focus.history[focus.current]}
                 options={options}
                 style={{ width: 400, display: "block" }}
                 onSearch={onSearch}
+                onChange={onChange}
               >
                 <Input.Search placeholder="class name" enterButton />
               </AutoComplete>
             </Col>
             <Col span={4} offset={8}>
               <Slider
-                defaultValue={3}
+                defaultValue={2}
                 min={1}
-                max={20}
+                max={10}
                 style={{ width: "100px" }}
                 tooltipPlacement={"right"}
                 onAfterChange={debouncedChangeDepth}
@@ -174,6 +190,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
             linkData={graphData.linkData}
             isDark={isDarkMode}
             onRefocus={onRefocus}
+            onOpen={onOpen}
             focusIdentifier={focus.history[focus.current]}
           />
         </Content>

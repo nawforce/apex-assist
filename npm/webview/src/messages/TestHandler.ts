@@ -23,9 +23,12 @@ export class TestHandler implements Handler {
   }
 
   requestDependents(identifier: string, depth: number): void {
-    console.log("Request dependent: " + identifier + " with depth " + depth);
     setTimeout(() => {
+      this.reciever.onTheme('vscode-dark')
       this.reciever.onDependents(this.dependents);
     }, 2000);
+  }
+
+  openIdentifier(identifier: string): void {
   }
 }

@@ -1,6 +1,5 @@
 package com.nawforce.vsext
 
-import com.nawforce.common.api.LoggerOps
 import com.nawforce.common.path.PathFactory
 import com.nawforce.rpc.Server
 import com.nawforce.runtime.platform.Path
@@ -13,6 +12,7 @@ import scala.scalajs.js.JSON
 class IncomingMessage(val cmd: String) extends js.Object
 class GetDependentsMessage(val identifier: String, val depth: Int)
     extends IncomingMessage("dependents")
+class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("open")
 
 class InitMessage(val isTest: Boolean, val identifier: String, val allIdentifiers: js.Array[String])
     extends js.Object
@@ -25,9 +25,23 @@ class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
 class DependencyExplorer(context: ExtensionContext, server: Server) {
 
   context.subscriptions.push(
-    VSCode.commands.registerCommand("apex-assist.dependencyGraph", () => createView()))
+    VSCode.commands.registerCommand("apex-assist.dependencyGraph", (uri: URI) => createView(uri)))
 
-  private def createView(): Unit = {
+  private def createView(uri: URI): Unit = {
+    val filePath = if (js.isUndefined(uri)) {
+      VSCode.window.activeTextEditor.map(_.document.uri.fsPath).toOption
+    } else {
+      Some(uri.fsPath)
+    }
+
+    filePath.foreach(filePath => {
+      server.identifierForPath(filePath).foreach(identifier => {
+        identifier.foreach(createView)
+      })
+    })
+  }
+
+  private def createView(identifier: String): Unit = {
     server
       .getTypeIdentifiers()
       .map(typeIdentifiers => {
@@ -36,26 +50,38 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
                                                      "Dependency Explorer",
                                                      ViewColumn.ONE,
                                                      new WebviewOptions)
-        panel.webview.onDidReceiveMessage(event => {
-          val cmd = event.asInstanceOf[IncomingMessage]
-          if (cmd.cmd == "dependents") {
-            val msg = cmd.asInstanceOf[GetDependentsMessage]
-            server
-              .dependencyGraph(msg.identifier, msg.depth)
-              .foreach(graph => {
-                panel.webview.postMessage(
-                  new ReplyDependentsMessage(
-                    graph.nodeData.map(d => new ReplyNodeData(d.id, d.name)).toJSArray,
-                    graph.linkData.map(d => new ReplyLinkData(d.target, d.source)).toJSArray))
-              })
-          }
-        }, js.undefined, js.Array())
+        panel.webview
+          .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
         panel.webview.html = webContent()
         panel.webview.postMessage(
           new InitMessage(isTest = false,
-                          identifier = "Contestants",
+                          identifier,
                           typeIdentifiers.identifiers.toJSArray))
       })
+  }
+
+  private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
+    val cmd = event.asInstanceOf[IncomingMessage]
+    cmd.cmd match {
+      case "dependents" =>
+        val msg = cmd.asInstanceOf[GetDependentsMessage]
+        server
+          .dependencyGraph(msg.identifier, msg.depth)
+          .foreach(graph => {
+            panel.webview.postMessage(
+              new ReplyDependentsMessage(
+                graph.nodeData.map(d => new ReplyNodeData(d.id, d.name)).toJSArray,
+                graph.linkData.map(d => new ReplyLinkData(d.target, d.source)).toJSArray))
+          })
+      case "open" =>
+        val msg = cmd.asInstanceOf[GetDependentsMessage]
+        server
+          .identifierLocation(msg.identifier)
+          .foreach(location => {
+            val uri = VSCode.Uri.file(location.pathLocation.path)
+            VSCode.workspace.openTextDocument(uri).toFuture.foreach(VSCode.window.showTextDocument)
+          })
+    }
   }
 
   private def webContent(): String = {
@@ -106,33 +132,30 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     val darkTheme =
       VSCode.Uri.file(webviewPath.join("dark-theme.css").toString).`with`(changeScheme)
 
-    val content =
-      s"""
-                     |<!DOCTYPE html>
-                     |<html lang="en">
-                     | <head>
-                     |   <meta charset="UTF-8">
-                     |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                     |   <title>Dependency Graph</title>
-                     |   ${chunksCSSMarkup.mkString("\n")}
-                     |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
-           .toString(true)}">
-                     |   <link rel="prefetch" type="text/css" id="theme-prefetch-dark" href="${darkTheme
-           .toString(true)}">
-                     |   <!-- inject-styles-here -->
-                     |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
-                     | </head>
-                     | <body data-theme="light" style="padding: 0">
-                     |   <div id="root"></div>
-                     |   <script crossorigin="anonymous" src="${runtimeUri
-           .toString(true)}"></script>
-                     |   ${chunksScripts.mkString("\n")}
-                     |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
-                     | </body>
-                     |</html>
-                     |""".stripMargin
-    LoggerOps.info(content)
-    content
+    s"""
+     |<!DOCTYPE html>
+     |<html lang="en">
+     | <head>
+     |   <meta charset="UTF-8">
+     |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     |   <title>Dependency Graph</title>
+     |   ${chunksCSSMarkup.mkString("\n")}
+     |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
+         .toString(true)}">
+     |   <link rel="prefetch" type="text/css" id="theme-prefetch-dark" href="${darkTheme
+         .toString(true)}">
+     |   <!-- inject-styles-here -->
+     |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
+     | </head>
+     | <body data-theme="light" style="padding: 0">
+     |   <div id="root"></div>
+     |   <script crossorigin="anonymous" src="${runtimeUri
+         .toString(true)}"></script>
+     |   ${chunksScripts.mkString("\n")}
+     |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
+     | </body>
+     |</html>
+     |""".stripMargin
   }
 
   private def parseManifestPath(path: String): String = {

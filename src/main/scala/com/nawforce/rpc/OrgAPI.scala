@@ -27,7 +27,7 @@
  */
 package com.nawforce.rpc
 
-import com.nawforce.common.api.{Diagnostic, DiagnosticCategory, Location}
+import com.nawforce.common.api.{Diagnostic, DiagnosticCategory, Location, PathLocation}
 import com.nawforce.common.diagnostics.Issue
 import io.github.shogowada.scala.jsonrpc.api
 import io.github.shogowada.scala.jsonrpc.serializers.JSONRPCPickler.{macroRW, ReadWriter => RW}
@@ -81,6 +81,14 @@ object DependencyGraphResult {
   implicit val rwLinkData: RW[LinkData] = macroRW
 }
 
+case class IdentifierLocationResult(pathLocation: PathLocation)
+
+object IdentifierLocationResult {
+  implicit val rw: RW[IdentifierLocationResult] = macroRW
+  implicit val rwPathLocation: RW[PathLocation] = macroRW
+  implicit val rwLocation: RW[Location] = macroRW
+}
+
 trait OrgAPI {
   @api.JSONRPCMethod(name = "identifier")
   def identifier(): Future[String]
@@ -102,4 +110,10 @@ trait OrgAPI {
 
   @api.JSONRPCMethod(name = "dependencyGraph")
   def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult]
+
+  @api.JSONRPCMethod(name = "identifierLocation")
+  def identifierLocation(identifier: String): Future[IdentifierLocationResult]
+
+  @api.JSONRPCMethod(name = "identifierForPath")
+  def identifierForPath(path: String): Future[Option[String]]
 }
