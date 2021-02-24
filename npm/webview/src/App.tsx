@@ -52,7 +52,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     linkData: [],
   });
   const [handler] = React.useState<Handler>(() => {
-    const reciever = new Reciever(setGraphData,setIsDarkMode)
+    const reciever = new Reciever(setGraphData, setIsDarkMode);
     const handler = isTest
       ? new TestHandler(reciever)
       : new VSCHandler(reciever, document);
@@ -68,7 +68,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     themeContext.switcher({
       theme: isDarkMode ? themeContext.themes.dark : themeContext.themes.light,
     });
-  })
+  });
 
   const changeDepth = (depth: number) => {
     setFocus({
@@ -87,12 +87,13 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
       history: stack,
       depth: focus.depth,
     });
+    setSearching(identifer);
     handler.requestDependents(identifer, focus.depth);
   };
 
   const onOpen = (identifier: string) => {
-    handler.openIdentifier(identifier)
-  }
+    handler.openIdentifier(identifier);
+  };
 
   const debouncedChangeDepth = debounce(changeDepth, 300);
 
@@ -106,6 +107,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
       depth: focus.depth,
     });
     handler.requestDependents(focus.history[focus.current - 1], focus.depth);
+    setSearching(focus.history[focus.current - 1]);
   };
 
   const goForward = () => {
@@ -115,18 +117,24 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
       depth: focus.depth,
     });
     handler.requestDependents(focus.history[focus.current + 1], focus.depth);
+    setSearching(focus.history[focus.current + 1]);
   };
 
   const [options, setOptions] = React.useState<{ value: string }[]>([]);
+  const [searching, setSearching] = React.useState<string>(
+    focus.history[focus.current]
+  );
 
   const onSearch = (value: string) => {
+    setSearching(value);
     if (value.length === 0) setOptions(identifiers);
     else setOptions(identifiers.filter((id) => id.value.startsWith(value)));
   };
 
   const onChange = (value: string) => {
+    setSearching(value);
     if (identifiers.filter((id) => id.value === value).length > 0) {
-      onRefocus(value)
+      onRefocus(value);
     }
   };
 
@@ -156,6 +164,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
             <Col span={8} offset={2}>
               <AutoComplete
                 defaultValue={focus.history[focus.current]}
+                value={searching}
                 options={options}
                 style={{ width: 400, display: "block" }}
                 onSearch={onSearch}

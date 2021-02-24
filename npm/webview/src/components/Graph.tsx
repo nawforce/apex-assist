@@ -1,14 +1,13 @@
 import { Component } from "react";
 import * as d3 from "d3";
-import { SimulationLinkDatum, SimulationNodeDatum } from "d3";
 import Measure, { ContentRect } from "react-measure";
+import { d3adaptor, InputNode, Layout, Link } from "webcola";
 
-interface NodeData extends SimulationNodeDatum {
-  id: number;
+interface NodeData extends InputNode {
   name: string;
 }
 
-interface LinkData extends SimulationLinkDatum<NodeData> {}
+interface LinkData extends Link<number> {}
 
 export interface GraphData {
   nodeData: NodeData[];
@@ -24,14 +23,14 @@ interface GraphProps extends GraphData {
 
 class GraphResizer {
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
-  private simulation: d3.Simulation<NodeData, undefined>;
+  private layout: Layout;
 
   constructor(
     svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-    simulation: d3.Simulation<NodeData, undefined>
+    layout: Layout
   ) {
     this.svg = svg;
-    this.simulation = simulation;
+    this.layout = layout;
   }
 
   resize(contentRect: ContentRect) {
@@ -41,8 +40,7 @@ class GraphResizer {
     if (width && height) {
       this.svg.attr("width", width);
       this.svg.attr("height", height);
-      this.simulation.force("center", d3.forceCenter(width / 2, height / 2));
-      this.simulation.restart();
+      this.layout.size([width, height]).start(50, 50, 250);
     }
   }
 }
@@ -112,7 +110,7 @@ export default class Graph extends Component<GraphProps> {
   private onDblClick(nodeData: NodeData): void {
     if (this.timeout) clearTimeout(this.timeout);
 
-    this.props.onOpen(nodeData.name)
+    this.props.onOpen(nodeData.name);
   }
 
   private createGraph(
@@ -125,16 +123,23 @@ export default class Graph extends Component<GraphProps> {
     const links = linkData.map((d) => Object.assign({}, d));
     const darkPostfix = this.props.isDark ? "-dark" : "";
     const focusIdentifier = this.props.focusIdentifier;
+    const containerRect = container.getBoundingClientRect();
 
-    const simulation = d3
-      .forceSimulation(nodes)
-      .force(
-        "link",
-        d3.forceLink(links).id((d) => (d as any).id)
-      )
-      .force("charge", d3.forceManyBody().strength(-350));
+    const layout = d3adaptor(d3)
+      .avoidOverlaps(true)
+      .nodes(nodes)
+      .links(links)
+      .linkDistance(100)
+      .constraints([])
+      .size([containerRect.width, containerRect.height])
+      .start(50, 50, 250);
 
-    const svg = d3.select(container).append("svg").attr("id", "graph-svg");
+    const svg = d3
+      .select(container)
+      .append("svg")
+      .attr("id", "graph-svg")
+      .attr("width", containerRect.width)
+      .attr("height", containerRect.height);
 
     // Define arrow
     svg
@@ -163,66 +168,49 @@ export default class Graph extends Component<GraphProps> {
 
     const node = svg
       .selectAll(".node")
-      .data(simulation.nodes())
+      .data(layout.nodes())
       .enter()
       .append("g")
-      .call(
-        d3
-          .drag<SVGGElement, NodeData>()
-          .on("start", function (event: any, d: NodeData) {})
-          .on("drag", function (event: any, d: NodeData) {
-            simulation.alpha(1).restart();
-            d.fx = event.x;
-            d.fy = event.y;
-          })
-          .on("end", function (event: any, d: NodeData) {
-            d.fx = event.x;
-            d.fy = event.y;
-          })
-      );
+      .attr("x", function (d) {
+        return d.x;
+      })
+      .attr("y", function (d) {
+        return d.y;
+      })
+      .call(layout.drag());
 
     node
       .append("circle")
       .attr("r", 7)
       .attr("class", function (n) {
         return (
-          (n.name === focusIdentifier ? "focus-node" : "graph-node") +
+          ((n as any).name === focusIdentifier ? "focus-node" : "graph-node") +
           darkPostfix
         );
       })
-      .on("click", function (event: Event, n: NodeData) {
-        if (event.defaultPrevented) return;
-        me.onClick(n);
+      .on("click", function (datum, index, nodes) {
+        me.onClick(datum as NodeData);
       })
-      .on("dblclick", function (event: Event, n: NodeData) {
-        me.onDblClick(n);
+      .on("dblclick", function (datum, index, nodes) {
+        me.onDblClick(datum as NodeData);
       });
 
     node
       .append("text")
       .attr("dy", -10)
       .text(function (d) {
-        return d.name;
+        return (d as any).name;
       })
       .attr("class", "graph-font" + darkPostfix);
 
-    this.resizer = new GraphResizer(svg, simulation);
+    this.resizer = new GraphResizer(svg, layout);
 
-    const containerRect = container.getBoundingClientRect();
-    svg.attr("width", containerRect.width);
-    svg.attr("height", containerRect.height);
-    simulation.force(
-      "center",
-      d3.forceCenter(containerRect.width / 2, containerRect.height / 2)
-    );
-
-    simulation.on("tick", () => {
+    layout.on("tick", () => {
       link
-        .attr("x1", (d) => (d.source as any).x)
-        .attr("y1", (d) => (d.source as any).y)
-        .attr("x2", (d) => (d.target as any).x)
-        .attr("y2", (d) => (d.target as any).y);
-
+        .attr("x1", (d) => (d as any).source.x)
+        .attr("y1", (d) => (d as any).source.y)
+        .attr("x2", (d) => (d as any).target.x)
+        .attr("y2", (d) => (d as any).target.y);
       node.attr("transform", (d) => "translate(" + [d.x, d.y] + ")");
     });
   }
