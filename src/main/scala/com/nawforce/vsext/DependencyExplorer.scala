@@ -43,7 +43,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
 
   private def createView(identifier: String): Unit = {
     server
-      .getTypeIdentifiers()
+      .typeIdentifiers()
       .map(typeIdentifiers => {
 
         val panel = VSCode.window.createWebviewPanel("dependencyGraph",

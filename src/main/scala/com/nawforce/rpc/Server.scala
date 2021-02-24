@@ -92,16 +92,16 @@ class Server(child: ChildProcess) {
     orgAPI.addPackage(directory: String)
   }
 
-  def getIssues: Future[GetIssuesResult] = {
-    orgAPI.getIssues()
+  def getIssues(includeWarnings: Boolean, includeZombies: Boolean): Future[GetIssuesResult] = {
+    orgAPI.getIssues(includeWarnings, includeZombies)
   }
 
   def refresh(path: String, contents: Option[String]): Future[Unit] = {
     orgAPI.refresh(path, contents)
   }
 
-  def getTypeIdentifiers(): Future[GetTypeIdentifiersResult] = {
-    orgAPI.getTypeIdentifiers()
+  def typeIdentifiers(): Future[GetTypeIdentifiersResult] = {
+    orgAPI.typeIdentifiers()
   }
 
   def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult] = {

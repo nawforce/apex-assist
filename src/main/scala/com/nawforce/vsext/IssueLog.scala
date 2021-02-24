@@ -50,15 +50,17 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
   }
 
   def refreshDiagnostics(): Unit = {
-    server.getIssues.map(issuesResult => {
-      diagnostics.clear()
+    server
+      .getIssues(includeWarnings = true, includeZombies = false)
+      .map(issuesResult => {
+        diagnostics.clear()
 
-      val issueMap =
-        filterIssues(issuesResult.issues).groupBy(_.path).map { case (x, xs) => (x, xs) }
-      issueMap.keys.foreach(path => {
-        diagnostics.set(VSCode.Uri.file(path), issueMap(path).map(issueToDiagnostic).toJSArray)
+        val issueMap =
+          filterIssues(issuesResult.issues).groupBy(_.path).map { case (x, xs) => (x, xs) }
+        issueMap.keys.foreach(path => {
+          diagnostics.set(VSCode.Uri.file(path), issueMap(path).map(issueToDiagnostic).toJSArray)
+        })
       })
-    })
   }
 
   def filterIssues(issues: Array[Issue]): Array[Issue] = {
@@ -71,8 +73,9 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
         issues.diagnostic.category != WARNING_CATEGORY && issues.diagnostic.category != UNUSED_CATEGORY)
   }
 
-  def setDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {
-    diagnostics.set(td.uri, issues.map(issueToDiagnostic).toJSArray)
+  def setLocalDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {
+    if (issues.nonEmpty || !diagnostics.has(td.uri))
+      diagnostics.set(td.uri, issues.map(issueToDiagnostic).toJSArray)
   }
 
   private def issueToDiagnostic(issue: Issue): com.nawforce.vsext.Diagnostic = {

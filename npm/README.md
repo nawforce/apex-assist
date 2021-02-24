@@ -1,7 +1,7 @@
 
 # Apex Assist
 
-Apex Assists is a developer productivity extension that provides immediate validation of Apex source code without 
+Apex Assist is a developer productivity extension that provides immediate validation of Apex source code without 
 the need to wait for files to be deployed to an org. You can use it in addition to the Salesforce Apex
 extension or as an alternative.
 
@@ -22,7 +22,7 @@ The extension is activated on any workspace which contains a sfdx-project.json f
 packageDirectory entries to locate Salesforce metadata and honours .forceignore entries. It will read both
 SFDX (source format) or MDAPI metadata and it not fussy about which you provide.
 
-When your project is loaded you are likely to see some warnings. You can disable the display of warning in the the 
+When your project is loaded you are likely to see some warnings. You can disable the display of warnings in the the 
 VSCode settings for 'Apex Assist' so these are not shown by default. 
 
 ## Cache Management
@@ -34,7 +34,7 @@ subsequent workspace loading will be significantly quicker.
 ## Multi-Package Analysis
 
 If you are working with Apex classes that reference managed packages then references to these
-will initially show up as errors. You can declare the namespaces as known within you sfdx-project.json which will 
+will initially show up as errors. You can declare the namespaces as known within your sfdx-project.json which will 
 suppress these errors.
 
 To do this add for the "aa" namespace add:
