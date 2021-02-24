@@ -16,7 +16,7 @@ class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("ope
 
 class InitMessage(val isTest: Boolean, val identifier: String, val allIdentifiers: js.Array[String])
     extends js.Object
-class ReplyNodeData(val id: Integer, val name: String) extends js.Object
+class ReplyNodeData(val name: String) extends js.Object
 class ReplyLinkData(val source: Integer, val target: Integer) extends js.Object
 class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
                              val linkData: js.Array[ReplyLinkData])
@@ -70,8 +70,8 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
           .foreach(graph => {
             panel.webview.postMessage(
               new ReplyDependentsMessage(
-                graph.nodeData.map(d => new ReplyNodeData(d.id, d.name)).toJSArray,
-                graph.linkData.map(d => new ReplyLinkData(d.target, d.source)).toJSArray))
+                graph.nodeData.map(d => new ReplyNodeData(d.name)).toJSArray,
+                graph.linkData.map(d => new ReplyLinkData(d.source, d.target)).toJSArray))
           })
       case "open" =>
         val msg = cmd.asInstanceOf[GetDependentsMessage]
