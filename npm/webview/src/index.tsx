@@ -26,7 +26,7 @@ window.addEventListener("message", (event) => {
   ReactDOM.render(
     <ThemeSwitcherProvider
       themeMap={themes}
-      defaultTheme="light"
+      defaultTheme="dark"
       insertionPoint="inject-styles-here"
     >
       <App

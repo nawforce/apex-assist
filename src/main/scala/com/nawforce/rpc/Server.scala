@@ -29,8 +29,7 @@ package com.nawforce.rpc
 
 import com.nawforce.common.api.LoggerOps
 import com.nawforce.common.path.PathFactory
-import com.nawforce.vsext.OutputChannel
-import io.github.shogowada.scala.jsonrpc.api
+import com.nawforce.vsext.{OutputChannel, VSCode}
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer._
@@ -132,7 +131,7 @@ object Server {
       js.Array("-Xmx512m",
                "-Dfile.encoding=UTF-8",
                "-cp",
-               "jars/apexlink-1.2.2.jar",
+               "jars/apexlink-1.3.0.jar",
                "com.nawforce.common.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")
@@ -141,8 +140,12 @@ object Server {
     })
 
     child.on("exit",
-             (code: Int, signal: Int) =>
-               outputChannel.appendLine(s"Server died! code: $code, signal: $signal"))
+             (code: Int, signal: Int) => {
+               if (code != 143)
+                 VSCode.window.showInformationMessage(
+                   s"ApexAssist server failed to start, code: $code, signal: $signal")
+               outputChannel.appendLine(s"Server died! code: $code, signal: $signal")
+             })
     child.stderr.on("data",
                     (data: Buffer) =>
                       data.toString().split("\n").map(d => outputChannel.appendLine(s"Server: $d")))

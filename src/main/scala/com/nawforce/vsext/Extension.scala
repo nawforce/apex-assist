@@ -60,16 +60,19 @@ object Extension {
     context.subscriptions.push(diagnostics)
     LoggerOps.info("Apex Assist activated")
 
-    // Status bar, do we want this?
+    // Status bar just to show we are loading
     statusBar = VSCode.window.createStatusBarItem()
     statusBar.text = "$(refresh) Apex Assist"
-    statusBar.hide()
     context.subscriptions.push(statusBar)
+    statusBar.show()
 
     // And finally the server
     startServer(output) map {
-      case Failure(ex) => VSCode.window.showInformationMessage(ex.getMessage)
+      case Failure(ex) =>
+        statusBar.hide()
+        VSCode.window.showInformationMessage(ex.getMessage)
       case Success(server) =>
+        statusBar.hide()
         this.server = Some(server)
         val issueLog = IssueLog(server, diagnostics)
         Watchers(context, server, issueLog)

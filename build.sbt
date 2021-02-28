@@ -77,18 +77,19 @@ createPackage := {
   copy("npm/grammars/apex.tmLanguage", s"$targetDir/grammars/apex.tmLanguage", REPLACE_EXISTING)
 
   // copy optimized js library
-  val fileDist = List(s"$libName-opt.js", s"$libName-opt.js.map")
+  val fileDist = List(s"$libName-opt.js"/*, s"$libName-opt.js.map" */)
   for (file <- fileDist) {
     println(s"copy file $inputDir/$file")
     copy(s"$inputDir/$file", s"$targetDir/$distDir/$file", REPLACE_EXISTING)
   }
 
   // copy non optimized js library (for debug purpose)
+  /*
   val fileSource = List(s"$libName-fastopt.js", s"$libName-fastopt.js.map")
   for (file <- fileSource) {
     println(s"copy file $inputDir/$file")
     copy(s"$inputDir/$file", s"$targetDir/$distDir/$file", REPLACE_EXISTING)
-  }
+  }*/
 
   // copy jars directory
   val jarFiles = new File("npm/jars").listFiles().map(_.name)

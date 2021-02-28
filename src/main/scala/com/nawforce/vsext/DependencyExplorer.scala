@@ -142,7 +142,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
      |   ${chunksCSSMarkup.mkString("\n")}
      |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
          .toString(true)}">
-     |   <link rel="prefetch" type="text/css" id="theme-prefetch-dark" href="${darkTheme
+     |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${darkTheme
          .toString(true)}">
      |   <!-- inject-styles-here -->
      |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">

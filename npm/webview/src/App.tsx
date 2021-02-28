@@ -35,7 +35,7 @@ interface Focus {
 
 const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
   const themeContext = useThemeSwitcher();
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const [isDarkMode, setIsDarkMode] = React.useState(true);
   const [focus, setFocus] = React.useState<Focus>({
     current: 0,
     history: [identifier],
@@ -180,6 +180,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
                 max={10}
                 style={{ width: "100px" }}
                 tooltipPlacement={"right"}
+                tipFormatter={(value) => `Depth: ${value}`}
                 onAfterChange={debouncedChangeDepth}
               />
             </Col>
