@@ -142,7 +142,9 @@ object DiagnosticSeverity {
 }
 
 @js.native
-trait Diagnostic extends js.Object {}
+trait Diagnostic extends js.Object {
+  var code: String;
+}
 
 @js.native
 trait DiagnosticCollection extends Disposable {
@@ -152,6 +154,7 @@ trait DiagnosticCollection extends Disposable {
   def delete(uri: URI): Unit
   def has(uri: URI): Boolean
   def set(uri: URI, diagnostics: js.Array[Diagnostic]): Unit
+  def get(uri: URI): js.UndefOr[js.Array[Diagnostic]]
 }
 
 @js.native

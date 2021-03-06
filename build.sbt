@@ -70,6 +70,7 @@ createPackage := {
   copyToDir(s"LICENSE", targetDir)
   copy("npm/package.json", s"$targetDir/package.json", REPLACE_EXISTING)
   copy("npm/README.md", s"$targetDir/README.md", REPLACE_EXISTING)
+  copy("npm/CHANGELOG.md", s"$targetDir/CHANGELOG.md", REPLACE_EXISTING)
   copy("npm/logo.png", s"$targetDir/logo.png", REPLACE_EXISTING)
   copy("npm/.vscodeignore", s"$targetDir/.vscodeignore", REPLACE_EXISTING)
   copy("npm/.vscode/launch.json", s"$targetDir/.vscode/launch.json", REPLACE_EXISTING)

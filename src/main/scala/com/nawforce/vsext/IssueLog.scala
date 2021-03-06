@@ -74,18 +74,20 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
   }
 
   def setLocalDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {
-    if (issues.nonEmpty || !diagnostics.has(td.uri))
-      diagnostics.set(td.uri, issues.map(issueToDiagnostic).toJSArray)
+    val nonSyntax = diagnostics.get(td.uri).getOrElse(js.Array()).filter(_.code != "Syntax")
+    diagnostics.set(td.uri, nonSyntax ++ issues.map(issueToDiagnostic).toJSArray)
   }
 
   private def issueToDiagnostic(issue: Issue): com.nawforce.vsext.Diagnostic = {
-    VSCode.newDiagnostic(locationToRange(issue.diagnostic.location),
+    val diag = VSCode.newDiagnostic(locationToRange(issue.diagnostic.location),
                          issue.diagnostic.message,
                          issue.diagnostic.category match {
                            case WARNING_CATEGORY => DiagnosticSeverity.WARNING
                            case UNUSED_CATEGORY  => DiagnosticSeverity.WARNING
                            case _                => DiagnosticSeverity.ERROR
                          })
+    diag.code = issue.diagnostic.category.value
+    diag
   }
 
   private def locationToRange(location: Location): Range = {
