@@ -1,9 +1,9 @@
 #!/bin/bash
 
-(cd ../ApexLink; mvn dependency:copy-dependencies -DincludeScope=runtime)
+(cd ../apex-link; mvn dependency:copy-dependencies -DincludeScope=runtime)
 rm -rf npm/jars
 mkdir npm/jars
-cp ../ApexLink/target/apexlink*.jar npm/jars/.
+cp ../apex-link/target/apexlink*.jar npm/jars/.
 rm npm/jars/apexlink*-javadoc.jar
 rm npm/jars/apexlink*-sources.jar
-cp ../ApexLink/target/dependency/* npm/jars/.
+cp ../apex-link/target/dependency/* npm/jars/.
