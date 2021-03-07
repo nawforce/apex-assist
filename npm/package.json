@@ -27,12 +27,21 @@
       "properties": {
         "apex-assist.errorsAndWarnings.showWarnings": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Show warnings as well as errors in diagnostics."
+        },
+        "apex-assist.errorsAndWarnings.showWarningsOnChange": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show warnings when a file is changed, use when showWarnings=false."
         }
       }
     },
     "commands": [
+      {
+        "command": "apex-assist.clearDiagnostics",
+        "title": "Assist: Clear Diagnostics"
+      },
       {
         "command": "apex-assist.dependencyGraph",
         "title": "Assist: Show Dependency Graph"

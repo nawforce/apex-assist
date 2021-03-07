@@ -27,6 +27,7 @@
  */
 package com.nawforce.vsext
 
+import com.nawforce.commands.{ClearDiagnostics, DependencyExplorer}
 import com.nawforce.common.api._
 import com.nawforce.rpc.{APIError, Server}
 
@@ -78,6 +79,7 @@ object Extension {
         Watchers(context, server, issueLog)
         Summary(context, issueLog)
         DependencyExplorer(context, server)
+        ClearDiagnostics(context, issueLog)
         issueLog.refreshDiagnostics()
     }
   }

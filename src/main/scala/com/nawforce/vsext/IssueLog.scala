@@ -32,45 +32,57 @@ import com.nawforce.common.diagnostics.Issue
 import com.nawforce.rpc.Server
 
 import scala.collection.compat.immutable.ArraySeq
+import scala.collection.mutable
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
 class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
 
-  private val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings";
+  private val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings"
+  private val showWarningsOnChangeConfig = "apex-assist.errorsAndWarnings.showWarningsOnChange"
+  private val warningsAllowed = new mutable.HashSet[String]()
 
   VSCode.workspace.onDidChangeConfiguration(onConfigChanged, js.undefined, js.Array())
 
   def onConfigChanged(event: ConfigurationChangeEvent): Unit = {
-    if (event.affectsConfiguration(showWarningsConfig)) {
-      LoggerOps.info(s"$showWarningsConfig Configuration Changed")
+    if (event.affectsConfiguration(showWarningsConfig) || event.affectsConfiguration(
+          showWarningsOnChangeConfig)) {
+      LoggerOps.info(s"$showWarningsConfig or $showWarningsOnChangeConfig Configuration Changed")
       refreshDiagnostics()
     }
   }
 
+  def clear(): Unit = {
+    diagnostics.clear()
+  }
+
+  def allowWarnings(td: TextDocument): Unit = {
+    warningsAllowed.add(td.uri.fsPath)
+  }
+
   def refreshDiagnostics(): Unit = {
+    val showWarnings =
+      VSCode.workspace.getConfiguration().get[Boolean](showWarningsConfig).getOrElse(false)
+
+    val showWarningsOnChange =
+      VSCode.workspace.getConfiguration().get[Boolean](showWarningsOnChangeConfig).getOrElse(true)
+
     server
       .getIssues(includeWarnings = true, includeZombies = false)
       .map(issuesResult => {
         diagnostics.clear()
 
-        val issueMap =
-          filterIssues(issuesResult.issues).groupBy(_.path).map { case (x, xs) => (x, xs) }
+        val issueMap = issuesResult.issues
+          .filter(i => allowIssues(i, showWarnings, showWarningsOnChange))
+          .groupBy(_.path)
+          .map { case (x, xs) => (x, xs) }
         issueMap.keys.foreach(path => {
-          diagnostics.set(VSCode.Uri.file(path), issueMap(path).map(issueToDiagnostic).toJSArray)
+          diagnostics.set(
+            VSCode.Uri.file(path),
+            issueMap(path).sortBy(_.diagnostic.location.startLine).map(issueToDiagnostic).toJSArray)
         })
       })
-  }
-
-  def filterIssues(issues: Array[Issue]): Array[Issue] = {
-    val showWarnings =
-      VSCode.workspace.getConfiguration().get[Boolean](showWarningsConfig).getOrElse(true)
-    if (showWarnings)
-      issues
-    else
-      issues.filter(issues =>
-        issues.diagnostic.category != WARNING_CATEGORY && issues.diagnostic.category != UNUSED_CATEGORY)
   }
 
   def setLocalDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {
@@ -78,14 +90,23 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
     diagnostics.set(td.uri, nonSyntax ++ issues.map(issueToDiagnostic).toJSArray)
   }
 
+  private def allowIssues(issue: Issue,
+                          showWarnings: Boolean,
+                          showWarningsOnChange: Boolean): Boolean = {
+    if (showWarnings || (showWarningsOnChange && warningsAllowed.contains(issue.path)))
+      return true
+
+    issue.diagnostic.category != WARNING_CATEGORY && issue.diagnostic.category != UNUSED_CATEGORY
+  }
+
   private def issueToDiagnostic(issue: Issue): com.nawforce.vsext.Diagnostic = {
     val diag = VSCode.newDiagnostic(locationToRange(issue.diagnostic.location),
-                         issue.diagnostic.message,
-                         issue.diagnostic.category match {
-                           case WARNING_CATEGORY => DiagnosticSeverity.WARNING
-                           case UNUSED_CATEGORY  => DiagnosticSeverity.WARNING
-                           case _                => DiagnosticSeverity.ERROR
-                         })
+                                    issue.diagnostic.message,
+                                    issue.diagnostic.category match {
+                                      case WARNING_CATEGORY => DiagnosticSeverity.WARNING
+                                      case UNUSED_CATEGORY  => DiagnosticSeverity.WARNING
+                                      case _                => DiagnosticSeverity.ERROR
+                                    })
     diag.code = issue.diagnostic.category.value
     diag
   }

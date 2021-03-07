@@ -1,8 +1,10 @@
 ## [1.1.0]
 
+* Added - Command to clear diagnostics
+* Added - Setting to only show warnings for changed files (default on)
+* Added - A CHANGELOG ;-)
 * Fixed - Diagnostic display as you type
 * Fixed - Inline SOSL queries (thanks to @codefriar for flagging omission)
-* Added - A CHANGELOG ;-) 
 
 ## [1.0.1]
 

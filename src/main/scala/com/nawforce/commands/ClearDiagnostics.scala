@@ -1,6 +1,6 @@
 /*
  [The "BSD licence"]
- Copyright (c) 2020 Kevin Jones
+ Copyright (c) 2021 Kevin Jones
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -25,44 +25,19 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nawforce.vsext
+package com.nawforce.commands
 
-import com.nawforce.common.parsers.ApexNode
-import com.nawforce.common.path.PathFactory
-import com.nawforce.runtime.parsers.{CodeParser, SourceData}
+import com.nawforce.vsext._
 
-import scala.collection.immutable.ArraySeq
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js
-import scala.scalajs.js.JSConverters._
+class ClearDiagnostics(context: ExtensionContext, issueLog: IssueLog) {
 
-class Summary(context: ExtensionContext, issueLog: IssueLog) {
+  context.subscriptions.push(
+    VSCode.commands.registerCommand("apex-assist.clearDiagnostics", () => issueLog.clear()))
 
-  VSCode.workspace.onDidOpenTextDocument(onSummary, js.undefined, js.Array())
-  VSCode.workspace.onDidChangeTextDocument(onChangeSummary, js.undefined, js.Array())
-
-  private def onSummary(td: TextDocument): js.Promise[Unit] = {
-    Future({
-      if (td.uri.fsPath.endsWith(".cls")) {
-        val parser = CodeParser(PathFactory(td.uri.fsPath), SourceData(td.getText()))
-        val issues = parser.parseClass() match {
-          case Left(issues) => ArraySeq.unsafeWrapArray(issues)
-          case Right(cu)    => ApexNode(parser, cu).collectIssues()
-        }
-        issueLog.setLocalDiagnostics(td, issues)
-      }
-    }).toJSPromise
-  }
-
-  private def onChangeSummary(event: TextDocumentChangeEvent): js.Promise[Unit] = {
-    issueLog.allowWarnings(event.document)
-    onSummary(event.document)
-  }
 }
 
-object Summary {
-  def apply(context: ExtensionContext, issueLog: IssueLog): Summary = {
-    new Summary(context, issueLog)
+object ClearDiagnostics {
+  def apply(context: ExtensionContext, issueLog: IssueLog): ClearDiagnostics = {
+    new ClearDiagnostics(context, issueLog)
   }
 }
