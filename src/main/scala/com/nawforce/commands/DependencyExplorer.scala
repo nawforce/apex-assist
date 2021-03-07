@@ -75,8 +75,8 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
   }
 
   class View(identifier: String) {
-
     private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
+    private var currentIdentifier = identifier
 
     private val ignoreTypes =
       VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
@@ -101,8 +101,9 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       cmd.cmd match {
         case "dependents" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
+          currentIdentifier = msg.identifier
           server
-            .dependencyGraph(msg.identifier, msg.depth)
+            .dependencyGraph(currentIdentifier, msg.depth)
             .foreach(graph => {
               val reduced = reduceGraph(graph, ignoreTypes)
               panel.webview.postMessage(
@@ -112,8 +113,9 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
             })
         case "open" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
+          currentIdentifier = msg.identifier
           server
-            .identifierLocation(msg.identifier)
+            .identifierLocation(currentIdentifier)
             .foreach(location => {
               val uri = VSCode.Uri.file(location.pathLocation.path)
               VSCode.workspace
@@ -210,7 +212,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
         val ignorePattern = Pattern.compile(ignoreTypes.get)
         val retain = graph.nodeData.zipWithIndex.flatMap(nd => {
           val matcher = ignorePattern.matcher(nd._1.name)
-          if ((nd._1.name == identifier) || !matcher.matches()) Some(nd._2) else None
+          if ((nd._1.name == currentIdentifier) || !matcher.matches()) Some(nd._2) else None
         })
 
         val oldToNewMapping = retain.zipWithIndex.toMap
