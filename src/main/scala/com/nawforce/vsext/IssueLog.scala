@@ -39,8 +39,8 @@ import scala.scalajs.js.JSConverters._
 
 class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
 
-  private val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings"
-  private val showWarningsOnChangeConfig = "apex-assist.errorsAndWarnings.showWarningsOnChange"
+  private final val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings"
+  private final val showWarningsOnChangeConfig = "apex-assist.errorsAndWarnings.showWarningsOnChange"
   private val warningsAllowed = new mutable.HashSet[String]()
 
   VSCode.workspace.onDidChangeConfiguration(onConfigChanged, js.undefined, js.Array())

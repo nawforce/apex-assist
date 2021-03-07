@@ -1,5 +1,6 @@
 ## [1.1.0]
 
+* Added - Setting to hide dependency graph nodes by regex, e.g. fflib_.*
 * Added - Command to clear diagnostics
 * Added - Setting to only show warnings for changed files (default on)
 * Added - A CHANGELOG ;-)
@@ -8,6 +9,6 @@
 
 ## [1.0.1]
 
-* Fixed - .forceignore handling on Windows (thanks to @FishOfPrey raising problem)
+* Fixed - .forceignore handling on Windows (thanks to @FishOfPrey raising)
 * Fixed - Support for Quiddity (thanks to @codefriar)
 

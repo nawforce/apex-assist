@@ -33,7 +33,11 @@
         "apex-assist.errorsAndWarnings.showWarningsOnChange": {
           "type": "boolean",
           "default": true,
-          "description": "Show warnings when a file is changed, use when showWarnings=false."
+          "markdownDescription": "Show warnings when a file is changed, use when `#apex-assist.errorsAndWarnings.showWarnings#` is false."
+        },
+        "apex-assist.dependencyExplorer.ignoreTypes": {
+          "type": "string",
+          "markdownDescription": "Regular expression of types to exclude from Dependency Explorer, e.g. 'fflib_.*'"
         }
       }
     },

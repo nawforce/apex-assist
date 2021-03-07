@@ -27,8 +27,11 @@
  */
 package com.nawforce.commands
 
+import java.util.regex.Pattern
+
+import com.nawforce.common.api.LoggerOps
 import com.nawforce.common.path.PathFactory
-import com.nawforce.rpc.Server
+import com.nawforce.rpc.{DependencyGraphResult, LinkData, Server}
 import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext._
 
@@ -63,13 +66,21 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     }
 
     filePath.foreach(filePath => {
-      server.identifierForPath(filePath).foreach(identifier => {
-        identifier.foreach(createView)
-      })
+      server
+        .identifierForPath(filePath)
+        .foreach(identifier => {
+          identifier.foreach(id => new View(id))
+        })
     })
   }
 
-  private def createView(identifier: String): Unit = {
+  class View(identifier: String) {
+
+    private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
+
+    private val ignoreTypes =
+      VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
+
     server
       .typeIdentifiers()
       .map(typeIdentifiers => {
@@ -82,85 +93,86 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
           .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
         panel.webview.html = webContent()
         panel.webview.postMessage(
-          new InitMessage(isTest = false,
-                          identifier,
-                          typeIdentifiers.identifiers.toJSArray))
+          new InitMessage(isTest = false, identifier, typeIdentifiers.identifiers.toJSArray))
       })
-  }
 
-  private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
-    val cmd = event.asInstanceOf[IncomingMessage]
-    cmd.cmd match {
-      case "dependents" =>
-        val msg = cmd.asInstanceOf[GetDependentsMessage]
-        server
-          .dependencyGraph(msg.identifier, msg.depth)
-          .foreach(graph => {
-            panel.webview.postMessage(
-              new ReplyDependentsMessage(
-                graph.nodeData.map(d => new ReplyNodeData(d.name)).toJSArray,
-                graph.linkData.map(d => new ReplyLinkData(d.source, d.target)).toJSArray))
-          })
-      case "open" =>
-        val msg = cmd.asInstanceOf[GetDependentsMessage]
-        server
-          .identifierLocation(msg.identifier)
-          .foreach(location => {
-            val uri = VSCode.Uri.file(location.pathLocation.path)
-            VSCode.workspace.openTextDocument(uri).toFuture.foreach(VSCode.window.showTextDocument)
-          })
-    }
-  }
-
-  private def webContent(): String = {
-    val extensionPath = PathFactory(context.extensionPath)
-
-    val webviewPath = extensionPath.join("webview")
-    val assetManifest = webviewPath.join("asset-manifest.json").read() match {
-      case Left(err)   => throw new Error(err)
-      case Right(data) => JSON.parse(data)
+    private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
+      val cmd = event.asInstanceOf[IncomingMessage]
+      cmd.cmd match {
+        case "dependents" =>
+          val msg = cmd.asInstanceOf[GetDependentsMessage]
+          server
+            .dependencyGraph(msg.identifier, msg.depth)
+            .foreach(graph => {
+              val reduced = reduceGraph(graph, ignoreTypes)
+              panel.webview.postMessage(
+                new ReplyDependentsMessage(
+                  reduced.nodeData.map(d => new ReplyNodeData(d.name)).toJSArray,
+                  reduced.linkData.map(d => new ReplyLinkData(d.source, d.target)).toJSArray))
+            })
+        case "open" =>
+          val msg = cmd.asInstanceOf[GetDependentsMessage]
+          server
+            .identifierLocation(msg.identifier)
+            .foreach(location => {
+              val uri = VSCode.Uri.file(location.pathLocation.path)
+              VSCode.workspace
+                .openTextDocument(uri)
+                .toFuture
+                .foreach(VSCode.window.showTextDocument)
+            })
+      }
     }
 
-    val files = assetManifest.files
-    val main = files.`main.js`.asInstanceOf[String]
-    val style = files.`main.css`.asInstanceOf[String]
-    val runtime = files.`runtime-main.js`.asInstanceOf[String]
-    val chunksJS = js.Object
-      .keys(files.asInstanceOf[js.Object])
-      .filter(_.endsWith("chunk.js"))
-      .map(k => files.selectDynamic(k).asInstanceOf[String])
-    val chunksCSS = js.Object
-      .keys(files.asInstanceOf[js.Object])
-      .filter(_.endsWith("chunk.css"))
-      .map(k => files.selectDynamic(k).asInstanceOf[String])
+    private def webContent(): String = {
+      val extensionPath = PathFactory(context.extensionPath)
 
-    val changeScheme = new ChangeOptions { scheme = "vscode-resource" }
-    val mainUri =
-      VSCode.Uri.file(webviewPath.join(parseManifestPath(main)).toString).`with`(changeScheme)
-    val styleUri =
-      VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString).`with`(changeScheme)
-    val runtimeUri =
-      VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString).`with`(changeScheme)
-    val chunksJSUri =
-      chunksJS.map(p =>
-        VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
-    val chunksCSSUri =
-      chunksCSS.map(p =>
-        VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
+      val webviewPath = extensionPath.join("webview")
+      val assetManifest = webviewPath.join("asset-manifest.json").read() match {
+        case Left(err)   => throw new Error(err)
+        case Right(data) => JSON.parse(data)
+      }
 
-    val chunksCSSMarkup = chunksCSSUri.map(chunkUri => {
-      s"""<link rel="stylesheet" type="text/css" href="${chunkUri.toString(true)}">"""
-    })
-    val chunksScripts = chunksJSUri.map(chunkUri => {
-      s"""<script crossorigin="anonymous" src="${chunkUri.toString(true)}"></script>"""
-    })
+      val files = assetManifest.files
+      val main = files.`main.js`.asInstanceOf[String]
+      val style = files.`main.css`.asInstanceOf[String]
+      val runtime = files.`runtime-main.js`.asInstanceOf[String]
+      val chunksJS = js.Object
+        .keys(files.asInstanceOf[js.Object])
+        .filter(_.endsWith("chunk.js"))
+        .map(k => files.selectDynamic(k).asInstanceOf[String])
+      val chunksCSS = js.Object
+        .keys(files.asInstanceOf[js.Object])
+        .filter(_.endsWith("chunk.css"))
+        .map(k => files.selectDynamic(k).asInstanceOf[String])
 
-    val lightTheme =
-      VSCode.Uri.file(webviewPath.join("light-theme.css").toString).`with`(changeScheme)
-    val darkTheme =
-      VSCode.Uri.file(webviewPath.join("dark-theme.css").toString).`with`(changeScheme)
+      val changeScheme = new ChangeOptions { scheme = "vscode-resource" }
+      val mainUri =
+        VSCode.Uri.file(webviewPath.join(parseManifestPath(main)).toString).`with`(changeScheme)
+      val styleUri =
+        VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString).`with`(changeScheme)
+      val runtimeUri =
+        VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString).`with`(changeScheme)
+      val chunksJSUri =
+        chunksJS.map(p =>
+          VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
+      val chunksCSSUri =
+        chunksCSS.map(p =>
+          VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
 
-    s"""
+      val chunksCSSMarkup = chunksCSSUri.map(chunkUri => {
+        s"""<link rel="stylesheet" type="text/css" href="${chunkUri.toString(true)}">"""
+      })
+      val chunksScripts = chunksJSUri.map(chunkUri => {
+        s"""<script crossorigin="anonymous" src="${chunkUri.toString(true)}"></script>"""
+      })
+
+      val lightTheme =
+        VSCode.Uri.file(webviewPath.join("light-theme.css").toString).`with`(changeScheme)
+      val darkTheme =
+        VSCode.Uri.file(webviewPath.join("dark-theme.css").toString).`with`(changeScheme)
+
+      s"""
      |<!DOCTYPE html>
      |<html lang="en">
      | <head>
@@ -169,25 +181,66 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
      |   <title>Dependency Graph</title>
      |   ${chunksCSSMarkup.mkString("\n")}
      |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
-         .toString(true)}">
+           .toString(true)}">
      |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${darkTheme
-         .toString(true)}">
+           .toString(true)}">
      |   <!-- inject-styles-here -->
      |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
      | </head>
      | <body data-theme="light" style="padding: 0">
      |   <div id="root"></div>
      |   <script crossorigin="anonymous" src="${runtimeUri
-         .toString(true)}"></script>
+           .toString(true)}"></script>
      |   ${chunksScripts.mkString("\n")}
      |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
      | </body>
      |</html>
      |""".stripMargin
-  }
+    }
 
-  private def parseManifestPath(path: String): String = {
-    path.split('/').tail.mkString(Path.separator)
+    private def parseManifestPath(path: String): String = {
+      path.split('/').tail.mkString(Path.separator)
+    }
+
+    private def reduceGraph(graph: DependencyGraphResult,
+                            ignoreTypes: Option[String]): DependencyGraphResult = {
+      if (ignoreTypes.isEmpty) return graph
+
+      try {
+        val ignorePattern = Pattern.compile(ignoreTypes.get)
+        val retain = graph.nodeData.zipWithIndex.flatMap(nd => {
+          val matcher = ignorePattern.matcher(nd._1.name)
+          if ((nd._1.name == identifier) || !matcher.matches()) Some(nd._2) else None
+        })
+
+        val oldToNewMapping = retain.zipWithIndex.toMap
+
+        val linkData = graph.linkData.flatMap(ld => {
+          val newSource = oldToNewMapping.get(ld.source)
+          val newTarget = oldToNewMapping.get(ld.target)
+          if (newSource.nonEmpty && newTarget.nonEmpty) {
+            Some(LinkData(newSource.get, newTarget.get))
+          } else {
+            None
+          }
+        })
+
+        val nodeData = graph.nodeData.zipWithIndex.flatMap(nd => {
+          if (oldToNewMapping.contains(nd._2))
+            Some(nd._1)
+          else
+            None
+        })
+
+        new DependencyGraphResult(nodeData, linkData)
+
+      } catch {
+        case ex: Exception =>
+          VSCode.window.showInformationMessage(
+            s"Bad regex in apex-assist.dependencyExplorer.ignoreTypes setting, ${ex.getMessage}")
+          graph
+      }
+    }
   }
 }
 
