@@ -1,3 +1,6 @@
+**/node_modules
 target/
-npm/jars
+jars/
+webview/build
+dist/apex-assist*
 

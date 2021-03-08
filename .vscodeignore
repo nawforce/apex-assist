@@ -1,0 +1,15 @@
+.idea/
+.vscode/
+.scalafmt.conf
+build.sbt
+pom.xml
+
+project/
+src/
+target/
+dist/apex-assist-fastopt.js
+dist/*.map
+
+webview/
+!webview/build/
+

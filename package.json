@@ -11,9 +11,24 @@
   "bugs": "https://github.com/nawforce/apexlink/issues",
   "icon": "logo.png",
   "dependencies": {
-    "xmldom": "0.1.27",
-    "antlr4ts": "0.5.0-alpha.3",
-    "apex-parser": "2.7.0"
+    "apex-parser": "2.7.0",
+    "vf-parser": "1.0.0"
+  },
+  "scripts": {
+    "package": "npm ci && npm run build && vsce package",
+    "build": "npm run webview && npm run maven && npm run sbt",
+    "webview": "(cd webview; npm ci && npm run build)",
+    "sbt": "sbt build",
+    "maven": "mvn -DoutputDirectory=jars dependency:copy-dependencies -DincludeScope=runtime;"
+  },
+  "java": {
+    "dependencies": [
+      {
+        "groupId": "org.apache.lucene",
+        "artifactId": "lucene-core",
+        "version": "4.9.0"
+      }
+    ]
   },
   "engines": {
     "vscode": "^1.41.0"

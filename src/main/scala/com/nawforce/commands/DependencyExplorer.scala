@@ -129,7 +129,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     private def webContent(): String = {
       val extensionPath = PathFactory(context.extensionPath)
 
-      val webviewPath = extensionPath.join("webview")
+      val webviewPath = extensionPath.join("webview").join("build")
       val assetManifest = webviewPath.join("asset-manifest.json").read() match {
         case Left(err)   => throw new Error(err)
         case Right(data) => JSON.parse(data)

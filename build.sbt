@@ -13,6 +13,8 @@ enablePlugins(ScalaJSPlugin)
 scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
 
 resolvers += Resolver.sonatypeRepo("public")
+libraryDependencies += "com.github.nawforce" % "apexlink" % "1.3.1"
+
 libraryDependencies += "net.exoego" %%% "scala-js-nodejs-v12" % "0.12.0"
 libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.0"
 libraryDependencies += "com.github.nawforce" %%% "pkgforce" % "1.3.2"
@@ -21,15 +23,19 @@ libraryDependencies += "com.github.nawforce" %%% "scala-json-rpc-upickle-json-se
 
 libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.0" % "test"
 
+artifactPath in(Compile, fastOptJS) := baseDirectory.value / "dist" / "apex-assist-fastopt.js"
+artifactPath in(Compile, fullOptJS) := baseDirectory.value / "dist" / "apex-assist-opt.js"
+
 val npmTargetDir = s"target/npm/" // where to generate npm
 val npmConf = "npm_config" // directory with static files for NPM package
-val createPackage = taskKey[Unit](s"Create npm package in $npmTargetDir")
+val build = taskKey[Unit](s"Build to JS")
 
-createPackage := {
-  // JS libraries must first be generated
+build := {
+  // Compile to JS
   (Compile / fastOptJS).value
   (Compile / fullOptJS).value
 
+  /*
   import java.nio.file.Files.copy
   import java.nio.file.Paths.get
   import java.nio.file.StandardCopyOption.REPLACE_EXISTING
@@ -104,4 +110,5 @@ createPackage := {
 
 
   println(s"NPM package created in $npmTargetDir")
+   */
 }
