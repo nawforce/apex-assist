@@ -95,6 +95,11 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     handler.openIdentifier(identifier);
   };
 
+  const onHide = (identifier: string) => {
+    if (identifier !== focus.history[focus.current])
+      handler.requestDependents(focus.history[focus.current], focus.depth, identifier);
+  };
+
   const debouncedChangeDepth = debounce(changeDepth, 300);
 
   const canBackward = () => focus.current > 0;
@@ -201,6 +206,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
             isDark={isDarkMode}
             onRefocus={onRefocus}
             onOpen={onOpen}
+            onHide={onHide}
             focusIdentifier={focus.history[focus.current]}
           />
         </Content>

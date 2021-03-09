@@ -5,6 +5,7 @@
   "dependencies": {
     "antd": "^4.11.1",
     "d3": "^5.16.0",
+    "d3-context-menu": "^2.1.0",
     "react": "^17.0.1",
     "react-css-theme-switcher": "^0.2.2",
     "react-dom": "^17.0.1",

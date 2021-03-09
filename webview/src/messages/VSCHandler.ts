@@ -32,11 +32,11 @@ export class VSCHandler implements Handler {
     });
   }
 
-  requestDependents(identifier: string, depth: number): void {
-    this.vscodeAPI.postMessage({ cmd: "dependents", identifier, depth });
+  requestDependents(identifier: string, depth: number, hide?: string): void {
+    this.vscodeAPI.postMessage({ cmd: "dependents", identifier, depth, hide });
   }
 
   openIdentifier(identifier: string): void {
-    this.vscodeAPI.postMessage({ cmd: "open", identifier });
+    this.vscodeAPI.postMessage({ cmd: "open", identifier});
   }
 }

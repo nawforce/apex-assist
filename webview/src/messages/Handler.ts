@@ -2,7 +2,7 @@ import { Reciever } from "./Receiver";
 import { TestHandler } from "./TestHandler";
 
 export interface Handler {
-    requestDependents(identifier: string, depth: number): void
+    requestDependents(identifier: string, depth: number, hide?: string): void
     openIdentifier(identifier: string): void
 }
 

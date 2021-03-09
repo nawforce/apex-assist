@@ -2,6 +2,7 @@ import { Component } from "react";
 import * as d3 from "d3";
 import Measure, { ContentRect } from "react-measure";
 import { d3adaptor, InputNode, Layout, Link } from "webcola";
+const contextMenu = require('d3-context-menu')
 
 interface NodeData extends InputNode {
   name: string;
@@ -19,6 +20,7 @@ interface GraphProps extends GraphData {
   focusIdentifier: string;
   onRefocus: (identifier: string) => void;
   onOpen: (identifier: string) => void;
+  onHide: (identifier: string) => void;
 }
 
 class GraphResizer {
@@ -44,6 +46,7 @@ class GraphResizer {
     }
   }
 }
+
 
 export default class Graph extends Component<GraphProps> {
   private resizer: GraphResizer | null = null;
@@ -125,6 +128,15 @@ export default class Graph extends Component<GraphProps> {
     const focusIdentifier = this.props.focusIdentifier;
     const containerRect = container.getBoundingClientRect();
 
+    const menu = [
+      {
+        title: 'Hide',
+        action: function(d: NodeData) {
+          me.props.onHide(d.name)
+        }
+      }
+    ]
+
     const layout = d3adaptor(d3)
       .avoidOverlaps(true)
       .nodes(nodes)
@@ -164,7 +176,7 @@ export default class Graph extends Component<GraphProps> {
       .selectAll(".link")
       .data(links)
       .join("line")
-      .attr("class", "graph-link" + darkPostfix);
+      .attr("class", "graph-link" + darkPostfix)
 
     const node = svg
       .selectAll(".node")
@@ -193,7 +205,8 @@ export default class Graph extends Component<GraphProps> {
       })
       .on("dblclick", function (datum, index, nodes) {
         me.onDblClick(datum as NodeData);
-      });
+      })
+      .on('contextmenu', contextMenu(menu));
 
     node
       .append("text")

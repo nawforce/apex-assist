@@ -29,19 +29,19 @@ package com.nawforce.commands
 
 import java.util.regex.Pattern
 
-import com.nawforce.common.api.LoggerOps
 import com.nawforce.common.path.PathFactory
 import com.nawforce.rpc.{DependencyGraphResult, LinkData, Server}
 import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext._
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.JSON
 
 class IncomingMessage(val cmd: String) extends js.Object
-class GetDependentsMessage(val identifier: String, val depth: Int)
+class GetDependentsMessage(val identifier: String, val depth: Int, val hide: js.UndefOr[String])
     extends IncomingMessage("dependents")
 class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("open")
 
@@ -77,6 +77,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
   class View(identifier: String) {
     private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
     private var currentIdentifier = identifier
+    private var hideTypes = mutable.HashSet[String]()
 
     private val ignoreTypes =
       VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
@@ -102,6 +103,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
         case "dependents" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
           currentIdentifier = msg.identifier
+          msg.hide.foreach(hideTypes.add)
           server
             .dependencyGraph(currentIdentifier, msg.depth)
             .foreach(graph => {
@@ -112,8 +114,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
                   reduced.linkData.map(d => new ReplyLinkData(d.source, d.target)).toJSArray))
             })
         case "open" =>
-          val msg = cmd.asInstanceOf[GetDependentsMessage]
-          currentIdentifier = msg.identifier
+          val msg = cmd.asInstanceOf[OpenIdentifierMessage]
           server
             .identifierLocation(currentIdentifier)
             .foreach(location => {
@@ -123,6 +124,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
                 .toFuture
                 .foreach(VSCode.window.showTextDocument)
             })
+
       }
     }
 
@@ -211,8 +213,15 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       try {
         val ignorePattern = Pattern.compile(ignoreTypes.get)
         val retain = graph.nodeData.zipWithIndex.flatMap(nd => {
-          val matcher = ignorePattern.matcher(nd._1.name)
-          if ((nd._1.name == currentIdentifier) || !matcher.matches()) Some(nd._2) else None
+          val id = nd._1.name
+          if (id == currentIdentifier)
+            Some(nd._2)
+          else if (hideTypes.contains(id))
+            None
+          else if (ignorePattern.matcher(id).matches())
+            None
+          else
+            Some(nd._2)
         })
 
         val oldToNewMapping = retain.zipWithIndex.toMap
