@@ -35,14 +35,16 @@
   stroke: #999;
   stroke-opacity: 0.6;
   stroke-width: 1.5;
-  marker-end: url(#end)
+  marker-end: url(#end);
+  fill-opacity: 0;
 }
 
 .graph-link-dark {
   stroke: #999;
   stroke-opacity: 0.6;
   stroke-width: 1.5;
-  marker-end: url(#end)
+  marker-end: url(#end);
+  fill-opacity: 0;
 }
 
 .graph-node {

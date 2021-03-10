@@ -47,7 +47,7 @@ class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("ope
 
 class InitMessage(val isTest: Boolean, val identifier: String, val allIdentifiers: js.Array[String])
     extends js.Object
-class ReplyNodeData(val name: String) extends js.Object
+class ReplyNodeData(val name: String, val r: Integer) extends js.Object
 class ReplyLinkData(val source: Integer, val target: Integer) extends js.Object
 class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
                              val linkData: js.Array[ReplyLinkData])
@@ -110,13 +110,18 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
               val reduced = reduceGraph(graph, ignoreTypes)
               panel.webview.postMessage(
                 new ReplyDependentsMessage(
-                  reduced.nodeData.map(d => new ReplyNodeData(d.name)).toJSArray,
+                  reduced.nodeData
+                    .map(d =>
+                      new ReplyNodeData(
+                        d.name,
+                        r = 4 + (5 * (Math.log10(if (d.size==0) 1000 else d.size.toDouble) - 2)).toInt))
+                    .toJSArray,
                   reduced.linkData.map(d => new ReplyLinkData(d.source, d.target)).toJSArray))
             })
         case "open" =>
           val msg = cmd.asInstanceOf[OpenIdentifierMessage]
           server
-            .identifierLocation(currentIdentifier)
+            .identifierLocation(msg.identifier)
             .foreach(location => {
               val uri = VSCode.Uri.file(location.pathLocation.path)
               VSCode.workspace

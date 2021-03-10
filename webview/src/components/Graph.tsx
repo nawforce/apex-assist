@@ -6,6 +6,7 @@ const contextMenu = require('d3-context-menu')
 
 interface NodeData extends InputNode {
   name: string;
+  r: number;
 }
 
 interface LinkData extends Link<number> {}
@@ -162,7 +163,7 @@ export default class Graph extends Component<GraphProps> {
       .append("svg:marker")
       .attr("id", String)
       .attr("viewBox", "0 -3 6 6")
-      .attr("refX", 10)
+      .attr("refX", 6)
       .attr("refY", 0)
       .attr("markerWidth", 6)
       .attr("markerHeight", 6)
@@ -175,7 +176,7 @@ export default class Graph extends Component<GraphProps> {
       .append("g")
       .selectAll(".link")
       .data(links)
-      .join("line")
+      .join("path")
       .attr("class", "graph-link" + darkPostfix)
 
     const node = svg
@@ -193,7 +194,9 @@ export default class Graph extends Component<GraphProps> {
 
     node
       .append("circle")
-      .attr("r", 7)
+      .attr("r", function (n) {
+        return (n as NodeData).r;
+      })
       .attr("class", function (n) {
         return (
           ((n as any).name === focusIdentifier ? "focus-node" : "graph-node") +
@@ -219,12 +222,58 @@ export default class Graph extends Component<GraphProps> {
     this.resizer = new GraphResizer(svg, layout);
 
     layout.on("tick", () => {
+      link.attr("d", this.linkArc);
+      /*
       link
         .attr("x1", (d) => (d as any).source.x)
         .attr("y1", (d) => (d as any).source.y)
         .attr("x2", (d) => (d as any).target.x)
         .attr("y2", (d) => (d as any).target.y);
+        */
       node.attr("transform", (d) => "translate(" + [d.x, d.y] + ")");
     });
   }
+
+  linkArc(d: any) {
+    var sourceX = d.source.x;
+    var sourceY = d.source.y;
+    var targetX = d.target.x;
+    var targetY = d.target.y;
+
+    var theta = Math.atan((targetX - sourceX) / (targetY - sourceY));
+    var phi = Math.atan((targetY - sourceY) / (targetX - sourceX));
+
+    var sinTheta = d.source.r * Math.sin(theta);
+    var cosTheta = d.source.r * Math.cos(theta);
+    var sinPhi = d.target.r * Math.sin(phi);
+    var cosPhi = d.target.r * Math.cos(phi);
+
+    // Set the position of the link's end point at the source node
+    // such that it is on the edge closest to the target node
+    if (d.target.y > d.source.y) {
+        sourceX = sourceX + sinTheta;
+        sourceY = sourceY + cosTheta;
+    }
+    else {
+        sourceX = sourceX - sinTheta;
+        sourceY = sourceY - cosTheta;
+    }
+
+    // Set the position of the link's end point at the target node
+    // such that it is on the edge closest to the source node
+    if (d.source.x > d.target.x) {
+        targetX = targetX + cosPhi;
+        targetY = targetY + sinPhi;    
+    }
+    else {
+        targetX = targetX - cosPhi;
+        targetY = targetY - sinPhi;   
+    }
+
+    // Draw an arc between the two calculated points
+    var dx = targetX - sourceX,
+        dy = targetY - sourceY,
+        dr = 2*Math.sqrt(dx * dx + dy * dy);
+    return "M" + sourceX + "," + sourceY + "A" + dr + "," + dr + " 0 0,1 " + targetX + "," + targetY;
+}  
 }

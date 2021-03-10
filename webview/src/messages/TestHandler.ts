@@ -7,43 +7,62 @@ export class TestHandler implements Handler {
 
   private dependents: GraphData = {
 		"nodeData": [{
-			"name": "Cars"
+			"name": "Cars",
+			"r": 10
 		}, {
-			"name": "fflib_QueryFactory"
+			"name": "fflib_QueryFactory",
+			"r": 10
 		}, {
-			"name": "Drivers"
+			"name": "Drivers",
+			"r": 10
 		}, {
-			"name": "fflib_SObjectDescribe"
+			"name": "fflib_SObjectDescribe",
+			"r": 10
 		}, {
-			"name": "Contestants"
+			"name": "Contestants",
+			"r": 10
 		}, {
-			"name": "CarsSelector"
+			"name": "CarsSelector",
+			"r": 10
 		}, {
-			"name": "ContestantsSelector"
+			"name": "ContestantsSelector",
+			"r": 10
 		}, {
-			"name": "TeamsSelector"
+			"name": "TeamsSelector",
+			"r": 10
 		}, {
-			"name": "fflib_SObjectUnitOfWork"
+			"name": "fflib_SObjectUnitOfWork",
+			"r": 10
 		}, {
-			"name": "fflib_StringBuilder"
+			"name": "fflib_StringBuilder",
+			"r": 10
 		}, {
-			"name": "fflib_SObjectSelector"
+			"name": "fflib_SObjectSelector",
+			"r": 10
 		}, {
-			"name": "fflib_SecurityUtils"
+			"name": "fflib_SecurityUtils",
+			"r": 10
 		}, {
-			"name": "RacesSelector"
+			"name": "RacesSelector",
+			"r": 10
 		}, {
-			"name": "fflib_SObjectDomain"
+			"name": "fflib_SObjectDomain",
+			"r": 10
 		}, {
-			"name": "Races"
+			"name": "Races",
+			"r": 15,
 		}, {
-			"name": "DriversSelector"
+			"name": "DriversSelector",
+			"r": 10
 		}, {
-			"name": "Teams"
+			"name": "Teams",
+			"r": 15,
 		}, {
-			"name": "RaceDataSelector"
+			"name": "RaceDataSelector",
+			"r": 15,
 		}, {
-			"name": "Application"
+			"name": "Application",
+			"r": 20,
 		}],
 		"linkData": [{
 			"source": 1,
