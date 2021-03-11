@@ -134,7 +134,7 @@ export class TestHandler implements Handler {
     this.reciever = reciever;
   }
 
-  requestDependents(identifier: string, depth: number, hide?: string): void {
+  requestDependents(identifier: string, depth: number, hide: string[]): void {
     setTimeout(() => {
       this.reciever.onTheme('vscode-dark')
       this.reciever.onDependents(this.dependents);

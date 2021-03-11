@@ -29,7 +29,7 @@ interface AppProps {
 
 interface Focus {
   current: number;
-  history: string[];
+  history: [string, string[]][];
   depth: number;
 }
 
@@ -38,7 +38,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
   const [isDarkMode, setIsDarkMode] = React.useState(true);
   const [focus, setFocus] = React.useState<Focus>({
     current: 0,
-    history: [identifier],
+    history: [[identifier, []]],
     depth: 2,
   });
   const [identifiers] = React.useState<{ value: string }[]>(() => {
@@ -56,7 +56,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     const handler = isTest
       ? new TestHandler(reciever)
       : new VSCHandler(reciever, document);
-    handler.requestDependents(identifier, 2);
+    handler.requestDependents(identifier, 2, []);
     return handler;
   });
 
@@ -76,19 +76,24 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
       history: focus.history,
       depth,
     });
-    handler.requestDependents(focus.history[focus.current], depth);
+    const current = focus.history[focus.current];
+    handler.requestDependents(current[0], depth, current[1]);
   };
 
   const onRefocus = (identifer: string) => {
-    let stack: string[] = focus.history.slice(0, focus.current + 1);
-    let length = stack.push(identifer);
+    const stack: [string, string[]][] = focus.history.slice(
+      0,
+      focus.current + 1
+    );
+    const hide = stack[stack.length - 1][1];
+    const length = stack.push([identifer, hide]);
     setFocus({
       current: length - 1,
       history: stack,
       depth: focus.depth,
     });
     setSearching(identifer);
-    handler.requestDependents(identifer, focus.depth);
+    handler.requestDependents(identifer, focus.depth, hide);
   };
 
   const onOpen = (identifier: string) => {
@@ -96,8 +101,25 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
   };
 
   const onHide = (identifier: string) => {
-    if (identifier !== focus.history[focus.current])
-      handler.requestDependents(focus.history[focus.current], focus.depth, identifier);
+    if (identifier !== focus.history[focus.current][0]) {
+      const stack: [string, string[]][] = focus.history.slice(
+        0,
+        focus.current + 1
+      );
+      const hide = [identifier].concat(stack[stack.length - 1][1]);
+      const length = stack.push([stack[stack.length - 1][0], hide]);
+      setFocus({
+        current: length - 1,
+        history: stack,
+        depth: focus.depth,
+      });
+
+      handler.requestDependents(
+        focus.history[focus.current][0],
+        focus.depth,
+        hide
+      );
+    }
   };
 
   const debouncedChangeDepth = debounce(changeDepth, 300);
@@ -111,8 +133,9 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
       history: focus.history,
       depth: focus.depth,
     });
-    handler.requestDependents(focus.history[focus.current - 1], focus.depth);
-    setSearching(focus.history[focus.current - 1]);
+    const current = focus.history[focus.current - 1];
+    handler.requestDependents(current[0], focus.depth, current[1]);
+    setSearching(current[0]);
   };
 
   const goForward = () => {
@@ -121,13 +144,14 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
       history: focus.history,
       depth: focus.depth,
     });
-    handler.requestDependents(focus.history[focus.current + 1], focus.depth);
-    setSearching(focus.history[focus.current + 1]);
+    const current = focus.history[focus.current + 1];
+    handler.requestDependents(current[0], focus.depth, current[1]);
+    setSearching(current[0]);
   };
 
   const [options, setOptions] = React.useState<{ value: string }[]>([]);
   const [searching, setSearching] = React.useState<string>(
-    focus.history[focus.current]
+    focus.history[focus.current][0]
   );
 
   const onSearch = (value: string) => {
@@ -168,7 +192,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
             </Col>
             <Col span={8} offset={2}>
               <AutoComplete
-                defaultValue={focus.history[focus.current]}
+                defaultValue={focus.history[focus.current][0]}
                 value={searching}
                 options={options}
                 style={{ width: 400, display: "block" }}
@@ -207,7 +231,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
             onRefocus={onRefocus}
             onOpen={onOpen}
             onHide={onHide}
-            focusIdentifier={focus.history[focus.current]}
+            focusIdentifier={focus.history[focus.current][0]}
           />
         </Content>
       </Layout>

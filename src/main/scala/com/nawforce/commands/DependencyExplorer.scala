@@ -41,7 +41,7 @@ import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.JSON
 
 class IncomingMessage(val cmd: String) extends js.Object
-class GetDependentsMessage(val identifier: String, val depth: Int, val hide: js.UndefOr[String])
+class GetDependentsMessage(val identifier: String, val depth: Int, val hide: js.Array[String])
     extends IncomingMessage("dependents")
 class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("open")
 
@@ -77,7 +77,6 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
   class View(identifier: String) {
     private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
     private var currentIdentifier = identifier
-    private var hideTypes = mutable.HashSet[String]()
 
     private val ignoreTypes =
       VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
@@ -103,18 +102,19 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
         case "dependents" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
           currentIdentifier = msg.identifier
-          msg.hide.foreach(hideTypes.add)
           server
             .dependencyGraph(currentIdentifier, msg.depth)
             .foreach(graph => {
-              val reduced = reduceGraph(graph, ignoreTypes)
+              val reduced =
+                removeOrphans(currentIdentifier,
+                              reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
               panel.webview.postMessage(
                 new ReplyDependentsMessage(
                   reduced.nodeData
                     .map(d =>
-                      new ReplyNodeData(
-                        d.name,
-                        r = 4 + (5 * (Math.log10(if (d.size==0) 1000 else d.size.toDouble) - 2)).toInt))
+                      new ReplyNodeData(d.name,
+                                        r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
+                                        else d.size.toDouble) - 2)).toInt))
                     .toJSArray,
                   reduced.linkData.map(d => new ReplyLinkData(d.source, d.target)).toJSArray))
             })
@@ -211,13 +211,12 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       path.split('/').tail.mkString(Path.separator)
     }
 
-    private def reduceGraph(graph: DependencyGraphResult,
-                            ignoreTypes: Option[String]): DependencyGraphResult = {
-      if (ignoreTypes.isEmpty) return graph
+    private def retainByName(ignoreTypes: Option[String], hideTypes: Set[String])(
+      graph: DependencyGraphResult): Seq[Int] = {
 
       try {
-        val ignorePattern = Pattern.compile(ignoreTypes.get)
-        val retain = graph.nodeData.zipWithIndex.flatMap(nd => {
+        val ignorePattern = Pattern.compile(ignoreTypes.getOrElse("^$"))
+        graph.nodeData.toIndexedSeq.zipWithIndex.flatMap(nd => {
           val id = nd._1.name
           if (id == currentIdentifier)
             Some(nd._2)
@@ -228,34 +227,64 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
           else
             Some(nd._2)
         })
-
-        val oldToNewMapping = retain.zipWithIndex.toMap
-
-        val linkData = graph.linkData.flatMap(ld => {
-          val newSource = oldToNewMapping.get(ld.source)
-          val newTarget = oldToNewMapping.get(ld.target)
-          if (newSource.nonEmpty && newTarget.nonEmpty) {
-            Some(LinkData(newSource.get, newTarget.get))
-          } else {
-            None
-          }
-        })
-
-        val nodeData = graph.nodeData.zipWithIndex.flatMap(nd => {
-          if (oldToNewMapping.contains(nd._2))
-            Some(nd._1)
-          else
-            None
-        })
-
-        new DependencyGraphResult(nodeData, linkData)
-
       } catch {
         case ex: Exception =>
           VSCode.window.showInformationMessage(
             s"Bad regex in apex-assist.dependencyExplorer.ignoreTypes setting, ${ex.getMessage}")
-          graph
+          0 to graph.nodeData.length
       }
+    }
+
+    @scala.annotation.tailrec
+    private def removeOrphans(rootIdentifier: String,
+                              graph: DependencyGraphResult): DependencyGraphResult = {
+      val reduced = reduceGraph(graph, retainByLinkage(rootIdentifier))
+      if (reduced.nodeData.length == graph.nodeData.length)
+        reduced
+      else
+        removeOrphans(rootIdentifier, reduced)
+    }
+
+    private def retainByLinkage(rootIdentifier: String)(graph: DependencyGraphResult): Seq[Int] = {
+      val retain = mutable.Set[Int]()
+      val nodes = graph.nodeData.toIndexedSeq.zipWithIndex
+      val rootIndex = nodes.find(_._1.name == rootIdentifier).map(_._2).head
+      retain.add(rootIndex)
+
+      def walk(index: Int): Unit = {
+        graph.linkData.filter(_.source == index).foreach(ld => {
+          if (retain.add(ld.target))
+            walk(ld.target)
+        })
+      }
+      walk(rootIndex)
+      retain.toSeq
+    }
+
+    private def reduceGraph(graph: DependencyGraphResult,
+                            reducer: DependencyGraphResult => Seq[Int]): DependencyGraphResult = {
+      val retain = reducer(graph)
+      val oldToNewMapping = retain.zipWithIndex.toMap
+
+      val linkData = graph.linkData.flatMap(ld => {
+        val newSource = oldToNewMapping.get(ld.source)
+        val newTarget = oldToNewMapping.get(ld.target)
+        if (newSource.nonEmpty && newTarget.nonEmpty) {
+          Some(LinkData(newSource.get, newTarget.get))
+        } else {
+          None
+        }
+      })
+
+      val nodeData = graph.nodeData.zipWithIndex.flatMap(nd => {
+        if (oldToNewMapping.contains(nd._2))
+          Some(nd._1)
+        else
+          None
+      })
+
+      new DependencyGraphResult(nodeData, linkData)
+
     }
   }
 }
