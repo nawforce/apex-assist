@@ -2,14 +2,16 @@ import { Component } from "react";
 import * as d3 from "d3";
 import Measure, { ContentRect } from "react-measure";
 import { d3adaptor, InputNode, Layout, Link } from "webcola";
-const contextMenu = require('d3-context-menu')
+const contextMenu = require("d3-context-menu");
 
 interface NodeData extends InputNode {
   name: string;
   r: number;
 }
 
-interface LinkData extends Link<number> {}
+interface LinkData extends Link<number> {
+  nature: string;
+}
 
 export interface GraphData {
   nodeData: NodeData[];
@@ -47,7 +49,6 @@ class GraphResizer {
     }
   }
 }
-
 
 export default class Graph extends Component<GraphProps> {
   private resizer: GraphResizer | null = null;
@@ -125,24 +126,24 @@ export default class Graph extends Component<GraphProps> {
     const me = this;
     const nodes = nodeData.map((d) => Object.assign({}, d));
     const links = linkData.map((d) => Object.assign({}, d));
-    const darkPostfix = this.props.isDark ? "-dark" : "";
+    const themeSelector = this.props.isDark ? "dark" : "light";
     const focusIdentifier = this.props.focusIdentifier;
     const containerRect = container.getBoundingClientRect();
 
     const menu = [
       {
-        title: 'Hide',
-        action: function(d: NodeData) {
-          me.props.onHide(d.name)
-        }
-      }
-    ]
+        title: "Hide",
+        action: function (d: NodeData) {
+          me.props.onHide(d.name);
+        },
+      },
+    ];
 
     const layout = d3adaptor(d3)
       .avoidOverlaps(true)
       .nodes(nodes)
       .links(links)
-      .linkDistance(100)
+      .linkDistance(150)
       .constraints([])
       .size([containerRect.width, containerRect.height])
       .start(50, 50, 250);
@@ -154,30 +155,18 @@ export default class Graph extends Component<GraphProps> {
       .attr("width", containerRect.width)
       .attr("height", containerRect.height);
 
-    // Define arrow
-    svg
-      .append("svg:defs")
-      .selectAll("marker")
-      .data(["end"])
-      .enter()
-      .append("svg:marker")
-      .attr("id", String)
-      .attr("viewBox", "0 -3 6 6")
-      .attr("refX", 6)
-      .attr("refY", 0)
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .attr("orient", "auto")
-      .append("svg:path")
-      .attr("d", "M0,-3L6,0L0,3")
-      .attr("class", "graph-marker" + darkPostfix);
+    this.arrow(svg, themeSelector, "uses");
+    this.arrow(svg, themeSelector, "extends");
+    this.arrow(svg, themeSelector, "implements");
 
     const link = svg
       .append("g")
       .selectAll(".link")
       .data(links)
       .join("path")
-      .attr("class", "graph-link" + darkPostfix)
+      .attr("class", function (l) {
+        return `graph-link-${themeSelector}-${l.nature}`;
+      });
 
     const node = svg
       .selectAll(".node")
@@ -198,10 +187,9 @@ export default class Graph extends Component<GraphProps> {
         return (n as NodeData).r;
       })
       .attr("class", function (n) {
-        return (
-          ((n as any).name === focusIdentifier ? "focus-node" : "graph-node") +
-          darkPostfix
-        );
+        const nodeType =
+          (n as any).name === focusIdentifier ? "focus-node" : "graph-node";
+        return `${nodeType}-${themeSelector}`;
       })
       .on("click", function (datum, index, nodes) {
         me.onClick(datum as NodeData);
@@ -209,29 +197,47 @@ export default class Graph extends Component<GraphProps> {
       .on("dblclick", function (datum, index, nodes) {
         me.onDblClick(datum as NodeData);
       })
-      .on('contextmenu', contextMenu(menu));
+      .on("contextmenu", contextMenu(menu));
 
     node
       .append("text")
-      .attr("dy", -10)
+      .attr("dy", function (d: any) {
+        return -3 - d.r;
+      })
       .text(function (d) {
         return (d as any).name;
       })
-      .attr("class", "graph-font" + darkPostfix);
+      .attr("class", `graph-font-${themeSelector}`);
 
     this.resizer = new GraphResizer(svg, layout);
 
     layout.on("tick", () => {
       link.attr("d", this.linkArc);
-      /*
-      link
-        .attr("x1", (d) => (d as any).source.x)
-        .attr("y1", (d) => (d as any).source.y)
-        .attr("x2", (d) => (d as any).target.x)
-        .attr("y2", (d) => (d as any).target.y);
-        */
       node.attr("transform", (d) => "translate(" + [d.x, d.y] + ")");
     });
+  }
+
+  arrow(
+    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+    themeSelector: string,
+    name: string
+  ) {
+    svg
+      .append("svg:defs")
+      .selectAll("marker")
+      .data([name])
+      .enter()
+      .append("svg:marker")
+      .attr("id", name)
+      .attr("viewBox", "0 -3 6 6")
+      .attr("refX", 6)
+      .attr("refY", 0)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("svg:path")
+      .attr("d", "M0,-3L6,0L0,3")
+      .attr("class", `graph-marker-${themeSelector}-${name}`);
   }
 
   linkArc(d: any) {
@@ -251,29 +257,28 @@ export default class Graph extends Component<GraphProps> {
     // Set the position of the link's end point at the source node
     // such that it is on the edge closest to the target node
     if (d.target.y > d.source.y) {
-        sourceX = sourceX + sinTheta;
-        sourceY = sourceY + cosTheta;
-    }
-    else {
-        sourceX = sourceX - sinTheta;
-        sourceY = sourceY - cosTheta;
+      sourceX = sourceX + sinTheta;
+      sourceY = sourceY + cosTheta;
+    } else {
+      sourceX = sourceX - sinTheta;
+      sourceY = sourceY - cosTheta;
     }
 
     // Set the position of the link's end point at the target node
     // such that it is on the edge closest to the source node
     if (d.source.x > d.target.x) {
-        targetX = targetX + cosPhi;
-        targetY = targetY + sinPhi;    
-    }
-    else {
-        targetX = targetX - cosPhi;
-        targetY = targetY - sinPhi;   
+      targetX = targetX + cosPhi;
+      targetY = targetY + sinPhi;
+    } else {
+      targetX = targetX - cosPhi;
+      targetY = targetY - sinPhi;
     }
 
     // Draw an arc between the two calculated points
     var dx = targetX - sourceX,
-        dy = targetY - sourceY,
-        dr = 2*Math.sqrt(dx * dx + dy * dy);
-    return "M" + sourceX + "," + sourceY + "A" + dr + "," + dr + " 0 0,1 " + targetX + "," + targetY;
-}  
+      dy = targetY - sourceY,
+      dr = 2 * Math.sqrt(dx * dx + dy * dy);
+
+    return `M${sourceX},${sourceY}A${dr},${dr} 0 0,1 ${targetX},${targetY}`;
+  }
 }

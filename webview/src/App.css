@@ -13,7 +13,7 @@
   padding-right: 30px;
 }
 
-.graph-font {
+.graph-font-light {
   font-size: 10px;
   fill: #000;
 }
@@ -23,32 +23,80 @@
   fill: #FFF;
 }
 
-.graph-marker {
+.graph-marker-light-uses {
   fill: #888;
 }
 
-.graph-marker-dark {
+.graph-marker-light-extends {
+  fill: #5F62FF;
+}
+
+.graph-marker-light-implements {
+  fill: #00A09D;
+}
+
+.graph-marker-dark-uses {
   fill: #888;
 }
 
-.graph-link {
-  stroke: #999;
-  stroke-opacity: 0.6;
-  stroke-width: 1.5;
-  marker-end: url(#end);
-  fill-opacity: 0;
+.graph-marker-dark-extends {
+  fill: #5F62FF;
 }
 
-.graph-link-dark {
-  stroke: #999;
-  stroke-opacity: 0.6;
-  stroke-width: 1.5;
-  marker-end: url(#end);
-  fill-opacity: 0;
+.graph-marker-dark-implements {
+  fill: #00A09D;
 }
 
-.graph-node {
+.graph-link-light-uses {
   stroke: #888;
+  stroke-opacity: 0.8;
+  stroke-width: 2.0;
+  marker-end: url(#uses);
+  fill-opacity: 0;
+}
+
+.graph-link-light-extends {
+  stroke: #5F62FF;
+  stroke-opacity: 1.0;
+  stroke-width: 2.5;
+  marker-end: url(#extends);
+  fill-opacity: 0;
+}
+
+.graph-link-light-implements {
+  stroke: #00A09D;
+  stroke-opacity: 1.0;
+  stroke-width: 2.5;
+  marker-end: url(#implements);
+  fill-opacity: 0;
+}
+
+.graph-link-dark-uses {
+  stroke: #999;
+  stroke-opacity: 0.8;
+  stroke-width: 2.0;
+  marker-end: url(#uses);
+  fill-opacity: 0;
+}
+
+.graph-link-dark-extends {
+  stroke: #5F62FF;
+  stroke-opacity: 1.0;
+  stroke-width: 2.5;
+  marker-end: url(#extends);
+  fill-opacity: 0;
+}
+
+.graph-link-dark-implements {
+  stroke: #00A09D;
+  stroke-opacity: 1.0;
+  stroke-width: 2.5;
+  marker-end: url(#implements);
+  fill-opacity: 0;
+}
+
+.graph-node-light {
+  stroke: #666;
   stroke-width: 2;
   fill: #9D00A0
 }
@@ -59,7 +107,7 @@
   fill: #9D00A0
 }
 
-.focus-node {
+.focus-node-light {
   stroke: #888;
   stroke-width: 2;
   fill: #1890ff

@@ -47,8 +47,8 @@ class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("ope
 
 class InitMessage(val isTest: Boolean, val identifier: String, val allIdentifiers: js.Array[String])
     extends js.Object
-class ReplyNodeData(val name: String, val r: Integer) extends js.Object
-class ReplyLinkData(val source: Integer, val target: Integer) extends js.Object
+class ReplyNodeData(val name: String, val r: Integer, val transitiveCount: Int) extends js.Object
+class ReplyLinkData(val source: Integer, val target: Integer, val nature: String) extends js.Object
 class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
                              val linkData: js.Array[ReplyLinkData])
     extends js.Object
@@ -114,9 +114,11 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
                     .map(d =>
                       new ReplyNodeData(d.name,
                                         r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
-                                        else d.size.toDouble) - 2)).toInt))
+                                        else d.size.toDouble) - 2)).toInt,
+                        d.transitiveCount
+                      ))
                     .toJSArray,
-                  reduced.linkData.map(d => new ReplyLinkData(d.source, d.target)).toJSArray))
+                  reduced.linkData.map(d => new ReplyLinkData(d.source, d.target, d.nature)).toJSArray))
             })
         case "open" =>
           val msg = cmd.asInstanceOf[OpenIdentifierMessage]
@@ -252,10 +254,12 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       retain.add(rootIndex)
 
       def walk(index: Int): Unit = {
-        graph.linkData.filter(_.source == index).foreach(ld => {
-          if (retain.add(ld.target))
-            walk(ld.target)
-        })
+        graph.linkData
+          .filter(_.source == index)
+          .foreach(ld => {
+            if (retain.add(ld.target))
+              walk(ld.target)
+          })
       }
       walk(rootIndex)
       retain.toSeq
@@ -270,7 +274,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
         val newSource = oldToNewMapping.get(ld.source)
         val newTarget = oldToNewMapping.get(ld.target)
         if (newSource.nonEmpty && newTarget.nonEmpty) {
-          Some(LinkData(newSource.get, newTarget.get))
+          Some(LinkData(newSource.get, newTarget.get, ld.nature))
         } else {
           None
         }
