@@ -1,17 +1,17 @@
 {
   "name": "apex-assist",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "displayName": "Apex Assist",
-  "description": "Instant Apex Validation",
+  "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
   "main": "dist/boot.js",
-  "repository": "nawforce/apexlink",
+  "repository": "nawforce/apex-assist",
   "author": "Kevin Jones <nawforce@gmail.com> (https://github.com/nawforce)",
   "license": "BSD-3-Clause",
-  "bugs": "https://github.com/nawforce/apexlink/issues",
+  "bugs": "https://github.com/nawforce/apex-assist/issues",
   "icon": "logo.png",
   "dependencies": {
-    "apex-parser": "2.7.0",
+    "apex-parser": "2.8.0",
     "vf-parser": "1.0.0"
   },
   "scripts": {
@@ -20,15 +20,6 @@
     "webview": "(cd webview; npm i && npm run build)",
     "sbt": "sbt build",
     "maven": "mvn -DoutputDirectory=jars dependency:copy-dependencies -DincludeScope=runtime;"
-  },
-  "java": {
-    "dependencies": [
-      {
-        "groupId": "org.apache.lucene",
-        "artifactId": "lucene-core",
-        "version": "4.9.0"
-      }
-    ]
   },
   "engines": {
     "vscode": "^1.41.0"
