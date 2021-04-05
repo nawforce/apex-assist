@@ -36,6 +36,7 @@ interface Focus {
 const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
   const themeContext = useThemeSwitcher();
   const [isDarkMode, setIsDarkMode] = React.useState(true);
+  const [isCountVisible, setIsCountVisible] = React.useState(false)
   const [focus, setFocus] = React.useState<Focus>({
     current: 0,
     history: [[identifier, []]],
@@ -121,6 +122,10 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
       );
     }
   };
+
+  const onToggleCount = () => {
+    setIsCountVisible(!isCountVisible)
+  }
 
   const debouncedChangeDepth = debounce(changeDepth, 300);
 
@@ -228,9 +233,11 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
             nodeData={graphData.nodeData}
             linkData={graphData.linkData}
             isDark={isDarkMode}
+            isCountVisible={isCountVisible}
             onRefocus={onRefocus}
             onOpen={onOpen}
             onHide={onHide}
+            onToggleCount={onToggleCount}
             focusIdentifier={focus.history[focus.current][0]}
           />
         </Content>

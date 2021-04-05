@@ -7,6 +7,7 @@ const contextMenu = require("d3-context-menu");
 interface NodeData extends InputNode {
   name: string;
   r: number;
+  transitiveCount: number;
 }
 
 interface LinkData extends Link<number> {
@@ -20,10 +21,12 @@ export interface GraphData {
 
 interface GraphProps extends GraphData {
   isDark: boolean;
+  isCountVisible: boolean;
   focusIdentifier: string;
   onRefocus: (identifier: string) => void;
   onOpen: (identifier: string) => void;
   onHide: (identifier: string) => void;
+  onToggleCount: () => void
 }
 
 class GraphResizer {
@@ -82,7 +85,8 @@ export default class Graph extends Component<GraphProps> {
       this.props.nodeData !== prevProps.nodeData ||
       this.props.linkData !== prevProps.linkData ||
       this.props.isDark !== prevProps.isDark ||
-      this.props.focusIdentifier !== prevProps.focusIdentifier
+      this.props.focusIdentifier !== prevProps.focusIdentifier ||
+      this.props.isCountVisible !== prevProps.isCountVisible
     )
       this.renderGraph();
   }
@@ -127,16 +131,25 @@ export default class Graph extends Component<GraphProps> {
     const nodes = nodeData.map((d) => Object.assign({}, d));
     const links = linkData.map((d) => Object.assign({}, d));
     const themeSelector = this.props.isDark ? "dark" : "light";
+    const isCountVisible = this.props.isCountVisible;
     const focusIdentifier = this.props.focusIdentifier;
     const containerRect = container.getBoundingClientRect();
 
     const menu = [
       {
-        title: "Hide",
+        title: function (d: NodeData) {
+          return `Hide ${d.name}`
+        },
         action: function (d: NodeData) {
           me.props.onHide(d.name);
         },
       },
+      {
+        title: "Toggle Dependency Count",
+        action: function () {
+          me.props.onToggleCount();
+        },
+      }
     ];
 
     const layout = d3adaptor(d3)
@@ -204,8 +217,12 @@ export default class Graph extends Component<GraphProps> {
       .attr("dy", function (d: any) {
         return -3 - d.r;
       })
-      .text(function (d) {
-        return (d as any).name;
+      .text(function (datum: any, index) {
+        const d = datum as NodeData
+        if (isCountVisible)
+          return `${d.name} (${d.transitiveCount})`
+        else
+          return `${d.name}`
       })
       .attr("class", `graph-font-${themeSelector}`);
 
