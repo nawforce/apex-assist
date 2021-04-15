@@ -54,9 +54,14 @@ object Extension {
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext): Unit = {
-    // Basic setup
     this.context = context
-    output = OutputLogging.setup(context)
+    start()
+  }
+
+  private def start(reuseOutput: Boolean = false): Unit = {
+    // Basic setup
+    if (!reuseOutput)
+      output = OutputLogging.setup(context)
     diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
     context.subscriptions.push(diagnostics)
     LoggerOps.info("Apex Assist activated")
@@ -116,8 +121,9 @@ object Extension {
   }
 
   def reset(): Unit = {
-    deactivate()
-    activate(context)
+    server.foreach(_.stop())
+    context.subscriptions.filterNot(_ == output).foreach(_.dispose())
+    start(reuseOutput = true)
   }
 
   private def waitAll[T](futures: Seq[Future[T]]): Future[Seq[Try[T]]] =
