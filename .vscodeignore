@@ -9,6 +9,7 @@ src/
 target/
 dist/apex-assist-fastopt.js
 dist/*.map
+jar/pom.xml
 
 webview/
 !webview/build/

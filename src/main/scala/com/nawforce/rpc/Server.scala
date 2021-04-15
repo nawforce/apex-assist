@@ -135,7 +135,7 @@ object Server {
       js.Array(s"-Xmx${maxMemory}m",
                "-Dfile.encoding=UTF-8",
                "-cp",
-               "jars/apexlink-1.4.1.jar",
+               "jars/apexlink-1.4.2.jar",
                "com.nawforce.common.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")

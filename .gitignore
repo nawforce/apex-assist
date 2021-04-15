@@ -1,6 +1,7 @@
+.idea/
 **/node_modules
 target/
 jars/
 webview/build
 dist/apex-assist*
-
+*.vsix

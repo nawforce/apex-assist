@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.github.nawforce</groupId>
-  <artifactId>apexlink-download</artifactId>
+  <artifactId>apex-assist-download</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
@@ -54,7 +54,7 @@
     <dependency>
       <groupId>com.github.nawforce</groupId>
       <artifactId>apexlink</artifactId>
-      <version>1.4.1</version>
+      <version>1.4.2</version>
     </dependency>
   </dependencies>
 

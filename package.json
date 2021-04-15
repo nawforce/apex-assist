@@ -19,7 +19,7 @@
     "build": "npm run webview && npm run maven && npm run sbt",
     "webview": "(cd webview; npm i && npm run build)",
     "sbt": "sbt build",
-    "maven": "mvn -DoutputDirectory=jars dependency:copy-dependencies -DincludeScope=runtime;"
+    "maven": "(cd jars; mvn -DoutputDirectory=. dependency:copy-dependencies -DincludeScope=runtime;)"
   },
   "engines": {
     "vscode": "^1.41.0"
