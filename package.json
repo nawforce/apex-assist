@@ -31,6 +31,11 @@
     "configuration": {
       "title": "ApexAssist",
       "properties": {
+        "apex-assist.server.maxMemory": {
+          "type": "integer",
+          "default": 512,
+          "description": "Maximum memory for the JVM server, default is 512MB, valid range 128-4096."
+        },
         "apex-assist.errorsAndWarnings.showWarnings": {
           "type": "boolean",
           "default": false,

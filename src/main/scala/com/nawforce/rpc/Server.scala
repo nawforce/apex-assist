@@ -125,10 +125,14 @@ class Server(child: ChildProcess) {
 }
 
 object Server {
+  private final val maxMemoryConfig = "apex-assist.server.maxMemory"
+  private val maxMemory =
+    Math.max(Math.min(VSCode.workspace.getConfiguration().get[Int](maxMemoryConfig).getOrElse(512), 4096), 128)
+
   def apply(outputChannel: OutputChannel): Server = {
     val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
     val args =
-      js.Array("-Xmx512m",
+      js.Array(s"-Xmx${maxMemory}m",
                "-Dfile.encoding=UTF-8",
                "-cp",
                "jars/apexlink-1.4.1.jar",
