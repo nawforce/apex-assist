@@ -27,29 +27,47 @@
  */
 package com.nawforce.vsext
 
+import com.nawforce.common.path.PathFactory
 import com.nawforce.rpc.Server
 import io.scalajs.nodejs.timers.Timeout
 import io.scalajs.nodejs.{clearTimeout, setTimeout}
 
+import scala.collection.mutable
 import scala.scalajs.js
 
 class Watchers(server: Server,
                issueLog: IssueLog,
-               resetWatchers: Array[FileSystemWatcher],
+               resetWatchers: Array[(String, FileSystemWatcher, Option[Int])],
                refreshWatchers: Array[FileSystemWatcher]) {
-  val issueUpdater = new IssueUpdater(issueLog)
 
-  resetWatchers.foreach(watcher => installWatcher(watcher, onWatchedReset))
+  private val issueUpdater = new IssueUpdater(issueLog)
+  private val resetHandler = new ResetHandler
+  private val currentHashes = mutable.HashMap[String, Option[Int]]()
+
+  resetWatchers.foreach(watcher => {
+    currentHashes.put(watcher._1, watcher._3)
+    installWatcher(watcher._2, onWatchedReset)
+  })
   refreshWatchers.foreach(watcher => installWatcher(watcher, onWatchedRefresh))
 
   private def onWatchedReset(uri: URI): js.Promise[Unit] = {
-    Extension.reset()
+    val hash =
+      PathFactory(uri.fsPath).read() match {
+        case Left(_)     => None
+        case Right(data) => Some(scala.util.hashing.MurmurHash3.stringHash(data))
+      }
+
+    if (!currentHashes.get(uri.fsPath).contains(hash)) {
+      currentHashes.put(uri.fsPath, hash)
+      resetHandler.trigger()
+    }
+
     js.Promise.resolve[Unit](())
   }
 
   private def onWatchedRefresh(uri: URI): js.Promise[Unit] = {
     server.refresh(uri.fsPath, None)
-    issueUpdater.restart()
+    issueUpdater.trigger()
     js.Promise.resolve[Unit](())
   }
 
@@ -60,16 +78,28 @@ class Watchers(server: Server,
   }
 }
 
-class IssueUpdater(issueLog: IssueLog) {
+abstract class Debouncer {
   var timer: Option[Timeout] = None
 
-  def restart(): Unit = {
+  def trigger(): Unit = {
     timer.foreach(timer => clearTimeout(timer))
-    timer = Some(setTimeout(() => fire(), 250))
+    timer = Some(setTimeout(() => {
+      fire()
+      timer = None
+    }, 250))
   }
 
-  private def fire(): Unit = {
-    timer = None
+  protected def fire(): Unit
+}
+
+class ResetHandler extends Debouncer {
+  protected def fire(): Unit = {
+    Extension.reset()
+  }
+}
+
+class IssueUpdater(issueLog: IssueLog) extends Debouncer {
+  protected def fire(): Unit = {
     issueLog.refreshDiagnostics()
   }
 }
@@ -80,10 +110,33 @@ object Watchers {
     Array("**/*.cls", "**/*.trigger", "**/*.labels", "**/*.labels-meta.xml")
 
   def apply(context: ExtensionContext, server: Server, issueLog: IssueLog): Watchers = {
-    new Watchers(server,
-                 issueLog,
-                 createWatchers(context, resetGlobs),
-                 createWatchers(context, changedGlobs))
+
+    val resetPaths = VSCode.workspace.workspaceFolders
+      .map(_.toArray)
+      .getOrElse(Array())
+      .flatMap(folder => {
+        Array(hashFiles(context, folder.uri, "sfdx-project.json"),
+              hashFiles(context, folder.uri, ".forceignore"))
+      })
+
+    new Watchers(server, issueLog, resetPaths, createWatchers(context, changedGlobs))
+  }
+
+  private def hashFiles(context: ExtensionContext,
+                        uri: URI,
+                        name: String): (String, FileSystemWatcher, Option[Int]) = {
+    val path = PathFactory(uri.fsPath).join(name)
+    val hash = path.read() match {
+      case Left(_)     => None
+      case Right(data) => Some(scala.util.hashing.MurmurHash3.stringHash(data))
+    }
+
+    val watcher = VSCode.workspace.createFileSystemWatcher(VSCode.newRelativePattern(uri, name),
+                                                           ignoreCreateEvents = false,
+                                                           ignoreChangeEvents = false,
+                                                           ignoreDeleteEvents = false)
+    context.subscriptions.push(watcher)
+    (path.toString, watcher, hash)
   }
 
   private def createWatchers(context: ExtensionContext,

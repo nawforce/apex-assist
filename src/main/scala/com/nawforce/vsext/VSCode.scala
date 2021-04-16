@@ -134,6 +134,9 @@ trait Position extends js.Object {}
 @js.native
 trait Range extends js.Object {}
 
+@js.native
+trait RelativePattern extends js.Object {}
+
 object DiagnosticSeverity {
   val ERROR: Int = 0
   val WARNING: Int = 1
@@ -143,7 +146,7 @@ object DiagnosticSeverity {
 
 @js.native
 trait Diagnostic extends js.Object {
-  var code: String;
+  var code: String
 }
 
 @js.native
@@ -211,6 +214,12 @@ trait WorkspaceOps extends js.Object {
                               ignoreCreateEvents: Boolean,
                               ignoreChangeEvents: Boolean,
                               ignoreDeleteEvents: Boolean): FileSystemWatcher = js.native
+
+  def createFileSystemWatcher(relativePattern: RelativePattern,
+                              ignoreCreateEvents: Boolean,
+                              ignoreChangeEvents: Boolean,
+                              ignoreDeleteEvents: Boolean): FileSystemWatcher = js.native
+
 }
 
 @js.native
@@ -225,6 +234,7 @@ trait VSCodeModule extends js.Object {
   val Range: Dynamic = js.native
   val Diagnostic: Dynamic = js.native
   val Event: Dynamic = js.native
+  val RelativePattern: Dynamic = js.native
 }
 
 @js.native
@@ -262,5 +272,9 @@ object VSCode {
 
   def newDiagnostic(range: Range, message: String, severity: Int): Diagnostic = {
     js.Dynamic.newInstance(module.Diagnostic)(range, message, severity).asInstanceOf[Diagnostic]
+  }
+
+  def newRelativePattern(base: URI, pattern: String): RelativePattern = {
+    js.Dynamic.newInstance(module.RelativePattern)(base, pattern).asInstanceOf[RelativePattern]
   }
 }
