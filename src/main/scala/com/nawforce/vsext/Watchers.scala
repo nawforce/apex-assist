@@ -37,7 +37,7 @@ import scala.scalajs.js
 
 class Watchers(server: Server,
                issueLog: IssueLog,
-               resetWatchers: Array[(String, FileSystemWatcher, Option[Int])],
+               resetWatchers: Array[(URI, FileSystemWatcher, Option[Int])],
                refreshWatchers: Array[FileSystemWatcher]) {
 
   private val issueUpdater = new IssueUpdater(issueLog)
@@ -45,7 +45,7 @@ class Watchers(server: Server,
   private val currentHashes = mutable.HashMap[String, Option[Int]]()
 
   resetWatchers.foreach(watcher => {
-    currentHashes.put(watcher._1, watcher._3)
+    currentHashes.put(watcher._1.toString(), watcher._3)
     installWatcher(watcher._2, onWatchedReset)
   })
   refreshWatchers.foreach(watcher => installWatcher(watcher, onWatchedRefresh))
@@ -57,8 +57,8 @@ class Watchers(server: Server,
         case Right(data) => Some(scala.util.hashing.MurmurHash3.stringHash(data))
       }
 
-    if (!currentHashes.get(uri.fsPath).contains(hash)) {
-      currentHashes.put(uri.fsPath, hash)
+    if (!currentHashes.get(uri.toString()).contains(hash)) {
+      currentHashes.put(uri.toString(), hash)
       resetHandler.trigger()
     }
 
@@ -105,7 +105,6 @@ class IssueUpdater(issueLog: IssueLog) extends Debouncer {
 }
 
 object Watchers {
-  private val resetGlobs = Array("**/sfdx-project.json", "**/.forceIgnore")
   private val changedGlobs =
     Array("**/*.cls", "**/*.trigger", "**/*.labels", "**/*.labels-meta.xml")
 
@@ -123,20 +122,21 @@ object Watchers {
   }
 
   private def hashFiles(context: ExtensionContext,
-                        uri: URI,
-                        name: String): (String, FileSystemWatcher, Option[Int]) = {
-    val path = PathFactory(uri.fsPath).join(name)
+                        base: URI,
+                        name: String): (URI, FileSystemWatcher, Option[Int]) = {
+    val uri = VSCode.Uri.joinPath(base, name)
+    val path = PathFactory(uri.fsPath)
     val hash = path.read() match {
       case Left(_)     => None
       case Right(data) => Some(scala.util.hashing.MurmurHash3.stringHash(data))
     }
 
-    val watcher = VSCode.workspace.createFileSystemWatcher(VSCode.newRelativePattern(uri, name),
+    val watcher = VSCode.workspace.createFileSystemWatcher(VSCode.newRelativePattern(base, name),
                                                            ignoreCreateEvents = false,
                                                            ignoreChangeEvents = false,
                                                            ignoreDeleteEvents = false)
     context.subscriptions.push(watcher)
-    (path.toString, watcher, hash)
+    (uri, watcher, hash)
   }
 
   private def createWatchers(context: ExtensionContext,

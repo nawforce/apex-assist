@@ -145,7 +145,7 @@ object Server {
 
     child.on("exit",
              (code: Int, signal: Int) => {
-               if (code != 143)
+               if (code != 0 && code != 143)
                  VSCode.window.showInformationMessage(
                    s"ApexAssist server failed to start, code: $code, signal: $signal")
                outputChannel.appendLine(s"Server died! code: $code, signal: $signal")

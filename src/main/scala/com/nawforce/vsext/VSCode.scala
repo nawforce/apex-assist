@@ -126,6 +126,7 @@ trait URI extends js.Object {
 @js.native
 trait URIOps extends js.Object {
   def file(path: String): URI = js.native
+  def joinPath(base: URI, pathSegments: String*): URI = js.native
 }
 
 @js.native
