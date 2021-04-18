@@ -1,4 +1,19 @@
+## [1.2.2]
+
+* Added - Big object support
+* Added - Transaction Finalizer support
+* Added - IsPortalEnabled on User
+* Fixed - Static fields in triggers
+* Fixed - Process.PluginDescribeResult inner classes
+* Fixed - Interface method matching for SObject Lists
+* Fixed - Missing classes in Auth namespace
+* Fixed - Field resolution via superclass problem
+* Fixed - Return type on platform enum values()
+* Fixed - Resolving classes with same identifier as namespace
+* Fixed - Errors on Object special methods having wrong return types
+
 ## [1.2.1]
+
 * Fixed - Verify arguments of functions calls to 3rd party namespace
 * Fixed - Add ConnectAPI MessageSegments classes
 * Fixed - Add Component.Flow.Interview platfom type
