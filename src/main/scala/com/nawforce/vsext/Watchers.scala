@@ -27,7 +27,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.common.path.PathFactory
+import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.rpc.Server
 import io.scalajs.nodejs.timers.Timeout
 import io.scalajs.nodejs.{clearTimeout, setTimeout}

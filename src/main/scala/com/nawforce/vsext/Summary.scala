@@ -27,8 +27,8 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.common.parsers.ApexNode
-import com.nawforce.common.path.PathFactory
+import com.nawforce.pkgforce.parsers.ApexNode
+import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.runtime.parsers.{CodeParser, SourceData}
 
 import scala.collection.immutable.ArraySeq

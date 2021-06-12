@@ -28,7 +28,7 @@
 package com.nawforce.vsext
 
 import com.nawforce.commands.{ClearDiagnostics, DependencyExplorer}
-import com.nawforce.common.api._
+import com.nawforce.pkgforce.diagnostics.LoggerOps
 import com.nawforce.rpc.{APIError, Server}
 
 import scala.concurrent.Future

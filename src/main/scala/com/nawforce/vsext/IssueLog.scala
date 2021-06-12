@@ -27,8 +27,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.common.api.{Location, LoggerOps, UNUSED_CATEGORY, WARNING_CATEGORY}
-import com.nawforce.common.diagnostics.Issue
+import com.nawforce.pkgforce.diagnostics.{Issue, Location, LoggerOps, UNUSED_CATEGORY, WARNING_CATEGORY}
 import com.nawforce.rpc.Server
 
 import scala.collection.compat.immutable.ArraySeq

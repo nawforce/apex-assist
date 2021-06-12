@@ -29,7 +29,7 @@ package com.nawforce.commands
 
 import java.util.regex.Pattern
 
-import com.nawforce.common.path.PathFactory
+import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.rpc.{DependencyGraphResult, LinkData, Server}
 import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext._

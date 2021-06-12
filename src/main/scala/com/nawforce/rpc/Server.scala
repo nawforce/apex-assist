@@ -27,8 +27,8 @@
  */
 package com.nawforce.rpc
 
-import com.nawforce.common.api.LoggerOps
-import com.nawforce.common.path.PathFactory
+import com.nawforce.pkgforce.diagnostics.LoggerOps
+import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.vsext.{OutputChannel, VSCode}
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
@@ -135,7 +135,7 @@ object Server {
       js.Array(s"-Xmx${maxMemory}m",
                "-Dfile.encoding=UTF-8",
                "-cp",
-               "jars/apexlink-1.4.3.jar",
+               "jars/apexlink-2.0.0-SNAPSHOT.jar",
                "com.nawforce.common.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")

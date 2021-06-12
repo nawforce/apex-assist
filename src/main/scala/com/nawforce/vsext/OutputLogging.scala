@@ -27,7 +27,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.common.api.{Logger, LoggerOps}
+import com.nawforce.pkgforce.diagnostics.{Logger, LoggerOps}
 
 class OutputLogging(channel: OutputChannel) extends Logger {
   def info(message: String): Unit = { channel.appendLine(message) }
