@@ -66,7 +66,7 @@ class Watchers(server: Server,
   }
 
   private def onWatchedRefresh(uri: URI): js.Promise[Unit] = {
-    server.refresh(uri.fsPath, None)
+    server.refresh(uri.fsPath)
     issueUpdater.trigger()
     js.Promise.resolve[Unit](())
   }

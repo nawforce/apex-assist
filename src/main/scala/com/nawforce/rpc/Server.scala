@@ -28,6 +28,7 @@
 package com.nawforce.rpc
 
 import com.nawforce.pkgforce.diagnostics.LoggerOps
+import com.nawforce.pkgforce.names.TypeIdentifier
 import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.vsext.{OutputChannel, VSCode}
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
@@ -87,31 +88,35 @@ class Server(child: ChildProcess) {
     orgAPI.identifier()
   }
 
-  def addPackage(directory: String): Future[AddPackageResult] = {
-    orgAPI.addPackage(directory: String)
+  def reset(): Future[Unit] = {
+    orgAPI.reset()
+  }
+
+  def open(directory: String): Future[OpenResult] = {
+    orgAPI.open(directory)
   }
 
   def getIssues(includeWarnings: Boolean, includeZombies: Boolean): Future[GetIssuesResult] = {
     orgAPI.getIssues(includeWarnings, includeZombies)
   }
 
-  def refresh(path: String, contents: Option[String]): Future[Unit] = {
-    orgAPI.refresh(path, contents)
+  def refresh(path: String): Future[Unit] = {
+    orgAPI.refresh(path)
   }
 
   def typeIdentifiers(): Future[GetTypeIdentifiersResult] = {
     orgAPI.typeIdentifiers()
   }
 
-  def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult] = {
-    orgAPI.dependencyGraph(path, depth)
+  def dependencyGraph(identifier: TypeIdentifier, depth: Int): Future[DependencyGraph] = {
+    orgAPI.dependencyGraph(IdentifierRequest(identifier), depth)
   }
 
-  def identifierLocation(identifier: String): Future[IdentifierLocationResult] = {
-    orgAPI.identifierLocation(identifier)
+  def identifierLocation(identifier: TypeIdentifier): Future[IdentifierLocationResult] = {
+    orgAPI.identifierLocation(IdentifierRequest(identifier))
   }
 
-  def identifierForPath(path: String): Future[Option[String]] = {
+  def identifierForPath(path: String): Future[IdentifierForPathResult] = {
     orgAPI.identifierForPath(path)
   }
 
@@ -136,7 +141,7 @@ object Server {
                "-Dfile.encoding=UTF-8",
                "-cp",
                "jars/apexlink-2.0.0-SNAPSHOT.jar",
-               "com.nawforce.common.cmds.Server")
+               "com.nawforce.apexlink.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")
     val child = ChildProcess.spawn("java", args, new SpawnOptions {

@@ -90,6 +90,7 @@ object Extension {
   }
 
   private def startServer(outputChannel: OutputChannel): Future[Try[Server]] = {
+    // Init server
     val server = Server(outputChannel)
     server
       .identifier()
@@ -97,21 +98,22 @@ object Extension {
         LoggerOps.info(s"Server ID: $identifier")
       })
 
-    // Load workspaces
+    // Load workspace
     val workspaceFolders = VSCode.workspace.workspaceFolders.getOrElse(js.Array()).toSeq
-    waitAll(workspaceFolders.map(folder => server.addPackage(folder.uri.fsPath))).map(results => {
-      val failures = results.collect { case Failure(ex) => ex }
-      if (failures.nonEmpty) {
-        Failure(failures.head)
-      } else {
-
-        val errors = results.collect { case Success(result) => result.error }.flatten
-        if (errors.nonEmpty)
-          Failure(new WorkspaceException(errors.head))
-
-        Success(server)
-      }
-    })
+    if (workspaceFolders.size > 1) {
+      Future.successful(
+        Failure(
+          new WorkspaceException(
+            APIError("Opening multiple folders is not currently supported."))))
+    } else {
+      server
+        .open(workspaceFolders.head.uri.fsPath)
+        .map(result => {
+          result.error
+            .map(error => Failure(new WorkspaceException(error)))
+            .getOrElse(Success(server))
+        })
+    }
   }
 
   @JSExportTopLevel("deactivate")
@@ -125,10 +127,4 @@ object Extension {
     context.subscriptions.filterNot(_ == output).foreach(_.dispose())
     start(reuseOutput = true)
   }
-
-  private def waitAll[T](futures: Seq[Future[T]]): Future[Seq[Try[T]]] =
-    Future.sequence(lift(futures))
-
-  private def lift[T](futures: Seq[Future[T]]): Seq[Future[Try[T]]] =
-    futures.map(_.map { Success(_) }.recover { case t => Failure(t) })
 }

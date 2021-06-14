@@ -29,8 +29,9 @@ package com.nawforce.commands
 
 import java.util.regex.Pattern
 
+import com.nawforce.pkgforce.names.TypeIdentifier
 import com.nawforce.pkgforce.path.PathFactory
-import com.nawforce.rpc.{DependencyGraphResult, LinkData, Server}
+import com.nawforce.rpc.{DependencyGraph, DependencyLink, Server}
 import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext._
 
@@ -68,15 +69,13 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     filePath.foreach(filePath => {
       server
         .identifierForPath(filePath)
-        .foreach(identifier => {
-          identifier.foreach(id => new View(id))
-        })
+        .foreach(_.identifier.foreach(id => new View(id)))
     })
   }
 
-  class View(identifier: String) {
+  class View(startingIdentifier: TypeIdentifier) {
     private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
-    private var currentIdentifier = identifier
+    private var identifier = startingIdentifier
 
     private val ignoreTypes =
       VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
@@ -93,7 +92,9 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
           .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
         panel.webview.html = webContent()
         panel.webview.postMessage(
-          new InitMessage(isTest = false, identifier, typeIdentifiers.identifiers.toJSArray))
+          new InitMessage(isTest = false,
+                          startingIdentifier.toString(),
+                          typeIdentifiers.identifiers.map(_.toString()).toJSArray))
       })
 
     private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
@@ -101,37 +102,45 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       cmd.cmd match {
         case "dependents" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
-          currentIdentifier = msg.identifier
-          server
-            .dependencyGraph(currentIdentifier, msg.depth)
-            .foreach(graph => {
-              val reduced =
-                removeOrphans(currentIdentifier,
-                              reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
-              panel.webview.postMessage(
-                new ReplyDependentsMessage(
-                  reduced.nodeData
-                    .map(d =>
-                      new ReplyNodeData(d.name,
-                                        r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
-                                        else d.size.toDouble) - 2)).toInt,
-                        d.transitiveCount
-                      ))
-                    .toJSArray,
-                  reduced.linkData.map(d => new ReplyLinkData(d.source, d.target, d.nature)).toJSArray))
-            })
+          TypeIdentifier(msg.identifier) match {
+            case Left(_) => () // TODO: Report error
+            case Right(id) =>
+              identifier = id
+              server
+                .dependencyGraph(identifier, msg.depth)
+                .foreach(graph => {
+                  val reduced =
+                    removeOrphans(identifier,
+                                  reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
+                  panel.webview.postMessage(
+                    new ReplyDependentsMessage(
+                      reduced.nodeData
+                        .map(d =>
+                          new ReplyNodeData(d.identifier.toString(),
+                                            r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
+                                            else d.size.toDouble) - 2)).toInt,
+                                            d.transitiveCount))
+                        .toJSArray,
+                      reduced.linkData
+                        .map(d => new ReplyLinkData(d.source, d.target, d.nature))
+                        .toJSArray))
+                })
+          }
         case "open" =>
           val msg = cmd.asInstanceOf[OpenIdentifierMessage]
-          server
-            .identifierLocation(msg.identifier)
-            .foreach(location => {
-              val uri = VSCode.Uri.file(location.pathLocation.path)
-              VSCode.workspace
-                .openTextDocument(uri)
-                .toFuture
-                .foreach(VSCode.window.showTextDocument)
-            })
-
+          TypeIdentifier(msg.identifier) match {
+            case Left(_) => () // TODO: Report error
+            case Right(id) =>
+              server
+                .identifierLocation(id)
+                .foreach(location => {
+                  val uri = VSCode.Uri.file(location.pathLocation.path)
+                  VSCode.workspace
+                    .openTextDocument(uri)
+                    .toFuture
+                    .foreach(VSCode.window.showTextDocument)
+                })
+          }
       }
     }
 
@@ -214,17 +223,17 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     }
 
     private def retainByName(ignoreTypes: Option[String], hideTypes: Set[String])(
-      graph: DependencyGraphResult): Seq[Int] = {
+      graph: DependencyGraph): Seq[Int] = {
 
       try {
         val ignorePattern = Pattern.compile(ignoreTypes.getOrElse("^$"))
         graph.nodeData.toIndexedSeq.zipWithIndex.flatMap(nd => {
-          val id = nd._1.name
-          if (id == currentIdentifier)
+          val typeName = nd._1.identifier.typeName.toString()
+          if (nd._1.identifier == identifier)
             Some(nd._2)
-          else if (hideTypes.contains(id))
+          else if (hideTypes.contains(typeName))
             None
-          else if (ignorePattern.matcher(id).matches())
+          else if (ignorePattern.matcher(typeName).matches())
             None
           else
             Some(nd._2)
@@ -237,20 +246,22 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       }
     }
 
+    /** Remove any nodes not linked to the node of the passed identifier. */
     @scala.annotation.tailrec
-    private def removeOrphans(rootIdentifier: String,
-                              graph: DependencyGraphResult): DependencyGraphResult = {
-      val reduced = reduceGraph(graph, retainByLinkage(rootIdentifier))
+    private def removeOrphans(identifier: TypeIdentifier,
+                              graph: DependencyGraph): DependencyGraph = {
+      val reduced = reduceGraph(graph, retainByLinkage(identifier))
       if (reduced.nodeData.length == graph.nodeData.length)
         reduced
       else
-        removeOrphans(rootIdentifier, reduced)
+        removeOrphans(identifier, reduced)
     }
 
-    private def retainByLinkage(rootIdentifier: String)(graph: DependencyGraphResult): Seq[Int] = {
+    /** Identify a set of nodes to retain based on them being linked to a node for the passed identifier. */
+    private def retainByLinkage(identifier: TypeIdentifier)(graph: DependencyGraph): Seq[Int] = {
       val retain = mutable.Set[Int]()
       val nodes = graph.nodeData.toIndexedSeq.zipWithIndex
-      val rootIndex = nodes.find(_._1.name == rootIdentifier).map(_._2).head
+      val rootIndex = nodes.find(_._1.identifier == identifier).map(_._2).head
       retain.add(rootIndex)
 
       def walk(index: Int): Unit = {
@@ -265,8 +276,9 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       retain.toSeq
     }
 
-    private def reduceGraph(graph: DependencyGraphResult,
-                            reducer: DependencyGraphResult => Seq[Int]): DependencyGraphResult = {
+    /** Reduce a graph by only retaining a subset of the nodes as identified by the reducer. */
+    private def reduceGraph(graph: DependencyGraph,
+                            reducer: DependencyGraph => Seq[Int]): DependencyGraph = {
       val retain = reducer(graph)
       val oldToNewMapping = retain.zipWithIndex.toMap
 
@@ -274,7 +286,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
         val newSource = oldToNewMapping.get(ld.source)
         val newTarget = oldToNewMapping.get(ld.target)
         if (newSource.nonEmpty && newTarget.nonEmpty) {
-          Some(LinkData(newSource.get, newTarget.get, ld.nature))
+          Some(DependencyLink(newSource.get, newTarget.get, ld.nature))
         } else {
           None
         }
@@ -287,8 +299,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
           None
       })
 
-      new DependencyGraphResult(nodeData, linkData)
-
+      new DependencyGraph(nodeData, linkData)
     }
   }
 }

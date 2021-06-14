@@ -1,8 +1,5 @@
 /*
- [The "BSD licence"]
- Copyright (c) 2020 Kevin Jones
- All rights reserved.
-
+ Copyright (c) 2020 Kevin Jones, All rights reserved.
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -13,21 +10,12 @@
     documentation and/or other materials provided with the distribution.
  3. The name of the author may not be used to endorse or promote products
     derived from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package com.nawforce.rpc
 
-import com.nawforce.pkgforce.diagnostics.{Diagnostic, DiagnosticCategory, Issue, Location, PathLocation}
+import com.nawforce.pkgforce.diagnostics._
+import com.nawforce.pkgforce.names.{Name, TypeIdentifier, TypeName}
 import io.github.shogowada.scala.jsonrpc.api
 import io.github.shogowada.scala.jsonrpc.serializers.JSONRPCPickler.{macroRW, ReadWriter => RW}
 
@@ -47,10 +35,10 @@ object APIError {
   }
 }
 
-case class AddPackageResult(error: Option[APIError], namespaces: Array[String])
+case class OpenResult(error: Option[APIError], namespaces: Array[String])
 
-object AddPackageResult {
-  implicit val rw: RW[AddPackageResult] = macroRW
+object OpenResult {
+  implicit val rw: RW[OpenResult] = macroRW
 }
 
 case class GetIssuesResult(issues: Array[Issue])
@@ -63,26 +51,13 @@ object GetIssuesResult {
   implicit val rwLocation: RW[Location] = macroRW
 }
 
-case class GetTypeIdentifiersResult(identifiers: Array[String])
+case class GetTypeIdentifiersResult(identifiers: Array[TypeIdentifier])
 
 object GetTypeIdentifiersResult {
   implicit val rw: RW[GetTypeIdentifiersResult] = macroRW
-}
-
-case class NodeData(name: String,
-                    size: Long,
-                    nature: String,
-                    transitiveCount: Int,
-                    extending: Array[String],
-                    implementing: Array[String],
-                    using: Array[String])
-case class LinkData(source: Int, target: Int, nature: String)
-case class DependencyGraphResult(nodeData: Array[NodeData], linkData: Array[LinkData])
-
-object DependencyGraphResult {
-  implicit val rw: RW[DependencyGraphResult] = macroRW
-  implicit val rwNodeData: RW[NodeData] = macroRW
-  implicit val rwLinkData: RW[LinkData] = macroRW
+  implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
 }
 
 case class IdentifierLocationResult(pathLocation: PathLocation)
@@ -93,6 +68,24 @@ object IdentifierLocationResult {
   implicit val rwLocation: RW[Location] = macroRW
 }
 
+case class IdentifierRequest(identifier: TypeIdentifier)
+
+object IdentifierRequest {
+  implicit val rw: RW[IdentifierRequest] = macroRW
+  implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
+}
+
+case class IdentifierForPathResult(identifier: Option[TypeIdentifier])
+
+object IdentifierForPathResult {
+  implicit val rw: RW[IdentifierForPathResult] = macroRW
+  implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
+}
+
 trait OrgAPI {
   @api.JSONRPCMethod(name = "identifier")
   def identifier(): Future[String]
@@ -100,24 +93,24 @@ trait OrgAPI {
   @api.JSONRPCMethod(name = "reset")
   def reset(): Future[Unit]
 
-  @api.JSONRPCMethod(name = "addPackage")
-  def addPackage(directory: String): Future[AddPackageResult]
+  @api.JSONRPCMethod(name = "open")
+  def open(directory: String): Future[OpenResult]
 
   @api.JSONRPCMethod(name = "getIssues")
   def getIssues(includeWarnings: Boolean, includeZombies: Boolean): Future[GetIssuesResult]
 
   @api.JSONRPCMethod(name = "refresh")
-  def refresh(path: String, contents: Option[String]): Future[Unit]
+  def refresh(path: String): Future[Unit]
 
   @api.JSONRPCMethod(name = "getTypeIdentifiers")
   def typeIdentifiers(): Future[GetTypeIdentifiersResult]
 
   @api.JSONRPCMethod(name = "dependencyGraph")
-  def dependencyGraph(path: String, depth: Int): Future[DependencyGraphResult]
+  def dependencyGraph(identifier: IdentifierRequest, depth: Int): Future[DependencyGraph]
 
   @api.JSONRPCMethod(name = "identifierLocation")
-  def identifierLocation(identifier: String): Future[IdentifierLocationResult]
+  def identifierLocation(identifier: IdentifierRequest): Future[IdentifierLocationResult]
 
   @api.JSONRPCMethod(name = "identifierForPath")
-  def identifierForPath(path: String): Future[Option[String]]
+  def identifierForPath(path: String): Future[IdentifierForPathResult]
 }
