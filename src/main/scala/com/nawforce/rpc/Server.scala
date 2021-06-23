@@ -58,7 +58,7 @@ class Server(child: ChildProcess) {
   }
 
   private def sender(json: String): Future[Option[String]] = {
-    LoggerOps.debug(LoggerOps.Trace, s"Sent: $json")
+    LoggerOps.debug(s"Sent: $json")
     child.stdin.write(encodeJSON(json))
     child.stdin.write("\n\n")
     val promise = Promise[Option[String]]()
@@ -79,7 +79,7 @@ class Server(child: ChildProcess) {
   }
 
   private def handleMessage(msg: String): Unit = {
-    LoggerOps.debug(LoggerOps.Trace, s"Received: $msg")
+    LoggerOps.debug(s"Received: $msg")
     val promise = inboundQueue.dequeue()
     promise.success(Some(msg))
   }

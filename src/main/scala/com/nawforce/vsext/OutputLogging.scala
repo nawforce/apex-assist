@@ -40,7 +40,7 @@ object OutputLogging {
     val output = VSCode.window.createOutputChannel("Apex Assist")
     context.subscriptions.push(output)
     LoggerOps.setLogger(new OutputLogging(output))
-    LoggerOps.setDebugLogging(Array("ALL"))
+    LoggerOps.setLoggingLevel(LoggerOps.DEBUG_LOGGING)
     output
   }
 }
