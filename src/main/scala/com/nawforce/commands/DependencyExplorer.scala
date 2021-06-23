@@ -42,17 +42,22 @@ import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.JSON
 
 class IncomingMessage(val cmd: String) extends js.Object
+
 class GetDependentsMessage(val identifier: String, val depth: Int, val hide: js.Array[String])
-    extends IncomingMessage("dependents")
+  extends IncomingMessage("dependents")
+
 class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("open")
 
 class InitMessage(val isTest: Boolean, val identifier: String, val allIdentifiers: js.Array[String])
-    extends js.Object
+  extends js.Object
+
 class ReplyNodeData(val name: String, val r: Integer, val transitiveCount: Int) extends js.Object
+
 class ReplyLinkData(val source: Integer, val target: Integer, val nature: String) extends js.Object
+
 class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
                              val linkData: js.Array[ReplyLinkData])
-    extends js.Object
+  extends js.Object
 
 class DependencyExplorer(context: ExtensionContext, server: Server) {
 
@@ -85,16 +90,16 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       .map(typeIdentifiers => {
 
         val panel = VSCode.window.createWebviewPanel("dependencyGraph",
-                                                     "Dependency Explorer",
-                                                     ViewColumn.ONE,
-                                                     new WebviewOptions)
+          "Dependency Explorer",
+          ViewColumn.ONE,
+          new WebviewOptions)
         panel.webview
           .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
-        panel.webview.html = webContent()
+        panel.webview.html = webContent(panel.webview)
         panel.webview.postMessage(
           new InitMessage(isTest = false,
-                          startingIdentifier.toString(),
-                          typeIdentifiers.identifiers.map(_.toString()).toJSArray))
+            startingIdentifier.toString(),
+            typeIdentifiers.identifiers.map(_.toString()).toJSArray))
       })
 
     private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
@@ -111,15 +116,15 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
                 .foreach(graph => {
                   val reduced =
                     removeOrphans(identifier,
-                                  reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
+                      reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
                   panel.webview.postMessage(
                     new ReplyDependentsMessage(
                       reduced.nodeData
                         .map(d =>
                           new ReplyNodeData(d.identifier.toString(),
-                                            r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
-                                            else d.size.toDouble) - 2)).toInt,
-                                            d.transitiveCount))
+                            r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
+                            else d.size.toDouble) - 2)).toInt,
+                            d.transitiveCount))
                         .toJSArray,
                       reduced.linkData
                         .map(d => new ReplyLinkData(d.source, d.target, d.nature))
@@ -144,12 +149,12 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       }
     }
 
-    private def webContent(): String = {
+    private def webContent(webview: Webview): String = {
       val extensionPath = PathFactory(context.extensionPath)
 
       val webviewPath = extensionPath.join("webview").join("build")
       val assetManifest = webviewPath.join("asset-manifest.json").read() match {
-        case Left(err)   => throw new Error(err)
+        case Left(err) => throw new Error(err)
         case Right(data) => JSON.parse(data)
       }
 
@@ -166,19 +171,18 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
         .filter(_.endsWith("chunk.css"))
         .map(k => files.selectDynamic(k).asInstanceOf[String])
 
-      val changeScheme = new ChangeOptions { scheme = "vscode-resource" }
       val mainUri =
-        VSCode.Uri.file(webviewPath.join(parseManifestPath(main)).toString).`with`(changeScheme)
+        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(main)).toString))
       val styleUri =
-        VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString).`with`(changeScheme)
+        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString))
       val runtimeUri =
-        VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString).`with`(changeScheme)
+        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString))
       val chunksJSUri =
         chunksJS.map(p =>
-          VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
+          webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString)))
       val chunksCSSUri =
         chunksCSS.map(p =>
-          VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString).`with`(changeScheme))
+          webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString)))
 
       val chunksCSSMarkup = chunksCSSUri.map(chunkUri => {
         s"""<link rel="stylesheet" type="text/css" href="${chunkUri.toString(true)}">"""
@@ -188,34 +192,40 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       })
 
       val lightTheme =
-        VSCode.Uri.file(webviewPath.join("light-theme.css").toString).`with`(changeScheme)
+        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join("light-theme.css").toString))
       val darkTheme =
-        VSCode.Uri.file(webviewPath.join("dark-theme.css").toString).`with`(changeScheme)
+        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join("dark-theme.css").toString))
 
       s"""
-     |<!DOCTYPE html>
-     |<html lang="en">
-     | <head>
-     |   <meta charset="UTF-8">
-     |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     |   <title>Dependency Graph</title>
-     |   ${chunksCSSMarkup.mkString("\n")}
-     |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
-           .toString(true)}">
-     |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${darkTheme
-           .toString(true)}">
-     |   <!-- inject-styles-here -->
-     |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
-     | </head>
-     | <body data-theme="light" style="padding: 0">
-     |   <div id="root"></div>
-     |   <script crossorigin="anonymous" src="${runtimeUri
-           .toString(true)}"></script>
-     |   ${chunksScripts.mkString("\n")}
-     |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
-     | </body>
-     |</html>
-     |""".stripMargin
+         |<!DOCTYPE html>
+         |<html lang="en">
+         | <head>
+         |   <meta charset="UTF-8">
+         |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         |   <title>Dependency Graph</title>
+         |   ${chunksCSSMarkup.mkString("\n")}
+         |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${
+        lightTheme
+          .toString(true)
+      }">
+         |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${
+        darkTheme
+          .toString(true)
+      }">
+         |   <!-- inject-styles-here -->
+         |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
+         | </head>
+         | <body data-theme="light" style="padding: 0">
+         |   <div id="root"></div>
+         |   <script crossorigin="anonymous" src="${
+        runtimeUri
+          .toString(true)
+      }"></script>
+         |   ${chunksScripts.mkString("\n")}
+         |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
+         | </body>
+         |</html>
+         |""".stripMargin
     }
 
     private def parseManifestPath(path: String): String = {
@@ -272,6 +282,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
               walk(ld.target)
           })
       }
+
       walk(rootIndex)
       retain.toSeq
     }
@@ -302,6 +313,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       new DependencyGraph(nodeData, linkData)
     }
   }
+
 }
 
 object DependencyExplorer {

@@ -58,6 +58,7 @@ trait StatusBar extends Disposable {
 trait Webview extends js.Object {
   var html: String = js.native
 
+  def asWebviewUri(uri: URI): URI = js.native
   def postMessage(message: Any): Unit = js.native
   def onDidReceiveMessage: Event[Any] = js.native
 }
