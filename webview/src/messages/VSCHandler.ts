@@ -1,18 +1,14 @@
 import { GraphData } from "../components/Graph";
 import { Handler } from "./Handler";
 import { Reciever } from "./Receiver";
-
-interface vscodeAPI {
-  postMessage(message: any): void;
-}
-
-declare function acquireVsCodeApi(): vscodeAPI;
+import { vscodeAPI } from "./VSCodeAPI";
 
 export class VSCHandler implements Handler {
-  private vscodeAPI = acquireVsCodeApi();
+  private vscodeAPI: vscodeAPI;
   private reciever: Reciever;
 
-  constructor(reciever: Reciever, document: Document) {
+  constructor(vscodeAPI: vscodeAPI, reciever: Reciever, document: Document) {
+    this.vscodeAPI = vscodeAPI;
     this.reciever = reciever;
     window.addEventListener("message", (event) => {
       this.reciever.onDependents(event.data as GraphData);
@@ -37,6 +33,6 @@ export class VSCHandler implements Handler {
   }
 
   openIdentifier(identifier: string): void {
-    this.vscodeAPI.postMessage({ cmd: "open", identifier});
+    this.vscodeAPI.postMessage({ cmd: "open", identifier });
   }
 }

@@ -27,14 +27,13 @@
  */
 package com.nawforce.commands
 
-import java.util.regex.Pattern
-
 import com.nawforce.pkgforce.names.TypeIdentifier
 import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.rpc.{DependencyGraph, DependencyLink, Server}
 import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext._
 
+import java.util.regex.Pattern
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
@@ -44,12 +43,12 @@ import scala.scalajs.js.JSON
 class IncomingMessage(val cmd: String) extends js.Object
 
 class GetDependentsMessage(val identifier: String, val depth: Int, val hide: js.Array[String])
-  extends IncomingMessage("dependents")
+    extends IncomingMessage("dependents")
 
 class OpenIdentifierMessage(val identifier: String) extends IncomingMessage("open")
 
 class InitMessage(val isTest: Boolean, val identifier: String, val allIdentifiers: js.Array[String])
-  extends js.Object
+    extends js.Object
 
 class ReplyNodeData(val name: String, val r: Integer, val transitiveCount: Int) extends js.Object
 
@@ -57,7 +56,7 @@ class ReplyLinkData(val source: Integer, val target: Integer, val nature: String
 
 class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
                              val linkData: js.Array[ReplyLinkData])
-  extends js.Object
+    extends js.Object
 
 class DependencyExplorer(context: ExtensionContext, server: Server) {
 
@@ -85,26 +84,27 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     private val ignoreTypes =
       VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
 
-    server
-      .typeIdentifiers()
-      .map(typeIdentifiers => {
-
-        val panel = VSCode.window.createWebviewPanel("dependencyGraph",
-          "Dependency Explorer",
-          ViewColumn.ONE,
-          new WebviewOptions)
-        panel.webview
-          .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
-        panel.webview.html = webContent(panel.webview)
-        panel.webview.postMessage(
-          new InitMessage(isTest = false,
-            startingIdentifier.toString(),
-            typeIdentifiers.identifiers.map(_.toString()).toJSArray))
-      })
+    private val panel = VSCode.window.createWebviewPanel("dependencyGraph",
+                                                         "Dependency Explorer",
+                                                         ViewColumn.ONE,
+                                                         new WebviewOptions)
+    panel.webview
+      .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
+    panel.webview.html = webContent(panel.webview)
 
     private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
       val cmd = event.asInstanceOf[IncomingMessage]
       cmd.cmd match {
+        case "init" =>
+          server
+            .typeIdentifiers()
+            .map(typeIdentifiers => {
+
+              panel.webview.postMessage(
+                new InitMessage(isTest = false,
+                                identifier.toString(),
+                                typeIdentifiers.identifiers.map(_.toString()).toJSArray))
+            })
         case "dependents" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
           TypeIdentifier(msg.identifier) match {
@@ -116,15 +116,15 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
                 .foreach(graph => {
                   val reduced =
                     removeOrphans(identifier,
-                      reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
+                                  reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
                   panel.webview.postMessage(
                     new ReplyDependentsMessage(
                       reduced.nodeData
                         .map(d =>
                           new ReplyNodeData(d.identifier.toString(),
-                            r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
-                            else d.size.toDouble) - 2)).toInt,
-                            d.transitiveCount))
+                                            r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
+                                            else d.size.toDouble) - 2)).toInt,
+                                            d.transitiveCount))
                         .toJSArray,
                       reduced.linkData
                         .map(d => new ReplyLinkData(d.source, d.target, d.nature))
@@ -154,7 +154,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
 
       val webviewPath = extensionPath.join("webview").join("build")
       val assetManifest = webviewPath.join("asset-manifest.json").read() match {
-        case Left(err) => throw new Error(err)
+        case Left(err)   => throw new Error(err)
         case Right(data) => JSON.parse(data)
       }
 
@@ -204,23 +204,17 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
          |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
          |   <title>Dependency Graph</title>
          |   ${chunksCSSMarkup.mkString("\n")}
-         |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${
-        lightTheme
-          .toString(true)
-      }">
-         |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${
-        darkTheme
-          .toString(true)
-      }">
+         |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
+           .toString(true)}">
+         |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${darkTheme
+           .toString(true)}">
          |   <!-- inject-styles-here -->
          |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
          | </head>
          | <body data-theme="light" style="padding: 0">
          |   <div id="root"></div>
-         |   <script crossorigin="anonymous" src="${
-        runtimeUri
-          .toString(true)
-      }"></script>
+         |   <script crossorigin="anonymous" src="${runtimeUri
+           .toString(true)}"></script>
          |   ${chunksScripts.mkString("\n")}
          |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
          | </body>

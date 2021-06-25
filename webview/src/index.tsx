@@ -3,6 +3,9 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
 import { ThemeSwitcherProvider } from "react-css-theme-switcher";
+import {vscodeAPI} from "./messages/VSCodeAPI"
+
+declare function acquireVsCodeApi(): vscodeAPI;
 
 let themes = {
   dark: `/dark-theme.css`,
@@ -22,7 +25,14 @@ if (lightPrefetch && darkPrefetch) {
   themes.dark = darkPrefetch;
 }
 
+let vscode: vscodeAPI;
+if (typeof acquireVsCodeApi !== undefined) {
+    vscode = acquireVsCodeApi();
+    vscode.postMessage({ cmd: "init"});
+}
+
 window.addEventListener("message", (event) => {
+  
   ReactDOM.render(
     <ThemeSwitcherProvider
       themeMap={themes}
@@ -30,6 +40,7 @@ window.addEventListener("message", (event) => {
       insertionPoint="inject-styles-here"
     >
       <App
+        vscodeAPI={vscode}
         isTest={event.data.isTest}
         identifier={event.data.identifier}
         allIdentifiers={event.data.allIdentifiers}
@@ -38,3 +49,7 @@ window.addEventListener("message", (event) => {
     document.getElementById("root")
   );
 });
+
+
+
+
