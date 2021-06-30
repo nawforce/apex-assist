@@ -19,9 +19,11 @@ import { Reciever } from "./messages/Receiver";
 import { Handler } from "./messages/Handler";
 import { TestHandler } from "./messages/TestHandler";
 import { VSCHandler } from "./messages/VSCHandler";
+import { vscodeAPI } from "./messages/VSCodeAPI";
 import { debounce } from "ts-debounce";
 
 interface AppProps {
+  vscodeAPI: vscodeAPI;
   isTest: boolean;
   identifier: string;
   allIdentifiers: string[];
@@ -33,7 +35,7 @@ interface Focus {
   depth: number;
 }
 
-const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
+const App: FC<AppProps> = ({ vscodeAPI, isTest, identifier, allIdentifiers }) => {
   const themeContext = useThemeSwitcher();
   const [isDarkMode, setIsDarkMode] = React.useState(true);
   const [isCountVisible, setIsCountVisible] = React.useState(false)
@@ -56,7 +58,7 @@ const App: FC<AppProps> = ({ isTest, identifier, allIdentifiers }) => {
     const reciever = new Reciever(setGraphData, setIsDarkMode);
     const handler = isTest
       ? new TestHandler(reciever)
-      : new VSCHandler(reciever, document);
+      : new VSCHandler(vscodeAPI, reciever, document);
     handler.requestDependents(identifier, 2, []);
     return handler;
   });

@@ -18,7 +18,6 @@ import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.rpc.{DependencyGraph, DependencyLink, Server}
 import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext._
-import io.scalajs.nodejs.setTimeout
 
 import java.util.regex.Pattern
 import scala.collection.mutable
@@ -71,28 +70,27 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     private val ignoreTypes =
       VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
 
-    server
-      .typeIdentifiers()
-      .map(typeIdentifiers => {
-
-        val panel = VSCode.window.createWebviewPanel("dependencyGraph",
-                                                     "Dependency Explorer",
-                                                     ViewColumn.ONE,
-                                                     new WebviewOptions)
-        panel.webview
-          .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
-        panel.webview.html = webContent(panel.webview)
-        setTimeout(() => {
-          panel.webview.postMessage(
-            new InitMessage(isTest = false,
-                            startingIdentifier.toString(),
-                            typeIdentifiers.identifiers.map(_.toString()).toJSArray))
-        }, 2000)
-      })
+    private val panel = VSCode.window.createWebviewPanel("dependencyGraph",
+                                                         "Dependency Explorer",
+                                                         ViewColumn.ONE,
+                                                         new WebviewOptions)
+    panel.webview
+      .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
+    panel.webview.html = webContent(panel.webview)
 
     private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
       val cmd = event.asInstanceOf[IncomingMessage]
       cmd.cmd match {
+        case "init" =>
+          server
+            .typeIdentifiers()
+            .map(typeIdentifiers => {
+
+              panel.webview.postMessage(
+                new InitMessage(isTest = false,
+                                identifier.toString(),
+                                typeIdentifiers.identifiers.map(_.toString()).toJSArray))
+            })
         case "dependents" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
           TypeIdentifier(msg.identifier) match {
