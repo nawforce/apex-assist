@@ -87,8 +87,8 @@ object IdentifierForPathResult {
 }
 
 trait OrgAPI {
-  @api.JSONRPCMethod(name = "identifier")
-  def identifier(): Future[String]
+  @api.JSONRPCMethod(name = "version")
+  def version(): Future[String]
 
   @api.JSONRPCMethod(name = "reset")
   def reset(): Future[Unit]
@@ -103,10 +103,10 @@ trait OrgAPI {
   def refresh(path: String): Future[Unit]
 
   @api.JSONRPCMethod(name = "getTypeIdentifiers")
-  def typeIdentifiers(): Future[GetTypeIdentifiersResult]
+  def typeIdentifiers(apexOnly: Boolean): Future[GetTypeIdentifiersResult]
 
   @api.JSONRPCMethod(name = "dependencyGraph")
-  def dependencyGraph(identifier: IdentifierRequest, depth: Int): Future[DependencyGraph]
+  def dependencyGraph(identifier: IdentifierRequest, depth: Int, apexOnly: Boolean): Future[DependencyGraph]
 
   @api.JSONRPCMethod(name = "identifierLocation")
   def identifierLocation(identifier: IdentifierRequest): Future[IdentifierLocationResult]

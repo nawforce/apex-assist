@@ -27,7 +27,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.pkgforce.diagnostics.{Issue, Location, LoggerOps, UNUSED_CATEGORY, WARNING_CATEGORY}
+import com.nawforce.pkgforce.diagnostics._
 import com.nawforce.rpc.Server
 
 import scala.collection.compat.immutable.ArraySeq
@@ -46,7 +46,7 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
 
   def onConfigChanged(event: ConfigurationChangeEvent): Unit = {
     if (event.affectsConfiguration(showWarningsConfig) || event.affectsConfiguration(
-          showWarningsOnChangeConfig)) {
+      showWarningsOnChangeConfig)) {
       LoggerOps.info(s"$showWarningsConfig or $showWarningsOnChangeConfig Configuration Changed")
       refreshDiagnostics()
     }
@@ -68,58 +68,63 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
       VSCode.workspace.getConfiguration().get[Boolean](showWarningsOnChangeConfig).getOrElse(true)
 
     server
-      .getIssues(includeWarnings = true, includeZombies = false)
+      .getIssues(includeWarnings = true, includeZombies = true)
       .map(issuesResult => {
         diagnostics.clear()
 
         val issueMap = issuesResult.issues
-          .filter(i => allowIssues(i, showWarnings, showWarningsOnChange))
+          .filter(i => allowIssue(i, showWarnings, showWarningsOnChange))
           .groupBy(_.path)
           .map { case (x, xs) => (x, xs) }
         issueMap.keys.foreach(path => {
           diagnostics.set(
             VSCode.Uri.file(path),
-            issueMap(path).sortBy(_.diagnostic.location.startLine).map(issueToDiagnostic).toJSArray)
+            issueMap(path).sortBy(_.diagnostic.location.startLine).map(issue => issueToDiagnostic(issue, isLocal = false)).toJSArray)
         })
       })
   }
 
   def setLocalDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {
-    val nonSyntax = diagnostics.get(td.uri).getOrElse(js.Array()).filter(_.code != "Syntax")
-    diagnostics.set(td.uri, nonSyntax ++ issues.map(issueToDiagnostic).toJSArray)
+    val nonLocal = diagnostics.get(td.uri).getOrElse(js.Array()).filter(_.code == IssueLog.serverTag)
+    val nonLocalLocations = nonLocal.map(diag =>
+      Location(diag.range.start.line+1, diag.range.start.character, diag.range.end.line+1, diag.range.end.character)).toSet
+    val newIssues = issues
+      .filterNot(issue => nonLocalLocations.contains(issue.diagnostic.location))
+      .map(issue => issueToDiagnostic(issue, isLocal = true))
+    diagnostics.set(td.uri, nonLocal ++ newIssues.toJSArray)
   }
 
-  private def allowIssues(issue: Issue,
-                          showWarnings: Boolean,
-                          showWarningsOnChange: Boolean): Boolean = {
+  private def allowIssue(issue: Issue,
+                         showWarnings: Boolean,
+                         showWarningsOnChange: Boolean): Boolean = {
     if (showWarnings || (showWarningsOnChange && warningsAllowed.contains(issue.path)))
       return true
 
-    issue.diagnostic.category != WARNING_CATEGORY && issue.diagnostic.category != UNUSED_CATEGORY
+    DiagnosticCategory.isErrorType(issue.diagnostic.category)
   }
 
-  private def issueToDiagnostic(issue: Issue): com.nawforce.vsext.Diagnostic = {
+  private def issueToDiagnostic(issue: Issue, isLocal: Boolean): com.nawforce.vsext.Diagnostic = {
     val diag = VSCode.newDiagnostic(locationToRange(issue.diagnostic.location),
-                                    issue.diagnostic.message,
-                                    issue.diagnostic.category match {
-                                      case WARNING_CATEGORY => DiagnosticSeverity.WARNING
-                                      case UNUSED_CATEGORY  => DiagnosticSeverity.WARNING
-                                      case _                => DiagnosticSeverity.ERROR
-                                    })
-    diag.code = issue.diagnostic.category.value
+      issue.diagnostic.message,
+      if (DiagnosticCategory.isErrorType(issue.diagnostic.category))
+        DiagnosticSeverity.ERROR else DiagnosticSeverity.WARNING
+    )
+    diag.code = if (isLocal) IssueLog.localTag else IssueLog.serverTag
     diag
   }
 
   private def locationToRange(location: Location): Range = {
     VSCode.newRange(location.startLine - 1,
-                    location.startPosition,
-                    location.endLine - 1,
-                    location.endPosition)
+      location.startPosition,
+      location.endLine - 1,
+      location.endPosition)
   }
-
 }
 
 object IssueLog {
+  val localTag: String = "ApexAssist"
+  val serverTag: String = "ApexAssist\u220B"
+
   def apply(server: Server, diagnostics: DiagnosticCollection): IssueLog = {
     new IssueLog(server, diagnostics)
   }

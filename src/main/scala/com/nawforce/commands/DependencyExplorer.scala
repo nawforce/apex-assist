@@ -97,7 +97,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       cmd.cmd match {
         case "init" =>
           server
-            .typeIdentifiers()
+            .typeIdentifiers(apexOnly = true)
             .map(typeIdentifiers => {
 
               panel.webview.postMessage(
@@ -112,7 +112,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
             case Right(id) =>
               identifier = id
               server
-                .dependencyGraph(identifier, msg.depth)
+                .dependencyGraph(identifier, msg.depth, apexOnly = true)
                 .foreach(graph => {
                   val reduced =
                     removeOrphans(identifier,
@@ -232,12 +232,12 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       try {
         val ignorePattern = Pattern.compile(ignoreTypes.getOrElse("^$"))
         graph.nodeData.toIndexedSeq.zipWithIndex.flatMap(nd => {
-          val typeName = nd._1.identifier.typeName.toString()
+          val typeIdentifier = nd._1.identifier.toString()
           if (nd._1.identifier == identifier)
             Some(nd._2)
-          else if (hideTypes.contains(typeName))
+          else if (hideTypes.contains(typeIdentifier))
             None
-          else if (ignorePattern.matcher(typeName).matches())
+          else if (ignorePattern.matcher(typeIdentifier).matches())
             None
           else
             Some(nd._2)

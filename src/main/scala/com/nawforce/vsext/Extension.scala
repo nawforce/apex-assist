@@ -93,9 +93,9 @@ object Extension {
     // Init server
     val server = Server(outputChannel)
     server
-      .identifier()
-      .map(identifier => {
-        LoggerOps.info(s"Server ID: $identifier")
+      .version()
+      .map(version => {
+        LoggerOps.info(s"Server ID: $version")
       })
 
     // Load workspace

@@ -59,7 +59,7 @@ class Server(child: ChildProcess) {
 
   private def sender(json: String): Future[Option[String]] = {
     LoggerOps.debug(s"Sent: $json")
-    child.stdin.write(encodeJSON(json))
+    child.stdin.write(json)
     child.stdin.write("\n\n")
     val promise = Promise[Option[String]]()
     inboundQueue.enqueue(promise)
@@ -84,8 +84,8 @@ class Server(child: ChildProcess) {
     promise.success(Some(msg))
   }
 
-  def identifier(): Future[String] = {
-    orgAPI.identifier()
+  def version(): Future[String] = {
+    orgAPI.version()
   }
 
   def reset(): Future[Unit] = {
@@ -104,12 +104,12 @@ class Server(child: ChildProcess) {
     orgAPI.refresh(path)
   }
 
-  def typeIdentifiers(): Future[GetTypeIdentifiersResult] = {
-    orgAPI.typeIdentifiers()
+  def typeIdentifiers(apexOnly: Boolean): Future[GetTypeIdentifiersResult] = {
+    orgAPI.typeIdentifiers(apexOnly)
   }
 
-  def dependencyGraph(identifier: TypeIdentifier, depth: Int): Future[DependencyGraph] = {
-    orgAPI.dependencyGraph(IdentifierRequest(identifier), depth)
+  def dependencyGraph(identifier: TypeIdentifier, depth: Int, apexOnly: Boolean): Future[DependencyGraph] = {
+    orgAPI.dependencyGraph(IdentifierRequest(identifier), depth, apexOnly)
   }
 
   def identifierLocation(identifier: TypeIdentifier): Future[IdentifierLocationResult] = {
@@ -118,14 +118,6 @@ class Server(child: ChildProcess) {
 
   def identifierForPath(path: String): Future[IdentifierForPathResult] = {
     orgAPI.identifierForPath(path)
-  }
-
-  private def encodeJSON(json: String): String = {
-    // New lines are used as message terminator so we best remove any used in formatting
-    if (json.indexOf('\n') == 1)
-      json
-    else
-      json.replace("\\n", "")
   }
 }
 
@@ -138,9 +130,10 @@ object Server {
     val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
     val args =
       js.Array(s"-Xmx${maxMemory}m",
+               "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
                "-Dfile.encoding=UTF-8",
                "-cp",
-               "jars/apexlink-2.0.0-SNAPSHOT.jar",
+               "jars/apexlink-2.0.0-rc3.jar",
                "com.nawforce.apexlink.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")

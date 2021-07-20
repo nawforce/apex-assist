@@ -46,11 +46,10 @@ class Summary(context: ExtensionContext, issueLog: IssueLog) {
     Future({
       if (td.uri.fsPath.endsWith(".cls")) {
         val parser = CodeParser(PathFactory(td.uri.fsPath), SourceData(td.getText()))
-        val issues = parser.parseClass() match {
-          case Left(issues) => ArraySeq.unsafeWrapArray(issues)
-          case Right(cu)    => ApexNode(parser, cu).collectIssues()
-        }
-        issueLog.setLocalDiagnostics(td, issues)
+        val result = parser.parseClass()
+        issueLog.setLocalDiagnostics(
+          td,
+          ArraySeq.unsafeWrapArray(result.issues) ++ ApexNode(parser, result.value).map(_.collectIssues()).getOrElse(ArraySeq()))
       }
     }).toJSPromise
   }

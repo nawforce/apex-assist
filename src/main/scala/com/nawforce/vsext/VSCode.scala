@@ -131,10 +131,16 @@ trait URIOps extends js.Object {
 }
 
 @js.native
-trait Position extends js.Object {}
+trait Position extends js.Object {
+ val line: Int
+ val character: Int
+}
 
 @js.native
-trait Range extends js.Object {}
+trait Range extends js.Object {
+  val start: Position
+  val end: Position
+}
 
 @js.native
 trait RelativePattern extends js.Object {}
@@ -149,6 +155,7 @@ object DiagnosticSeverity {
 @js.native
 trait Diagnostic extends js.Object {
   var code: String
+  var range: Range
 }
 
 @js.native
