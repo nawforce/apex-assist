@@ -69,7 +69,7 @@ object Extension {
         this.server = Some(server)
         val issueLog = IssueLog(server, diagnostics)
         Watchers(context, server, issueLog)
-        DefinitionProvider(context, server)
+        //DefinitionProvider(context, server)
         Summary(context, issueLog)
         DependencyExplorer(context, server)
         ClearDiagnostics(context, issueLog)
