@@ -1,8 +1,5 @@
 /*
- [The "BSD licence"]
- Copyright (c) 2020 Kevin Jones
- All rights reserved.
-
+ Copyright (c) 2020 Kevin Jones, All rights reserved.
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -13,17 +10,6 @@
     documentation and/or other materials provided with the distribution.
  3. The name of the author may not be used to endorse or promote products
     derived from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.nawforce.vsext
 
@@ -120,7 +106,7 @@ class ChangeOptions extends js.Object {
 trait URI extends js.Object {
   val fsPath: String
 
-  def `with`(change: ChangeOptions): URI= js.native
+  def `with`(change: ChangeOptions): URI = js.native
   def toString(skipEncoding: Boolean): String = js.native
 }
 
@@ -169,9 +155,36 @@ trait DiagnosticCollection extends Disposable {
   def get(uri: URI): js.UndefOr[js.Array[Diagnostic]]
 }
 
+trait DocumentFilter extends js.Object {
+  val language: String
+  val pattern: String
+  val scheme: String
+}
+
+trait LocationLink extends js.Object {
+  val originSelectionRange: Range
+  val targetRange: Range
+  val targetSelectionRange: Range
+  val targetUri: Range
+}
+
+@js.native
+trait CancellationToken extends js.Object
+
+trait DefinitionProvider extends js.Object {
+  type DefinitionLink = LocationLink
+
+  def provideDefinition(document: TextDocument,
+                        position: Position,
+                        token: CancellationToken): js.Promise[Array[DefinitionLink]]
+}
+
 @js.native
 trait LanguagesOps extends js.Object {
   def createDiagnosticCollection(name: String): DiagnosticCollection = js.native
+
+  def registerDefinitionProvider(selector: DocumentFilter,
+                                 provider: DefinitionProvider): Disposable = js.native
 }
 
 @js.native

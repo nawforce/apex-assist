@@ -49,11 +49,11 @@ case class DependencyNode(identifier: TypeIdentifier,
 
   private def doesEqual(other: DependencyNode): Boolean = {
     identifier == other.identifier &&
-      size == other.size &&
-      transitiveCount == other.transitiveCount &&
-      extending.sameElements(other.extending) &&
-      implementing.sameElements(other.implementing) &&
-      using.sameElements(other.using)
+    size == other.size &&
+    transitiveCount == other.transitiveCount &&
+    extending.sameElements(other.extending) &&
+    implementing.sameElements(other.implementing) &&
+    using.sameElements(other.using)
   }
 }
 
