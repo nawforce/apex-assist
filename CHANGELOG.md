@@ -1,3 +1,16 @@
+## [1.3.0]
+* Added Improved multi-package directory and 2GP support
+* Added Goto Definition support for classes and static methods/fields
+* Added Unused local variables warning
+* Changed Improved loading performance & lower memory usage
+* Changed Unused method/field analysis enabled
+* Fixed VF Page/Component controller unused reporting
+* Fixed Dependency Explorer failing to open
+* Fixed Add missing types for FSL
+* Fixed SuppressWarning not turning off unused warnings
+* Fixed Error message on duplicate methods
+
+
 ## [1.2.2]
 
 * Added - Big object support
