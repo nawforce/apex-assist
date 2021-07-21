@@ -13,6 +13,8 @@
  */
 package com.nawforce.vsext
 
+import com.nawforce.pkgforce.diagnostics.Location
+
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic
 import scala.scalajs.js.Dynamic.{global => g}
@@ -118,14 +120,14 @@ trait URIOps extends js.Object {
 
 @js.native
 trait Position extends js.Object {
- val line: Int
- val character: Int
+  var line: Int = js.native
+  var character: Int = js.native
 }
 
 @js.native
 trait Range extends js.Object {
-  val start: Position
-  val end: Position
+  var start: Position = js.native
+  var end: Position = js.native
 }
 
 @js.native
@@ -161,11 +163,11 @@ trait DocumentFilter extends js.Object {
   val scheme: String
 }
 
-trait LocationLink extends js.Object {
-  val originSelectionRange: Range
-  val targetRange: Range
-  val targetSelectionRange: Range
-  val targetUri: Range
+class LocationLink extends js.Object {
+  var originSelectionRange: js.UndefOr[Range] = js.undefined
+  var targetRange: js.UndefOr[Range] = js.undefined
+  var targetSelectionRange: js.UndefOr[Range] = js.undefined
+  var targetUri: js.UndefOr[URI] = js.undefined
 }
 
 @js.native
@@ -176,7 +178,7 @@ trait DefinitionProvider extends js.Object {
 
   def provideDefinition(document: TextDocument,
                         position: Position,
-                        token: CancellationToken): js.Promise[Array[DefinitionLink]]
+                        token: CancellationToken): js.Promise[js.Array[DefinitionLink]]
 }
 
 @js.native
@@ -207,6 +209,7 @@ trait WorkspaceConfiguration extends js.Object {
 @js.native
 trait TextDocument extends js.Object {
   val uri: URI = js.native
+  val isDirty: Boolean = js.native
   def getText(): String = js.native
 }
 
@@ -298,5 +301,12 @@ object VSCode {
 
   def newRelativePattern(base: URI, pattern: String): RelativePattern = {
     js.Dynamic.newInstance(module.RelativePattern)(base, pattern).asInstanceOf[RelativePattern]
+  }
+
+  def locationToRange(location: Location): Range = {
+    newRange(location.startLine - 1,
+             location.startPosition,
+             location.endLine - 1,
+             location.endPosition)
   }
 }

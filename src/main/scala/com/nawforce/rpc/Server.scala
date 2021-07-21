@@ -105,6 +105,10 @@ class Server(child: ChildProcess) {
   def identifierForPath(path: String): Future[IdentifierForPathResult] = {
     orgAPI.identifierForPath(path)
   }
+
+  def getDefinition(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]] = {
+    orgAPI.getDefinition(path, line, offset, content)
+  }
 }
 
 object Server {
@@ -118,7 +122,7 @@ object Server {
     val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
     val args =
       js.Array(s"-Xmx${maxMemory}m",
-               "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
+               //"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
                "-Dfile.encoding=UTF-8",
                "-cp",
                "jars/apexlink-2.0.0-rc3.jar",

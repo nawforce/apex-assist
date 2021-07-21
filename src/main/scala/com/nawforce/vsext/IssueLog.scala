@@ -91,20 +91,13 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
   }
 
   private def issueToDiagnostic(issue: Issue, isLocal: Boolean): com.nawforce.vsext.Diagnostic = {
-    val diag = VSCode.newDiagnostic(locationToRange(issue.diagnostic.location),
+    val diag = VSCode.newDiagnostic(VSCode.locationToRange(issue.diagnostic.location),
       issue.diagnostic.message,
       if (DiagnosticCategory.isErrorType(issue.diagnostic.category))
         DiagnosticSeverity.ERROR else DiagnosticSeverity.WARNING
     )
     diag.code = if (isLocal) IssueLog.localTag else IssueLog.serverTag
     diag
-  }
-
-  private def locationToRange(location: Location): Range = {
-    VSCode.newRange(location.startLine - 1,
-      location.startPosition,
-      location.endLine - 1,
-      location.endPosition)
   }
 }
 
