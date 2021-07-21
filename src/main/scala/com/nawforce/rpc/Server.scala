@@ -46,7 +46,7 @@ class Server(child: ChildProcess) {
   private def sender(json: String): Future[Option[String]] = {
     LoggerOps.debug(s"Sent: $json")
     child.stdin.write(json)
-    child.stdin.write("\n\n")
+    child.stdin.write("\u0000")
     val promise = Promise[Option[String]]()
     inboundQueue.enqueue(promise)
     promise.future
@@ -55,12 +55,12 @@ class Server(child: ChildProcess) {
   private def receiver(data: String): Unit = {
     val existingLength = inboundData.length()
     inboundData.append(data)
-    var terminator = inboundData.indexOf("\n\n", existingLength)
+    var terminator = inboundData.indexOf('\u0000', existingLength)
     while (terminator != -1) {
       val msg = inboundData.slice(0, terminator).mkString
       handleMessage(msg)
-      inboundData = inboundData.slice(terminator + 2, inboundData.length)
-      terminator = inboundData.indexOf("\n\n")
+      inboundData = inboundData.slice(terminator + 1, inboundData.length)
+      terminator = inboundData.indexOf('\u0000')
     }
   }
 
