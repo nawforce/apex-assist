@@ -14,6 +14,7 @@
 package com.nawforce.vsext
 
 import com.nawforce.pkgforce.diagnostics._
+import com.nawforce.pkgforce.path.{PathFactory, PathLike}
 import com.nawforce.rpc.Server
 
 import scala.collection.compat.immutable.ArraySeq
@@ -59,8 +60,10 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
       .map(issuesResult => {
         diagnostics.clear()
 
+        val workspaceProjectFile = PathFactory(VSCode.workspace.workspaceFolders.get.head.uri.fsPath)
+          .join("sfdx-project.json")
         val issueMap = issuesResult.issues
-          .filter(i => allowIssue(i, showWarnings, showWarningsOnChange))
+          .filter(i => allowIssue(i, workspaceProjectFile, showWarnings, showWarningsOnChange))
           .groupBy(_.path)
           .map { case (x, xs) => (x, xs) }
         issueMap.keys.foreach(path => {
@@ -82,8 +85,13 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
   }
 
   private def allowIssue(issue: Issue,
+                         workspaceProjectFile: PathLike,
                          showWarnings: Boolean,
                          showWarningsOnChange: Boolean): Boolean = {
+    if (PathFactory(issue.path) == workspaceProjectFile) {
+      return true
+    }
+
     if (showWarnings || (showWarningsOnChange && warningsAllowed.contains(issue.path)))
       return true
 
@@ -103,7 +111,7 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
 
 object IssueLog {
   val localTag: String = "ApexAssist"
-  val serverTag: String = "ApexAssist\u220B"
+  val serverTag: String = "ApexAssist\u200B"
 
   def apply(server: Server, diagnostics: DiagnosticCollection): IssueLog = {
     new IssueLog(server, diagnostics)
