@@ -109,6 +109,10 @@ class Server(child: ChildProcess) {
   def getDefinition(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]] = {
     orgAPI.getDefinition(path, line, offset, content)
   }
+
+  def getDependencyBombs(count: Int): Future[Array[BombScore]] = {
+    orgAPI.getDependencyBombs(count)
+  }
 }
 
 object Server {

@@ -60,6 +60,10 @@
       {
         "command": "apex-assist.dependencyGraph",
         "title": "Assist: Show Dependency Graph"
+      },
+      {
+        "command": "apex-assist.dependencyBombs",
+        "title": "Assist: Show Dependency Bombs"
       }
     ],
     "menus": {

@@ -13,7 +13,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.commands.{ClearDiagnostics, DependencyExplorer}
+import com.nawforce.commands.{ClearDiagnostics, DependencyBombs, DependencyExplorer}
 import com.nawforce.pkgforce.diagnostics.LoggerOps
 import com.nawforce.providers.DefinitionProvider
 import com.nawforce.rpc.{APIError, Server}
@@ -72,6 +72,7 @@ object Extension {
         DefinitionProvider(context, server)
         Summary(context, issueLog)
         DependencyExplorer(context, server)
+        DependencyBombs(context, server)
         ClearDiagnostics(context, issueLog)
         issueLog.refreshDiagnostics()
     }
