@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
@@ -11,7 +11,7 @@
   "bugs": "https://github.com/nawforce/apex-assist/issues",
   "icon": "logo.png",
   "dependencies": {
-    "apex-parser": "2.8.0",
+    "apex-parser": "2.10.0",
     "vf-parser": "1.0.0"
   },
   "scripts": {
@@ -91,6 +91,7 @@
         ],
         "extensions": [
           ".cls",
+          ".xcls",
           ".trigger"
         ]
       }

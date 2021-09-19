@@ -13,7 +13,9 @@
  */
 package com.nawforce.vsext
 
+import com.nawforce.pkgforce.diagnostics.CatchingLogger
 import com.nawforce.pkgforce.path.PathFactory
+import com.nawforce.pkgforce.sfdx.SFDXProject
 import com.nawforce.rpc.Server
 import io.scalajs.nodejs.timers.Timeout
 import io.scalajs.nodejs.{clearTimeout, setTimeout}
@@ -91,20 +93,29 @@ class IssueUpdater(issueLog: IssueLog) extends Debouncer {
 }
 
 object Watchers {
-  private val changedGlobs =
-    Array("**/*.cls", "**/*.trigger", "**/*.labels", "**/*.labels-meta.xml")
-
   def apply(context: ExtensionContext, server: Server, issueLog: IssueLog): Watchers = {
 
-    val resetPaths = VSCode.workspace.workspaceFolders
+    val folders = VSCode.workspace.workspaceFolders
       .map(_.toArray)
       .getOrElse(Array())
+
+    val resetWatchers = folders
       .flatMap(folder => {
-        Array(hashFiles(context, folder.uri, "sfdx-project.json"),
-              hashFiles(context, folder.uri, ".forceignore"))
+        val baseURI = folder.uri
+        Array(hashFiles(context, baseURI, "sfdx-project.json"),
+          hashFiles(context, baseURI, ".forceignore"),
+        )
       })
 
-    new Watchers(server, issueLog, resetPaths, createWatchers(context, changedGlobs))
+    val metadataWatchers = folders
+      .flatMap(folder => {
+        val baseURI = folder.uri
+        SFDXProject(PathFactory(baseURI.fsPath), new CatchingLogger()).map(project => {
+          createWatchers(context, baseURI, project.metadataGlobs.toArray)
+        }).getOrElse(Array())
+      })
+
+    new Watchers(server, issueLog, resetWatchers, metadataWatchers)
   }
 
   private def hashFiles(context: ExtensionContext,
@@ -116,24 +127,21 @@ object Watchers {
       case Left(_)     => None
       case Right(data) => Some(scala.util.hashing.MurmurHash3.stringHash(data))
     }
-
-    val watcher = VSCode.workspace.createFileSystemWatcher(VSCode.newRelativePattern(base, name),
-                                                           ignoreCreateEvents = false,
-                                                           ignoreChangeEvents = false,
-                                                           ignoreDeleteEvents = false)
-    context.subscriptions.push(watcher)
-    (uri, watcher, hash)
+    (uri, createWatcher(context, base, name), hash)
   }
 
   private def createWatchers(context: ExtensionContext,
+                             base: URI,
                              globs: Array[String]): Array[FileSystemWatcher] = {
-    globs.map(glob => {
-      val watcher = VSCode.workspace.createFileSystemWatcher(glob,
-                                                             ignoreCreateEvents = false,
-                                                             ignoreChangeEvents = false,
-                                                             ignoreDeleteEvents = false)
-      context.subscriptions.push(watcher)
-      watcher
-    })
+    globs.map(glob => createWatcher(context, base, glob))
+  }
+
+  private def createWatcher(context: ExtensionContext, base: URI, glob: String) = {
+    val watcher = VSCode.workspace.createFileSystemWatcher(VSCode.newRelativePattern(base, glob),
+      ignoreCreateEvents = false,
+      ignoreChangeEvents = false,
+      ignoreDeleteEvents = false)
+    context.subscriptions.push(watcher)
+    watcher
   }
 }

@@ -1,3 +1,9 @@
+## [1.4.0]
+* Significantly improved Goto Defintion support
+* Support for Generics Proof of Concept
+* File watchers are more specific
+* Improved checking for server termination
+
 ## [1.3.0]
 * Added Improved multi-package directory and 2GP support
 * Added Goto Definition support for classes and static methods/fields
@@ -10,9 +16,7 @@
 * Fixed SuppressWarning not turning off unused warnings
 * Fixed Error message on duplicate methods
 
-
 ## [1.2.2]
-
 * Added - Big object support
 * Added - Transaction Finalizer support
 * Added - IsPortalEnabled on User
@@ -26,7 +30,6 @@
 * Fixed - Errors on Object special methods having wrong return types
 
 ## [1.2.1]
-
 * Fixed - Verify arguments of functions calls to 3rd party namespace
 * Fixed - Add ConnectAPI MessageSegments classes
 * Fixed - Add Component.Flow.Interview platfom type
@@ -53,7 +56,6 @@
 * Fixed - Surrogate pair handling in source files
 
 ## [1.2.0]
-
 * Changed - Updated dependency graph UI
 * Changed - Updated SObject definitions for Spring '21 (thanks to @mrwordsmith)
 * Fixed - Added System.Formula* classes (thanks to @mrwordsmith)
@@ -61,7 +63,6 @@
 * Added - Visualforce Component attribute handling
 
 ## [1.1.0]
-
 * Added - Setting to hide dependency graph nodes by regex, e.g. fflib_.*
 * Added - Command to clear diagnostics
 * Added - Setting to only show warnings for changed files (default on)
@@ -70,7 +71,6 @@
 * Fixed - Inline SOSL queries (thanks to @codefriar for flagging omission)
 
 ## [1.0.1]
-
 * Fixed - .forceignore handling on Windows (thanks to @FishOfPrey raising)
 * Fixed - Support for Quiddity (thanks to @codefriar)
 
