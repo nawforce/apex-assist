@@ -16,8 +16,8 @@ package com.nawforce.vsext
 import com.nawforce.pkgforce.diagnostics.Location
 
 import scala.scalajs.js
-import scala.scalajs.js.Dynamic
 import scala.scalajs.js.Dynamic.{global => g}
+import scala.scalajs.js.{Dynamic, |}
 
 @js.native
 trait Disposable extends js.Object {
@@ -75,6 +75,19 @@ class WebviewOptions extends js.Object {
   var retainContextWhenHidden: js.UndefOr[Boolean] = true
 }
 
+trait QuickPickItem extends js.Object {
+  val alwaysShow: Boolean
+  val label: String
+  val description: String
+  val picked: Boolean
+}
+
+class QuickPickOptions extends js.Object {
+  var canPickMany: Boolean = false
+  var ignoreFocusOut: Boolean = false
+  var placeHolder: String = ""
+}
+
 @js.native
 trait WindowOps extends js.Object {
   var activeTextEditor: js.UndefOr[TextEditor] = js.native
@@ -87,6 +100,10 @@ trait WindowOps extends js.Object {
                          viewColumn: Int,
                          options: WebviewOptions): WebviewPanel = js.native
   def showTextDocument(textDocument: TextDocument): js.Promise[Any] = js.native
+  def showQuickPick[T <: QuickPickItem](
+    items: js.Array[T],
+    options: QuickPickOptions,
+    token: js.UndefOr[CancellationToken]): js.Promise[js.UndefOr[T | js.Array[T]]] = js.native
 }
 
 @js.native
