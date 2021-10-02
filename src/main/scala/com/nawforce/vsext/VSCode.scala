@@ -198,12 +198,69 @@ trait DefinitionProvider extends js.Object {
                         token: CancellationToken): js.Promise[js.Array[DefinitionLink]]
 }
 
+trait CompletionItemProvider extends js.Object {
+  def provideCompletionItems(document: TextDocument,
+                             position: Position,
+                             token: CancellationToken,
+                             context: CompletionContext): js.Promise[CompletionList]
+}
+
+trait CompletionContext extends js.Object {
+  val triggerCharacter: String
+  val triggerKind: CompletionItemTriggerKind
+}
+
+trait CompletionItemTriggerKind extends js.Object
+
+trait CompletionItem extends js.Object
+
+class CompletionList extends js.Object {
+  var isIncomplete: js.UndefOr[Boolean] = js.undefined
+  var items: js.Array[CompletionItem] = js.Array()
+}
+
+object CompletionItemKind {
+  val TEXT: Int = 0
+  val METHOD: Int = 1
+  val FUNCTION: Int = 2
+  val CONSTRUCTOR: Int = 3
+  val FIELD: Int = 4
+  val VARIABLE: Int = 5
+  val CLASS: Int = 6
+  val INTERFACE: Int = 7
+  val MODULE: Int = 8
+  val PROPERTY: Int = 9
+  val UNIT: Int = 10
+  val VALUE: Int = 11
+  val ENUM: Int = 12
+  val KEYWORD: Int = 13
+  val SNIPPET: Int = 14
+  val COLOR: Int = 15
+  val FILE: Int = 16
+  val REFERENCE: Int = 17
+  val FOLDER: Int = 18
+  val ENUM_MEMBER: Int = 19
+  val CONSTANT: Int = 20
+  val STRUCT: Int = 21
+  val EVENT: Int = 22
+  val OPERATOR: Int = 23
+  val TYPE_PARAMETER: Int = 24
+  val USER: Int = 25
+  val ISSUE: Int = 26
+}
+
+
 @js.native
 trait LanguagesOps extends js.Object {
   def createDiagnosticCollection(name: String): DiagnosticCollection = js.native
 
   def registerDefinitionProvider(selector: DocumentFilter,
                                  provider: DefinitionProvider): Disposable = js.native
+
+  def registerCompletionItemProvider(selector: DocumentFilter,
+                                     provider: CompletionItemProvider,
+                                     triggerCharacters: js.Array[String]): Disposable = js.native
+
 }
 
 @js.native
@@ -277,6 +334,7 @@ trait VSCodeModule extends js.Object {
   val Diagnostic: Dynamic = js.native
   val Event: Dynamic = js.native
   val RelativePattern: Dynamic = js.native
+  val CompletionItem: Dynamic = js.native
 }
 
 @js.native
@@ -320,10 +378,14 @@ object VSCode {
     js.Dynamic.newInstance(module.RelativePattern)(base, pattern).asInstanceOf[RelativePattern]
   }
 
+  def newCompletionItem(label: String, kind: Int): CompletionItem = {
+    js.Dynamic.newInstance(module.CompletionItem)(label, kind).asInstanceOf[CompletionItem]
+  }
+
   def locationToRange(location: Location): Range = {
     newRange(location.startLine - 1,
-             location.startPosition,
-             location.endLine - 1,
-             location.endPosition)
+      location.startPosition,
+      location.endLine - 1,
+      location.endPosition)
   }
 }

@@ -113,6 +113,10 @@ class Server(child: ChildProcess) {
   def getDependencyBombs(count: Int): Future[Array[BombScore]] = {
     orgAPI.getDependencyBombs(count)
   }
+
+  def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]] = {
+    orgAPI.getCompletionItems(path, line, offset, content)
+  }
 }
 
 object Server {
@@ -129,7 +133,7 @@ object Server {
                //"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
                "-Dfile.encoding=UTF-8",
                "-cp",
-               "jars/apexlink-2.1.1.jar",
+               "jars/apexlink-2.1.2-SNAPSHOT.jar",
                "com.nawforce.apexlink.cmds.Server")
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")

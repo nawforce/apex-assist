@@ -21,16 +21,10 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichFutureNonThenable
 import js.JSConverters._
 
-class DefinitionFilter extends DocumentFilter {
-  override val language = "apex"
-  override val pattern: String = "**/*.cls"
-  override val scheme: String = "file"
-}
-
 class DefinitionProvider(context: ExtensionContext, server: Server) extends com.nawforce.vsext.DefinitionProvider {
 
   context.subscriptions.push(
-    VSCode.languages.registerDefinitionProvider(new DefinitionFilter, this))
+    VSCode.languages.registerDefinitionProvider(new ApexDefinitionFilter, this))
 
   override def provideDefinition(document: TextDocument,
                                  position: Position,

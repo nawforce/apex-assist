@@ -15,7 +15,7 @@ package com.nawforce.vsext
 
 import com.nawforce.commands.{ClearDiagnostics, DependencyBombs, DependencyExplorer}
 import com.nawforce.pkgforce.diagnostics.LoggerOps
-import com.nawforce.providers.DefinitionProvider
+import com.nawforce.providers.{CompletionProvider, DefinitionProvider}
 import com.nawforce.rpc.{APIError, Server}
 
 import scala.concurrent.Future
@@ -70,6 +70,7 @@ object Extension {
         val issueLog = IssueLog(server, diagnostics)
         Watchers(context, server, issueLog)
         DefinitionProvider(context, server)
+        CompletionProvider(context, server)
         Summary(context, issueLog)
         DependencyExplorer(context, server)
         DependencyBombs(context, server)

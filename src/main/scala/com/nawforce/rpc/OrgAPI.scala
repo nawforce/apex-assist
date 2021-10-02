@@ -128,4 +128,7 @@ trait OrgAPI {
 
   @api.JSONRPCMethod(name = "getDependencyBombs")
   def getDependencyBombs(count: Int): Future[Array[BombScore]]
+
+  @api.JSONRPCMethod(name = "getCompletionItems")
+  def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]]
 }
