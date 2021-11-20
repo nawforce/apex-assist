@@ -249,7 +249,6 @@ object CompletionItemKind {
   val ISSUE: Int = 26
 }
 
-
 @js.native
 trait LanguagesOps extends js.Object {
   def createDiagnosticCollection(name: String): DiagnosticCollection = js.native
@@ -259,7 +258,7 @@ trait LanguagesOps extends js.Object {
 
   def registerCompletionItemProvider(selector: DocumentFilter,
                                      provider: CompletionItemProvider,
-                                     triggerCharacters: js.Array[String]): Disposable = js.native
+                                     triggerCharacters: String): Disposable = js.native
 
 }
 
