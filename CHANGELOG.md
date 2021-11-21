@@ -1,3 +1,12 @@
+## [1.5.0]
+* Added initial version of code completion
+* Added type checking on local variable initialisation
+* Changed project loading to improve speed and reduce memory use
+* Fixed errors on partial class handling
+* Fixed duplicate static method detection
+* Fixed duplicate constructor method detection
+* Removed support for Generics
+
 ## [1.4.0]
 * Significantly improved Goto Defintion support
 * Support for Generics Proof of Concept

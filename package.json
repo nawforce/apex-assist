@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
@@ -17,7 +17,7 @@
   "scripts": {
     "package": "npm i && npm run build && vsce package",
     "build": "npm run webview && npm run maven && npm run sbt",
-    "webview": "(cd webview; npm i --production && npm run build)",
+    "webview": "(cd webview; npm i && npm run build)",
     "sbt": "sbt build",
     "maven": "(cd jars; mvn -DoutputDirectory=. dependency:copy-dependencies -DincludeScope=runtime;)"
   },
