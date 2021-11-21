@@ -47,22 +47,21 @@ object OpenResult {
 case class GetIssuesResult(issues: Array[Issue])
 
 object GetIssuesResult {
-  implicit val rw: RW[GetIssuesResult]                      = macroRW
-  implicit val rwIssue: RW[Issue]                           = macroRW
-  implicit val rwDiagnostic: RW[Diagnostic]                 = macroRW
+  implicit val rw: RW[GetIssuesResult] = macroRW
+  implicit val rwIssue: RW[Issue] = macroRW
+  implicit val rwDiagnostic: RW[Diagnostic] = macroRW
   implicit val rwDiagnosticCategory: RW[DiagnosticCategory] = macroRW
-  implicit val rwLocation: RW[Location]                     = macroRW
-  implicit val rwPathLike: RW[PathLike] =
-    JSONRPCPickler.readwriter[String].bimap[PathLike](_.toString, Path(_))
+  implicit val rwLocation: RW[Location] = macroRW
+  implicit val rwPathLike: RW[PathLike] = JSONRPCPickler.readwriter[String].bimap[PathLike](_.toString, Path(_))
 }
 
 case class GetTypeIdentifiersResult(identifiers: Array[TypeIdentifier])
 
 object GetTypeIdentifiersResult {
-  implicit val rw: RW[GetTypeIdentifiersResult]     = macroRW
+  implicit val rw: RW[GetTypeIdentifiersResult] = macroRW
   implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
-  implicit val rwTypeName: RW[TypeName]             = macroRW
-  implicit val rwName: RW[Name]                     = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
 }
 
 case class IdentifierLocationResult(pathLocation: PathLocation)
@@ -70,36 +69,74 @@ case class IdentifierLocationResult(pathLocation: PathLocation)
 object IdentifierLocationResult {
   implicit val rw: RW[IdentifierLocationResult] = macroRW
   implicit val rwPathLocation: RW[PathLocation] = macroRW
-  implicit val rwLocation: RW[Location]         = macroRW
-  implicit val rwPathLike: RW[PathLike] =
-    JSONRPCPickler.readwriter[String].bimap[PathLike](_.toString, Path(_))
+  implicit val rwLocation: RW[Location] = macroRW
+  implicit val rwPathLike: RW[PathLike] = JSONRPCPickler.readwriter[String].bimap[PathLike](_.toString, Path(_))
 }
 
 case class IdentifierRequest(identifier: TypeIdentifier)
 
 object IdentifierRequest {
-  implicit val rw: RW[IdentifierRequest]            = macroRW
+  implicit val rw: RW[IdentifierRequest] = macroRW
   implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
-  implicit val rwTypeName: RW[TypeName]             = macroRW
-  implicit val rwName: RW[Name]                     = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
+}
+
+case class IdentifiersRequest(identifiers: Array[TypeIdentifier])
+
+object IdentifiersRequest {
+  implicit val rw: RW[IdentifiersRequest] = macroRW
+  implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
 }
 
 case class IdentifierForPathResult(identifier: Option[TypeIdentifier])
 
 object IdentifierForPathResult {
-  implicit val rw: RW[IdentifierForPathResult]      = macroRW
+  implicit val rw: RW[IdentifierForPathResult] = macroRW
   implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
-  implicit val rwTypeName: RW[TypeName]             = macroRW
-  implicit val rwName: RW[Name]                     = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
 }
 
 case class BombScore(identifier: TypeIdentifier, usedBy: Int, uses: Int, score: Double)
 
 object BombScore {
-  implicit val rw: RW[BombScore]                    = macroRW
+  implicit val rw: RW[BombScore] = macroRW
   implicit val rwTypeIdentifier: RW[TypeIdentifier] = macroRW
-  implicit val rwTypeName: RW[TypeName]             = macroRW
-  implicit val rwName: RW[Name]                     = macroRW
+  implicit val rwTypeName: RW[TypeName] = macroRW
+  implicit val rwName: RW[Name] = macroRW
+}
+
+case class GetTestClassNamesRequest(paths: Array[String], findTests: Boolean)
+
+object GetTestClassNamesRequest {
+  implicit val rw: RW[GetTestClassNamesRequest] = macroRW
+}
+
+case class GetTestClassNamesResult(testClassNames: Array[String])
+
+object GetTestClassNamesResult {
+  implicit val rw: RW[GetTestClassNamesResult] = macroRW
+}
+
+case class GetDependencyCountsRequest(paths: Array[String])
+
+object GetDependencyCountsRequest {
+  implicit val rw: RW[GetDependencyCountsRequest] = macroRW
+}
+
+case class DependencyCount(path: String, count: Int)
+
+object DependencyCount {
+  implicit val rw: RW[DependencyCount] = macroRW
+}
+
+case class GetDependencyCountsResult(counts: Array[DependencyCount])
+
+object GetDependencyCountsResult {
+  implicit val rw: RW[GetDependencyCountsResult] = macroRW
 }
 
 trait OrgAPI {
@@ -122,11 +159,7 @@ trait OrgAPI {
   def typeIdentifiers(apexOnly: Boolean): Future[GetTypeIdentifiersResult]
 
   @api.JSONRPCMethod(name = "dependencyGraph")
-  def dependencyGraph(
-    identifier: IdentifierRequest,
-    depth: Int,
-    apexOnly: Boolean
-  ): Future[DependencyGraph]
+  def dependencyGraph(identifiers: IdentifiersRequest, depth: Int, apexOnly: Boolean): Future[DependencyGraph]
 
   @api.JSONRPCMethod(name = "identifierLocation")
   def identifierLocation(identifier: IdentifierRequest): Future[IdentifierLocationResult]
@@ -135,21 +168,17 @@ trait OrgAPI {
   def identifierForPath(path: String): Future[IdentifierForPathResult]
 
   @api.JSONRPCMethod(name = "getDefinition")
-  def getDefinition(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: Option[String]
-  ): Future[Array[LocationLink]]
+  def getDefinition(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]]
 
   @api.JSONRPCMethod(name = "getDependencyBombs")
   def getDependencyBombs(count: Int): Future[Array[BombScore]]
 
+  @api.JSONRPCMethod(name = "getTestClassNames")
+  def getTestClassNames(paths: GetTestClassNamesRequest): Future[GetTestClassNamesResult]
+
+  @api.JSONRPCMethod(name = "getDependencyCounts")
+  def getDependencyCounts(paths: GetDependencyCountsRequest): Future[GetDependencyCountsResult]
+
   @api.JSONRPCMethod(name = "getCompletionItems")
-  def getCompletionItems(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: String
-  ): Future[Array[CompletionItemLink]]
+  def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]]
 }

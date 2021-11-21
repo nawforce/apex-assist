@@ -19,6 +19,7 @@ import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.vsext.{OutputChannel, VSCode}
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
+import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer._
 import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.child_process.{ChildProcess, SpawnOptions}
 
@@ -98,7 +99,7 @@ class Server(child: ChildProcess) {
     depth: Int,
     apexOnly: Boolean
   ): Future[DependencyGraph] = {
-    orgAPI.dependencyGraph(IdentifierRequest(identifier), depth, apexOnly)
+    orgAPI.dependencyGraph(IdentifiersRequest(Array(identifier)), depth, apexOnly)
   }
 
   def identifierLocation(identifier: TypeIdentifier): Future[IdentifierLocationResult] = {
