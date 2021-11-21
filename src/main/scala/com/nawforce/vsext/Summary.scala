@@ -35,7 +35,10 @@ class Summary(context: ExtensionContext, issueLog: IssueLog) {
         val result = parser.parseClass()
         issueLog.setLocalDiagnostics(
           td,
-          result.issues ++ ApexNode(parser, result.value).map(_.collectIssues()).getOrElse(ArraySeq()))
+          result.issues ++ ApexNode(parser, result.value)
+            .map(_.collectIssues())
+            .getOrElse(ArraySeq())
+        )
       }
     }).toJSPromise
   }

@@ -18,7 +18,8 @@ import com.nawforce.vsext._
 class ClearDiagnostics(context: ExtensionContext, issueLog: IssueLog) {
 
   context.subscriptions.push(
-    VSCode.commands.registerCommand("apex-assist.clearDiagnostics", () => issueLog.clear()))
+    VSCode.commands.registerCommand("apex-assist.clearDiagnostics", () => issueLog.clear())
+  )
 
 }
 

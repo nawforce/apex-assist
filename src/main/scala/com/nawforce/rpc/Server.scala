@@ -19,7 +19,6 @@ import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.vsext.{OutputChannel, VSCode}
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
-import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer._
 import io.scalajs.nodejs.buffer.Buffer
 import io.scalajs.nodejs.child_process.{ChildProcess, SpawnOptions}
 
@@ -31,11 +30,11 @@ import scala.scalajs.js.Dynamic.{global => g}
 
 class Server(child: ChildProcess) {
   private val serializer = new UpickleJSONSerializer()
-  private val client = JSONRPCClient(serializer, (json: String) => sender(json))
-  private val orgAPI = client.createAPI[OrgAPI]
+  private val client     = JSONRPCClient(serializer, (json: String) => sender(json))
+  private val orgAPI     = client.createAPI[OrgAPI]
 
   private val inboundQueue = mutable.Queue[Promise[Option[String]]]()
-  private var inboundData = new mutable.StringBuilder()
+  private var inboundData  = new mutable.StringBuilder()
 
   child.stdout.onData((data: Buffer) => receiver(data.toString()))
 
@@ -94,7 +93,11 @@ class Server(child: ChildProcess) {
     orgAPI.typeIdentifiers(apexOnly)
   }
 
-  def dependencyGraph(identifier: TypeIdentifier, depth: Int, apexOnly: Boolean): Future[DependencyGraph] = {
+  def dependencyGraph(
+    identifier: TypeIdentifier,
+    depth: Int,
+    apexOnly: Boolean
+  ): Future[DependencyGraph] = {
     orgAPI.dependencyGraph(IdentifierRequest(identifier), depth, apexOnly)
   }
 
@@ -106,7 +109,12 @@ class Server(child: ChildProcess) {
     orgAPI.identifierForPath(path)
   }
 
-  def getDefinition(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]] = {
+  def getDefinition(
+    path: String,
+    line: Int,
+    offset: Int,
+    content: Option[String]
+  ): Future[Array[LocationLink]] = {
     orgAPI.getDefinition(path, line, offset, content)
   }
 
@@ -114,7 +122,12 @@ class Server(child: ChildProcess) {
     orgAPI.getDependencyBombs(count)
   }
 
-  def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]] = {
+  def getCompletionItems(
+    path: String,
+    line: Int,
+    offset: Int,
+    content: String
+  ): Future[Array[CompletionItemLink]] = {
     orgAPI.getCompletionItems(path, line, offset, content)
   }
 }
@@ -124,33 +137,45 @@ object Server {
   private val maxMemory =
     Math.max(
       Math.min(VSCode.workspace.getConfiguration().get[Int](maxMemoryConfig).getOrElse(512), 4096),
-      128)
+      128
+    )
 
   def apply(outputChannel: OutputChannel): Server = {
     val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
     val args =
-      js.Array(s"-Xmx${maxMemory}m",
-               // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
-               "-Dfile.encoding=UTF-8",
-               "-cp",
-               "jars/apexlink-2.2.3.jar",
-               "com.nawforce.apexlink.cmds.Server")
+      js.Array(
+        s"-Xmx${maxMemory}m",
+        // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
+        "-Dfile.encoding=UTF-8",
+        "-cp",
+        "jars/apexlink-2.2.3.jar",
+        "com.nawforce.apexlink.cmds.Server"
+      )
 
     LoggerOps.info(s"Spawning 'java ${args.mkString(" ")}'")
-    val child = ChildProcess.spawn("java", args, new SpawnOptions {
-      cwd = path.toString; detached = true; windowsHide = true
-    })
+    val child = ChildProcess.spawn(
+      "java",
+      args,
+      new SpawnOptions {
+        cwd = path.toString; detached = true; windowsHide = true
+      }
+    )
 
-    child.on("exit",
-             (code: Int, signal: Int) => {
-               if (code != 0 && code != 143)
-                 VSCode.window.showInformationMessage(
-                   s"ApexAssist server failed to start, code: $code, signal: $signal")
-               outputChannel.appendLine(s"Server died! code: $code, signal: $signal")
-             })
-    child.stderr.on("data",
-                    (data: Buffer) =>
-                      data.toString().split("\n").map(d => outputChannel.appendLine(s"Server: $d")))
+    child.on(
+      "exit",
+      (code: Int, signal: Int) => {
+        if (code != 0 && code != 143)
+          VSCode.window.showInformationMessage(
+            s"ApexAssist server failed to start, code: $code, signal: $signal"
+          )
+        outputChannel.appendLine(s"Server died! code: $code, signal: $signal")
+      }
+    )
+    child.stderr.on(
+      "data",
+      (data: Buffer) =>
+        data.toString().split("\n").map(d => outputChannel.appendLine(s"Server: $d"))
+    )
 
     new Server(child)
   }

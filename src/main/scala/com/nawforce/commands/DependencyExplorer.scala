@@ -40,14 +40,16 @@ class ReplyNodeData(val name: String, val r: Integer, val transitiveCount: Int) 
 
 class ReplyLinkData(val source: Integer, val target: Integer, val nature: String) extends js.Object
 
-class ReplyDependentsMessage(val nodeData: js.Array[ReplyNodeData],
-                             val linkData: js.Array[ReplyLinkData])
-    extends js.Object
+class ReplyDependentsMessage(
+  val nodeData: js.Array[ReplyNodeData],
+  val linkData: js.Array[ReplyLinkData]
+) extends js.Object
 
 class DependencyExplorer(context: ExtensionContext, server: Server) {
 
   context.subscriptions.push(
-    VSCode.commands.registerCommand("apex-assist.dependencyGraph", (uri: URI) => createView(uri)))
+    VSCode.commands.registerCommand("apex-assist.dependencyGraph", (uri: URI) => createView(uri))
+  )
 
   private def createView(uri: URI): Unit = {
     val filePath = if (js.isUndefined(uri)) {
@@ -65,15 +67,17 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
 
   class View(startingIdentifier: TypeIdentifier) {
     private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
-    private var identifier = startingIdentifier
+    private var identifier              = startingIdentifier
 
     private val ignoreTypes =
       VSCode.workspace.getConfiguration().get[String](ignoreTypesConfig).toOption
 
-    private val panel = VSCode.window.createWebviewPanel("dependencyGraph",
-                                                         "Dependency Explorer",
-                                                         ViewColumn.ONE,
-                                                         new WebviewOptions)
+    private val panel = VSCode.window.createWebviewPanel(
+      "dependencyGraph",
+      "Dependency Explorer",
+      ViewColumn.ONE,
+      new WebviewOptions
+    )
     panel.webview
       .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
     panel.webview.html = webContent(panel.webview)
@@ -87,9 +91,12 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
             .map(typeIdentifiers => {
 
               panel.webview.postMessage(
-                new InitMessage(isTest = false,
-                                identifier.toString(),
-                                typeIdentifiers.identifiers.map(_.toString()).toJSArray))
+                new InitMessage(
+                  isTest = false,
+                  identifier.toString(),
+                  typeIdentifiers.identifiers.map(_.toString()).toJSArray
+                )
+              )
             })
         case "dependents" =>
           val msg = cmd.asInstanceOf[GetDependentsMessage]
@@ -101,20 +108,30 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
                 .dependencyGraph(identifier, msg.depth, apexOnly = true)
                 .foreach(graph => {
                   val reduced =
-                    removeOrphans(identifier,
-                                  reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
+                    removeOrphans(
+                      identifier,
+                      reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet))
+                    )
                   panel.webview.postMessage(
                     new ReplyDependentsMessage(
                       reduced.nodeData
-                        .map(d =>
-                          new ReplyNodeData(d.identifier.toString(),
-                                            r = 4 + (5 * (Math.log10(if (d.size == 0) 1000
-                                            else d.size.toDouble) - 2)).toInt,
-                                            d.transitiveCount))
+                        .map(
+                          d =>
+                            new ReplyNodeData(
+                              d.identifier.toString(),
+                              r = 4 + (5 * (Math.log10(
+                                if (d.size == 0) 1000
+                                else d.size.toDouble
+                              ) - 2)).toInt,
+                              d.transitiveCount
+                            )
+                        )
                         .toJSArray,
                       reduced.linkData
                         .map(d => new ReplyLinkData(d.source, d.target, d.nature))
-                        .toJSArray))
+                        .toJSArray
+                    )
+                  )
                 })
           }
         case "open" =>
@@ -144,9 +161,9 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
         case Right(data) => JSON.parse(data)
       }
 
-      val files = assetManifest.files
-      val main = files.`main.js`.asInstanceOf[String]
-      val style = files.`main.css`.asInstanceOf[String]
+      val files   = assetManifest.files
+      val main    = files.`main.js`.asInstanceOf[String]
+      val style   = files.`main.css`.asInstanceOf[String]
       val runtime = files.`runtime-main.js`.asInstanceOf[String]
       val chunksJS = js.Object
         .keys(files.asInstanceOf[js.Object])
@@ -164,11 +181,15 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       val runtimeUri =
         webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString))
       val chunksJSUri =
-        chunksJS.map(p =>
-          webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString)))
+        chunksJS.map(
+          p =>
+            webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString))
+        )
       val chunksCSSUri =
-        chunksCSS.map(p =>
-          webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString)))
+        chunksCSS.map(
+          p =>
+            webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString))
+        )
 
       val chunksCSSMarkup = chunksCSSUri.map(chunkUri => {
         s"""<link rel="stylesheet" type="text/css" href="${chunkUri.toString(true)}">"""
@@ -191,16 +212,16 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
          |   <title>Dependency Graph</title>
          |   ${chunksCSSMarkup.mkString("\n")}
          |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
-           .toString(true)}">
+        .toString(true)}">
          |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${darkTheme
-           .toString(true)}">
+        .toString(true)}">
          |   <!-- inject-styles-here -->
          |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
          | </head>
          | <body data-theme="light" style="padding: 0">
          |   <div id="root"></div>
          |   <script crossorigin="anonymous" src="${runtimeUri
-           .toString(true)}"></script>
+        .toString(true)}"></script>
          |   ${chunksScripts.mkString("\n")}
          |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
          | </body>
@@ -213,7 +234,8 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     }
 
     private def retainByName(ignoreTypes: Option[String], hideTypes: Set[String])(
-      graph: DependencyGraph): Seq[Int] = {
+      graph: DependencyGraph
+    ): Seq[Int] = {
 
       try {
         val ignorePattern = Pattern.compile(ignoreTypes.getOrElse("^$"))
@@ -231,15 +253,18 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
       } catch {
         case ex: Exception =>
           VSCode.window.showInformationMessage(
-            s"Bad regex in apex-assist.dependencyExplorer.ignoreTypes setting, ${ex.getMessage}")
+            s"Bad regex in apex-assist.dependencyExplorer.ignoreTypes setting, ${ex.getMessage}"
+          )
           0 to graph.nodeData.length
       }
     }
 
     /** Remove any nodes not linked to the node of the passed identifier. */
     @scala.annotation.tailrec
-    private def removeOrphans(identifier: TypeIdentifier,
-                              graph: DependencyGraph): DependencyGraph = {
+    private def removeOrphans(
+      identifier: TypeIdentifier,
+      graph: DependencyGraph
+    ): DependencyGraph = {
       val reduced = reduceGraph(graph, retainByLinkage(identifier))
       if (reduced.nodeData.length == graph.nodeData.length)
         reduced
@@ -249,8 +274,8 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
 
     /** Identify a set of nodes to retain based on them being linked to a node for the passed identifier. */
     private def retainByLinkage(identifier: TypeIdentifier)(graph: DependencyGraph): Seq[Int] = {
-      val retain = mutable.Set[Int]()
-      val nodes = graph.nodeData.toIndexedSeq.zipWithIndex
+      val retain    = mutable.Set[Int]()
+      val nodes     = graph.nodeData.toIndexedSeq.zipWithIndex
       val rootIndex = nodes.find(_._1.identifier == identifier).map(_._2).head
       retain.add(rootIndex)
 
@@ -268,9 +293,11 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     }
 
     /** Reduce a graph by only retaining a subset of the nodes as identified by the reducer. */
-    private def reduceGraph(graph: DependencyGraph,
-                            reducer: DependencyGraph => Seq[Int]): DependencyGraph = {
-      val retain = reducer(graph)
+    private def reduceGraph(
+      graph: DependencyGraph,
+      reducer: DependencyGraph => Seq[Int]
+    ): DependencyGraph = {
+      val retain          = reducer(graph)
       val oldToNewMapping = retain.zipWithIndex.toMap
 
       val linkData = graph.linkData.flatMap(ld => {

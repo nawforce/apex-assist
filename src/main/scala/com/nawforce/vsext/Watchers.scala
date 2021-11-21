@@ -23,13 +23,15 @@ import io.scalajs.nodejs.{clearTimeout, setTimeout}
 import scala.collection.mutable
 import scala.scalajs.js
 
-class Watchers(server: Server,
-               issueLog: IssueLog,
-               resetWatchers: Array[(URI, FileSystemWatcher, Option[Int])],
-               refreshWatchers: Array[FileSystemWatcher]) {
+class Watchers(
+  server: Server,
+  issueLog: IssueLog,
+  resetWatchers: Array[(URI, FileSystemWatcher, Option[Int])],
+  refreshWatchers: Array[FileSystemWatcher]
+) {
 
-  private val issueUpdater = new IssueUpdater(issueLog)
-  private val resetHandler = new ResetHandler
+  private val issueUpdater  = new IssueUpdater(issueLog)
+  private val resetHandler  = new ResetHandler
   private val currentHashes = mutable.HashMap[String, Option[Int]]()
 
   resetWatchers.foreach(watcher => {
@@ -71,10 +73,15 @@ abstract class Debouncer {
 
   def trigger(): Unit = {
     timer.foreach(timer => clearTimeout(timer))
-    timer = Some(setTimeout(() => {
-      fire()
-      timer = None
-    }, 250))
+    timer = Some(
+      setTimeout(
+        () => {
+          fire()
+          timer = None
+        },
+        250
+      )
+    )
   }
 
   protected def fire(): Unit
@@ -102,26 +109,31 @@ object Watchers {
     val resetWatchers = folders
       .flatMap(folder => {
         val baseURI = folder.uri
-        Array(hashFiles(context, baseURI, "sfdx-project.json"),
-          hashFiles(context, baseURI, ".forceignore"),
+        Array(
+          hashFiles(context, baseURI, "sfdx-project.json"),
+          hashFiles(context, baseURI, ".forceignore")
         )
       })
 
     val metadataWatchers = folders
       .flatMap(folder => {
         val baseURI = folder.uri
-        SFDXProject(PathFactory(baseURI.fsPath), new CatchingLogger()).map(project => {
-          createWatchers(context, baseURI, project.metadataGlobs.toArray)
-        }).getOrElse(Array())
+        SFDXProject(PathFactory(baseURI.fsPath), new CatchingLogger())
+          .map(project => {
+            createWatchers(context, baseURI, project.metadataGlobs.toArray)
+          })
+          .getOrElse(Array())
       })
 
     new Watchers(server, issueLog, resetWatchers, metadataWatchers)
   }
 
-  private def hashFiles(context: ExtensionContext,
-                        base: URI,
-                        name: String): (URI, FileSystemWatcher, Option[Int]) = {
-    val uri = VSCode.Uri.joinPath(base, name)
+  private def hashFiles(
+    context: ExtensionContext,
+    base: URI,
+    name: String
+  ): (URI, FileSystemWatcher, Option[Int]) = {
+    val uri  = VSCode.Uri.joinPath(base, name)
     val path = PathFactory(uri.fsPath)
     val hash = path.read() match {
       case Left(_)     => None
@@ -130,17 +142,21 @@ object Watchers {
     (uri, createWatcher(context, base, name), hash)
   }
 
-  private def createWatchers(context: ExtensionContext,
-                             base: URI,
-                             globs: Array[String]): Array[FileSystemWatcher] = {
+  private def createWatchers(
+    context: ExtensionContext,
+    base: URI,
+    globs: Array[String]
+  ): Array[FileSystemWatcher] = {
     globs.map(glob => createWatcher(context, base, glob))
   }
 
   private def createWatcher(context: ExtensionContext, base: URI, glob: String) = {
-    val watcher = VSCode.workspace.createFileSystemWatcher(VSCode.newRelativePattern(base, glob),
+    val watcher = VSCode.workspace.createFileSystemWatcher(
+      VSCode.newRelativePattern(base, glob),
       ignoreCreateEvents = false,
       ignoreChangeEvents = false,
-      ignoreDeleteEvents = false)
+      ignoreDeleteEvents = false
+    )
     context.subscriptions.push(watcher)
     watcher
   }

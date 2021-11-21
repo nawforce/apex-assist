@@ -18,28 +18,36 @@ import com.nawforce.vsext._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
-import scala.scalajs.js.JSConverters.JSRichFutureNonThenable
-import js.JSConverters._
+import scala.scalajs.js.JSConverters.{JSRichFutureNonThenable, _}
 
-class DefinitionProvider(context: ExtensionContext, server: Server) extends com.nawforce.vsext.DefinitionProvider {
+class DefinitionProvider(context: ExtensionContext, server: Server)
+    extends com.nawforce.vsext.DefinitionProvider {
 
   context.subscriptions.push(
-    VSCode.languages.registerDefinitionProvider(new ApexDefinitionFilter, this))
+    VSCode.languages.registerDefinitionProvider(new ApexDefinitionFilter, this)
+  )
 
-  override def provideDefinition(document: TextDocument,
-                                 position: Position,
-                                 token: CancellationToken): js.Promise[js.Array[DefinitionLink]] = {
+  override def provideDefinition(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): js.Promise[js.Array[DefinitionLink]] = {
     val content = if (document.isDirty) Some(document.getText()) else None
-    server.getDefinition(document.uri.fsPath, position.line+1, position.character, content).map(links => {
-      links.map(link => {
-        val dl = new LocationLink()
-        dl.targetUri = VSCode.Uri.file(link.targetPath)
-        dl.targetRange = VSCode.locationToRange(link.target)
-        dl.targetSelectionRange = VSCode.locationToRange(link.targetSelection)
-        dl.originSelectionRange = VSCode.locationToRange(link.origin)
-        dl
-      }).toJSArray
-    }).toJSPromise
+    server
+      .getDefinition(document.uri.fsPath, position.line + 1, position.character, content)
+      .map(links => {
+        links
+          .map(link => {
+            val dl = new LocationLink()
+            dl.targetUri = VSCode.Uri.file(link.targetPath)
+            dl.targetRange = VSCode.locationToRange(link.target)
+            dl.targetSelectionRange = VSCode.locationToRange(link.targetSelection)
+            dl.originSelectionRange = VSCode.locationToRange(link.origin)
+            dl
+          })
+          .toJSArray
+      })
+      .toJSPromise
   }
 }
 

@@ -12,14 +12,15 @@ import scala.scalajs.js.Thenable.Implicits.thenable2future
 
 class BombItem(val label: String, val description: String) extends QuickPickItem {
   override val alwaysShow: Boolean = true
-  override val picked: Boolean = false
+  override val picked: Boolean     = false
 }
 
 class DependencyBombs(context: ExtensionContext, server: Server) {
   final val maxBombs = 25
 
   context.subscriptions.push(
-    VSCode.commands.registerCommand("apex-assist.dependencyBombs", () => getBombs.map(showBombs)))
+    VSCode.commands.registerCommand("apex-assist.dependencyBombs", () => getBombs.map(showBombs))
+  )
 
   private def showBombs(bombs: Array[BombItem]): Unit = {
     val options = new QuickPickOptions
@@ -47,8 +48,11 @@ class DependencyBombs(context: ExtensionContext, server: Server) {
       .map(bombs => {
         bombs.map(
           bomb =>
-            new BombItem(bomb.identifier.toString(),
-                         s"Score ${bomb.score}, Used By ${bomb.usedBy}, Uses ${bomb.uses}"))
+            new BombItem(
+              bomb.identifier.toString(),
+              s"Score ${bomb.score}, Used By ${bomb.usedBy}, Uses ${bomb.uses}"
+            )
+        )
       })
   }
 

@@ -33,11 +33,11 @@ trait ExtensionContext extends js.Object {
 class WorkspaceException(error: APIError) extends Throwable(error.message)
 
 object Extension {
-  private var context: ExtensionContext = _
+  private var context: ExtensionContext         = _
   private var diagnostics: DiagnosticCollection = _
-  private var output: OutputChannel = _
-  private var statusBar: StatusBar = _
-  private var server: Option[Server] = None
+  private var output: OutputChannel             = _
+  private var statusBar: StatusBar              = _
+  private var server: Option[Server]            = None
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext): Unit = {
@@ -93,7 +93,9 @@ object Extension {
     if (workspaceFolders.size > 1) {
       Future.successful(
         Failure(
-          new WorkspaceException(APIError("Opening multiple folders is not currently supported."))))
+          new WorkspaceException(APIError("Opening multiple folders is not currently supported."))
+        )
+      )
     } else {
       server
         .open(workspaceFolders.head.uri.fsPath)

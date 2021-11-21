@@ -20,35 +20,48 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.{JSRichFutureNonThenable, _}
 
-class CompletionProvider(context: ExtensionContext, server: Server) extends com.nawforce.vsext.CompletionItemProvider {
+class CompletionProvider(context: ExtensionContext, server: Server)
+    extends com.nawforce.vsext.CompletionItemProvider {
 
   context.subscriptions.push(
-    VSCode.languages.registerCompletionItemProvider(new ApexDefinitionFilter, this, "."))
+    VSCode.languages.registerCompletionItemProvider(new ApexDefinitionFilter, this, ".")
+  )
 
-  override def provideCompletionItems(document: TextDocument,
-                                      position: Position,
-                                      token: CancellationToken,
-                                      context: CompletionContext): js.Promise[CompletionList] = {
-    server.getCompletionItems(document.uri.fsPath, position.line + 1, position.character, document.getText())
+  override def provideCompletionItems(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken,
+    context: CompletionContext
+  ): js.Promise[CompletionList] = {
+    server
+      .getCompletionItems(
+        document.uri.fsPath,
+        position.line + 1,
+        position.character,
+        document.getText()
+      )
       .map(items => {
         val completions = new CompletionList
         completions.isIncomplete = true
-        completions.items = items.map(item => {
-          VSCode.newCompletionItem(item.label, convertKind(item.kind))
-        }).toJSArray
+        completions.items = items
+          .map(item => {
+            VSCode.newCompletionItem(item.label, convertKind(item.kind))
+          })
+          .toJSArray
         completions
-      }).toJSPromise
+      })
+      .toJSPromise
   }
 
   private def convertKind(kind: String): Int = {
     kind match {
-      case "Class" => CompletionItemKind.CLASS
-      case "Interface" => CompletionItemKind.INTERFACE
-      case "Enum" => CompletionItemKind.ENUM
+      case "Class"       => CompletionItemKind.CLASS
+      case "Interface"   => CompletionItemKind.INTERFACE
+      case "Enum"        => CompletionItemKind.ENUM
       case "Constructor" => CompletionItemKind.CONSTRUCTOR
-      case "Method" => CompletionItemKind.METHOD
-      case "Field" => CompletionItemKind.FIELD
-      case _ => CompletionItemKind.TEXT
+      case "Method"      => CompletionItemKind.METHOD
+      case "Field"       => CompletionItemKind.FIELD
+      case _             => CompletionItemKind.TEXT
     }
   }
 }
