@@ -10,11 +10,11 @@
     "react-css-theme-switcher": "^0.2.2",
     "react-dom": "^17.0.1",
     "react-measure": "^2.5.2",
-    "react-scripts": "4.0.1",
     "ts-debounce": "^2.2.0",
     "webcola": "^3.4.0"
   },
   "devDependencies": {
+    "react-scripts": "4.0.3",    
     "@types/d3": "^5.16.0",
     "@types/jest": "^26.0.15",
     "@types/node": "^12.0.0",
