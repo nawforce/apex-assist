@@ -14,7 +14,7 @@
 package com.nawforce.vsext
 
 import com.nawforce.pkgforce.diagnostics._
-import com.nawforce.pkgforce.path.{PathFactory, PathLike}
+import com.nawforce.pkgforce.path.{Location, PathFactory, PathLike}
 import com.nawforce.rpc.Server
 
 import scala.collection.compat.immutable.ArraySeq
@@ -68,7 +68,7 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
           .map { case (x, xs) => (x, xs) }
         issueMap.keys.foreach(path => {
           diagnostics.set(
-            VSCode.Uri.file(path),
+            VSCode.Uri.file(path.toString),
             issueMap(path).sortBy(_.diagnostic.location.startLine).map(issue => issueToDiagnostic(issue, isLocal = false)).toJSArray)
         })
       })
@@ -88,11 +88,11 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
                          workspaceProjectFile: PathLike,
                          showWarnings: Boolean,
                          showWarningsOnChange: Boolean): Boolean = {
-    if (PathFactory(issue.path) == workspaceProjectFile) {
+    if (PathFactory(issue.path.toString) == workspaceProjectFile) {
       return true
     }
 
-    if (showWarnings || (showWarningsOnChange && warningsAllowed.contains(issue.path)))
+    if (showWarnings || (showWarningsOnChange && warningsAllowed.contains(issue.path.toString)))
       return true
 
     DiagnosticCategory.isErrorType(issue.diagnostic.category)

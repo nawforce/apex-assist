@@ -125,7 +125,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
               server
                 .identifierLocation(id)
                 .foreach(location => {
-                  val uri = VSCode.Uri.file(location.pathLocation.path)
+                  val uri = VSCode.Uri.file(location.pathLocation.path.toString)
                   VSCode.workspace
                     .openTextDocument(uri)
                     .toFuture

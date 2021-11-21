@@ -33,7 +33,7 @@ class DependencyBombs(context: ExtensionContext, server: Server) {
               .identifierLocation(id)
               .map(location => {
                 VSCode.workspace
-                  .openTextDocument(VSCode.Uri.file(location.pathLocation.path))
+                  .openTextDocument(VSCode.Uri.file(location.pathLocation.path.toString))
                   .map(doc => VSCode.window.showTextDocument(doc))
               })
           case Left(_) => ()

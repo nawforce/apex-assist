@@ -13,7 +13,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.pkgforce.diagnostics.Location
+import com.nawforce.pkgforce.path.Location
 
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.{global => g}
