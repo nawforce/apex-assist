@@ -219,7 +219,10 @@ trait CompletionContext extends js.Object {
 
 trait CompletionItemTriggerKind extends js.Object
 
-trait CompletionItem extends js.Object
+@js.native
+trait CompletionItem extends js.Object {
+  var detail: String = js.native
+}
 
 class CompletionList extends js.Object {
   var isIncomplete: js.UndefOr[Boolean] = js.undefined
@@ -394,8 +397,11 @@ object VSCode {
     js.Dynamic.newInstance(module.RelativePattern)(base, pattern).asInstanceOf[RelativePattern]
   }
 
-  def newCompletionItem(label: String, kind: Int): CompletionItem = {
-    js.Dynamic.newInstance(module.CompletionItem)(label, kind).asInstanceOf[CompletionItem]
+  def newCompletionItem(label: String, kind: Int, detail: String=null): CompletionItem = {
+    val item = js.Dynamic.newInstance(module.CompletionItem)(label, kind).asInstanceOf[CompletionItem]
+    if (detail != null)
+      item.detail = detail
+    item
   }
 
   def locationToRange(location: Location): Range = {

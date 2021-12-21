@@ -45,7 +45,7 @@ class CompletionProvider(context: ExtensionContext, server: Server)
         completions.isIncomplete = true
         completions.items = items
           .map(item => {
-            VSCode.newCompletionItem(item.label, convertKind(item.kind))
+            VSCode.newCompletionItem(item.label, convertKind(item.kind), item.detail)
           })
           .toJSArray
         completions
@@ -61,6 +61,8 @@ class CompletionProvider(context: ExtensionContext, server: Server)
       case "Constructor" => CompletionItemKind.CONSTRUCTOR
       case "Method"      => CompletionItemKind.METHOD
       case "Field"       => CompletionItemKind.FIELD
+      case "Variable"    => CompletionItemKind.VARIABLE
+      case "Keyword"     => CompletionItemKind.KEYWORD
       case _             => CompletionItemKind.TEXT
     }
   }

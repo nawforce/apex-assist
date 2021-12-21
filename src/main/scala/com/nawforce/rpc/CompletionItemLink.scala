@@ -16,7 +16,7 @@ package com.nawforce.rpc
 import com.nawforce.pkgforce.path.Location
 import io.github.shogowada.scala.jsonrpc.serializers.JSONRPCPickler.{macroRW, ReadWriter => RW}
 
-case class CompletionItemLink(label: String, kind: String)
+case class CompletionItemLink(label: String, kind: String, detail: String=null)
 
 object CompletionItemLink {
   implicit val rw: RW[CompletionItemLink] = macroRW
