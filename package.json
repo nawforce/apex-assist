@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "1.5.0",
+  "version": "1.5.1-debug1",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",

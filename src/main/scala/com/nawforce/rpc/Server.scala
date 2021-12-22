@@ -30,6 +30,7 @@ import scala.scalajs.js
 import scala.scalajs.js.Dynamic.{global => g}
 
 class Server(child: ChildProcess) {
+  LoggerOps.setLoggingLevel(LoggerOps.DEBUG_LOGGING)
   private val serializer = new UpickleJSONSerializer()
   private val client     = JSONRPCClient(serializer, (json: String) => sender(json))
   private val orgAPI     = client.createAPI[OrgAPI]
@@ -53,13 +54,16 @@ class Server(child: ChildProcess) {
   }
 
   private def receiver(data: String): Unit = {
+    LoggerOps.debug(s"ClientRPC: received ${data.size} chars")
     val existingLength = inboundData.length()
     inboundData.append(data)
     var terminator = inboundData.indexOf('\u0000', existingLength)
     while (terminator != -1) {
       val msg = inboundData.slice(0, terminator).mkString
+      LoggerOps.debug(s"ClientRPC: terminated msg, ${msg.size} chars")      
       handleMessage(msg)
       inboundData = inboundData.slice(terminator + 1, inboundData.length)
+      LoggerOps.debug(s"ClientRPC: residual data, ${inboundData.size} chars")      
       terminator = inboundData.indexOf('\u0000')
     }
   }
@@ -158,7 +162,7 @@ object Server {
       "java",
       args,
       new SpawnOptions {
-        cwd = path.toString; detached = true; windowsHide = true
+        cwd = path.toString; windowsHide = true
       }
     )
 
