@@ -33,6 +33,8 @@ trait ExtensionContext extends js.Object {
 class WorkspaceException(error: APIError) extends Throwable(error.message)
 
 object Extension {
+  private final val loggingLevelConfig = "apex-assist.loggingLevel"
+
   private var context: ExtensionContext         = _
   private var diagnostics: DiagnosticCollection = _
   private var output: OutputChannel             = _
@@ -51,6 +53,8 @@ object Extension {
       output = OutputLogging.setup(context)
     diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
     context.subscriptions.push(diagnostics)
+    val loggingLevel = VSCode.workspace.getConfiguration().get[String](loggingLevelConfig).getOrElse("info")
+    LoggerOps.setLoggingLevel(loggingLevel)
     LoggerOps.info("Apex Assist activated")
 
     // Status bar just to show we are loading
@@ -60,7 +64,7 @@ object Extension {
     statusBar.show()
 
     // And finally the server
-    startServer(output) map {
+    startServer(loggingLevel, output) map {
       case Failure(ex) =>
         statusBar.hide()
         VSCode.window.showInformationMessage(ex.getMessage)
@@ -79,9 +83,10 @@ object Extension {
     }
   }
 
-  private def startServer(outputChannel: OutputChannel): Future[Try[Server]] = {
+  private def startServer(loggingLevel: String, outputChannel: OutputChannel): Future[Try[Server]] = {
     // Init server
     val server = Server(outputChannel)
+    server.setLoggingLevel(loggingLevel)
     server
       .version()
       .map(version => {

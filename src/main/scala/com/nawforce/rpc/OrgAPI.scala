@@ -48,7 +48,18 @@ case class GetIssuesResult(issues: Array[Issue])
 
 object GetIssuesResult {
   implicit val rw: RW[GetIssuesResult] = macroRW
-  implicit val rwIssue: RW[Issue] = macroRW
+  implicit val rwIssue: RW[com.nawforce.pkgforce.diagnostics.Issue] = macroRW
+  implicit val rwDiagnostic: RW[Diagnostic] = macroRW
+  implicit val rwDiagnosticCategory: RW[DiagnosticCategory] = macroRW
+  implicit val rwLocation: RW[Location] = macroRW
+  implicit val rwPathLike: RW[PathLike] = JSONRPCPickler.readwriter[String].bimap[PathLike](_.toString, Path(_))
+}
+
+case class IssuesResult(issues: Array[Issue])
+
+object IssuesResult {
+  implicit val rw: RW[IssuesResult] = macroRW
+  implicit val rwIssue: RW[com.nawforce.pkgforce.diagnostics.Issue] = macroRW
   implicit val rwDiagnostic: RW[Diagnostic] = macroRW
   implicit val rwDiagnosticCategory: RW[DiagnosticCategory] = macroRW
   implicit val rwLocation: RW[Location] = macroRW
@@ -139,18 +150,36 @@ object GetDependencyCountsResult {
   implicit val rw: RW[GetDependencyCountsResult] = macroRW
 }
 
+case class TestMethod(className: String, methodName: String)
+
+object TestMethod {
+  implicit val rw: RW[TestMethod] = macroRW
+}
+
 trait OrgAPI {
   @api.JSONRPCMethod(name = "version")
   def version(): Future[String]
 
-  @api.JSONRPCMethod(name = "reset")
-  def reset(): Future[Unit]
+  @api.JSONRPCMethod(name = "setLoggingLevel")
+  def setLoggingLevel(level: String): Future[Unit]
 
   @api.JSONRPCMethod(name = "open")
   def open(directory: String): Future[OpenResult]
 
   @api.JSONRPCMethod(name = "getIssues")
   def getIssues(includeWarnings: Boolean, includeZombies: Boolean): Future[GetIssuesResult]
+
+  @api.JSONRPCMethod(name = "hasUpdatedIssues")
+  def hasUpdatedIssues: Future[Array[String]]
+
+  @api.JSONRPCMethod(name = "ignoreUpdatedIssues")
+  def ignoreUpdatedIssues(path: String): Future[Unit]
+
+  @api.JSONRPCMethod(name = "issuesForFile")
+  def issuesForFile(path: String): Future[IssuesResult]
+
+  @api.JSONRPCMethod(name = "issuesForFiles")
+  def issuesForFiles(paths: Array[String], includeWarnings: Boolean, maxErrorsPerFile: Int): Future[IssuesResult]
 
   @api.JSONRPCMethod(name = "refresh")
   def refresh(path: String): Future[Unit]
@@ -159,7 +188,7 @@ trait OrgAPI {
   def typeIdentifiers(apexOnly: Boolean): Future[GetTypeIdentifiersResult]
 
   @api.JSONRPCMethod(name = "dependencyGraph")
-  def dependencyGraph(identifiers: IdentifiersRequest, depth: Int, apexOnly: Boolean): Future[DependencyGraph]
+  def dependencyGraph(identifiers: IdentifiersRequest, depth: Int, apexOnly: Boolean, ignoring: IdentifiersRequest): Future[DependencyGraph]
 
   @api.JSONRPCMethod(name = "identifierLocation")
   def identifierLocation(identifier: IdentifierRequest): Future[IdentifierLocationResult]
@@ -181,4 +210,7 @@ trait OrgAPI {
 
   @api.JSONRPCMethod(name = "getCompletionItems")
   def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]]
+
+  @api.JSONRPCMethod(name = "getAllTestMethods")
+  def getAllTestMethods(): Future[Array[TestMethod]]
 }
