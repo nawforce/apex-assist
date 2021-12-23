@@ -49,6 +49,12 @@
         "apex-assist.dependencyExplorer.ignoreTypes": {
           "type": "string",
           "markdownDescription": "Regular expression of types to exclude from Dependency Explorer, e.g. 'fflib_.*'"
+        },
+        "apex-assist.loggingLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["info", "debug", "trace"],          
+          "markdownDescription": "Set logging level for debug information shown in Output window"
         }
       }
     },

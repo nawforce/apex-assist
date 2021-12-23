@@ -18,7 +18,7 @@ import com.nawforce.pkgforce.diagnostics.{Logger, LoggerOps}
 class OutputLogging(channel: OutputChannel) extends Logger {
   def info(message: String): Unit = { channel.appendLine(message) }
   def debug(message: String): Unit = { channel.appendLine("Client: [debug] " + message) }
-  def error(message: String): Unit = { channel.appendLine("Client: [error] " + message) }
+  def trace(message: String): Unit = { channel.appendLine("Client: [trace] " + message) }
 }
 
 object OutputLogging {
@@ -26,7 +26,6 @@ object OutputLogging {
     val output = VSCode.window.createOutputChannel("Apex Assist")
     context.subscriptions.push(output)
     LoggerOps.setLogger(new OutputLogging(output))
-    LoggerOps.setLoggingLevel(LoggerOps.DEBUG_LOGGING)
     output
   }
 }
