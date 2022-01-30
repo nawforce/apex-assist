@@ -55,14 +55,13 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
     val showWarningsOnChange =
       VSCode.workspace.getConfiguration().get[Boolean](showWarningsOnChangeConfig).getOrElse(true)
 
-    server
-      .getIssues(includeWarnings = true, includeZombies = true)
-      .map(issuesResult => {
-        diagnostics.clear()
+    val workspaceProjectFile =
+      PathFactory(VSCode.workspace.workspaceFolders.get.head.uri.fsPath)
+        .join("sfdx-project.json")
 
-        val workspaceProjectFile =
-          PathFactory(VSCode.workspace.workspaceFolders.get.head.uri.fsPath)
-            .join("sfdx-project.json")
+    server.hasUpdatedIssues.map(paths => {
+      paths.foreach(path => diagnostics.set(VSCode.Uri.file(path), js.Array()))
+      server.issuesForFiles(paths, includeWarnings = true, maxErrorsPerFile = 25).map(issuesResult => {
         val issueMap = issuesResult.issues
           .filter(i => allowIssue(i, workspaceProjectFile, showWarnings, showWarningsOnChange))
           .groupBy(_.path)
@@ -77,6 +76,7 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
           )
         })
       })
+    })
   }
 
   def setLocalDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {

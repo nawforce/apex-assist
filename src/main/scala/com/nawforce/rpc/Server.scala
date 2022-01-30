@@ -17,6 +17,7 @@ import com.nawforce.pkgforce.diagnostics.LoggerOps
 import com.nawforce.pkgforce.names.TypeIdentifier
 import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.vsext.{OutputChannel, VSCode}
+import io.github.shogowada.scala.jsonrpc.api
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer._
@@ -89,6 +90,22 @@ class Server(child: ChildProcess) {
     orgAPI.getIssues(includeWarnings, includeZombies)
   }
 
+  def hasUpdatedIssues: Future[Array[String]] = {
+    orgAPI.hasUpdatedIssues
+  }
+
+  def ignoreUpdatedIssues(path: String): Future[Unit] = {
+    orgAPI.ignoreUpdatedIssues(path)
+  }
+
+  def issuesForFile(path: String): Future[IssuesResult] = {
+    orgAPI.issuesForFile(path)
+  }
+
+  def issuesForFiles(paths: Array[String], includeWarnings: Boolean, maxErrorsPerFile: Int): Future[IssuesResult] = {
+    orgAPI.issuesForFiles(paths, includeWarnings, maxErrorsPerFile)
+  }
+
   def refresh(path: String): Future[Unit] = {
     orgAPI.refresh(path)
   }
@@ -152,7 +169,7 @@ object Server {
         // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         "-Dfile.encoding=UTF-8",
         "-cp",
-        "jars/apexlink-2.2.3.jar",
+        "jars/apexlink-2.3.1.jar",
         "com.nawforce.apexlink.cmds.Server"
       )
 
