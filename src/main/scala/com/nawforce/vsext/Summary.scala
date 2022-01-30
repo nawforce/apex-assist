@@ -13,7 +13,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.pkgforce.parsers.ApexNode
+import com.nawforce.pkgforce.parsers.ApexClassVisitor
 import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.runtime.parsers.{CodeParser, SourceData}
 
@@ -30,14 +30,15 @@ class Summary(context: ExtensionContext, issueLog: IssueLog) {
 
   private def onSummary(td: TextDocument): js.Promise[Unit] = {
     Future({
-      if (td.uri.fsPath.endsWith(".cls") || td.uri.fsPath.endsWith(".trigger")) {
-        val parser = CodeParser(PathFactory(td.uri.fsPath), SourceData(td.getText()))
-        val result = parser.parseClass()
+      val path = td.uri.fsPath
+      if (path.endsWith(".cls") || path.endsWith(".trigger")) {
+        val parser = CodeParser(PathFactory(path), SourceData(td.getText()))
+        val result = if (path.endsWith(".cls")) parser.parseClass() else parser.parseTrigger()
+        val node = new ApexClassVisitor(parser).visit(result.value).headOption
+
         issueLog.setLocalDiagnostics(
           td,
-          result.issues ++ ApexNode(parser, result.value)
-            .map(_.collectIssues())
-            .getOrElse(ArraySeq())
+          result.issues ++ node.map(_.collectIssues()).getOrElse(ArraySeq())
         )
       }
     }).toJSPromise
