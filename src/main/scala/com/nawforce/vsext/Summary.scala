@@ -30,7 +30,7 @@ class Summary(context: ExtensionContext, issueLog: IssueLog) {
 
   private def onSummary(td: TextDocument): js.Promise[Unit] = {
     Future({
-      if (td.uri.fsPath.endsWith(".cls") || td.uri.fsPath.endsWith(".xcls")) {
+      if (td.uri.fsPath.endsWith(".cls") || td.uri.fsPath.endsWith(".trigger")) {
         val parser = CodeParser(PathFactory(td.uri.fsPath), SourceData(td.getText()))
         val result = parser.parseClass()
         issueLog.setLocalDiagnostics(

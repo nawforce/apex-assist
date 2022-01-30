@@ -17,6 +17,6 @@ import com.nawforce.vsext.DocumentFilter
 
 class ApexDefinitionFilter extends DocumentFilter {
   override val language        = "apex"
-  override val pattern: String = "**/*.cls"
+  override val pattern: String = "**/*.{cls,trigger}"
   override val scheme: String  = "file"
 }
