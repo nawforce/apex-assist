@@ -1,3 +1,9 @@
+## [1.6.0]
+* Support context sensitive code completion
+* Enabled code completion and got definition for triggers
+* Improved API for accessing issues
+* Improved SuppressWarnings handling
+
 ## [1.5.0]
 * Added initial version of code completion
 * Added type checking on local variable initialisation
