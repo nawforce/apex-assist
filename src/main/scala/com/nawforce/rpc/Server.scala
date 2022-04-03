@@ -169,7 +169,7 @@ object Server {
         // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         "-Dfile.encoding=UTF-8",
         "-cp",
-        "jars/apexlink-2.3.2.jar",
+        "jars/apexlink-2.3.3.jar",
         "com.nawforce.apexlink.cmds.Server"
       )
 
