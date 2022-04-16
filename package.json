@@ -11,7 +11,7 @@
   "bugs": "https://github.com/nawforce/apex-assist/issues",
   "icon": "logo.png",
   "dependencies": {
-    "apex-parser": "2.10.0",
+    "apex-parser": "2.13.0",
     "vf-parser": "1.0.0"
   },
   "scripts": {
@@ -53,7 +53,11 @@
         "apex-assist.loggingLevel": {
           "type": "string",
           "default": "info",
-          "enum": ["info", "debug", "trace"],          
+          "enum": [
+            "info",
+            "debug",
+            "trace"
+          ],
           "markdownDescription": "Set logging level for debug information shown in Output window"
         }
       }

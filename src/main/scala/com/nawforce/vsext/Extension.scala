@@ -59,7 +59,7 @@ object Extension {
 
     // Status bar just to show we are loading
     statusBar = VSCode.window.createStatusBarItem()
-    statusBar.text = "$(refresh) Apex Assist"
+    statusBar.text = "$(sync~spin) Apex Assist"
     context.subscriptions.push(statusBar)
     statusBar.show()
 
