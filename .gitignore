@@ -1,5 +1,6 @@
 .idea/
 .metals/
+.bsp/
 **/node_modules
 target/
 jars/

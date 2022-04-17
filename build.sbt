@@ -5,7 +5,7 @@ name := "apex-assist"
 version := "1.6.1"
 scalaVersion := "2.13.3"
 scalacOptions += "-deprecation"
-parallelExecution in Test := false
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 enablePlugins(ScalaJSPlugin)
 scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
@@ -19,8 +19,8 @@ libraryDependencies += "com.github.nawforce" %%% "scala-json-rpc-upickle-json-se
 
 libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.0" % "test"
 
-artifactPath in(Compile, fastOptJS) := baseDirectory.value / "dist" / "apex-assist-fastopt.js"
-artifactPath in(Compile, fullOptJS) := baseDirectory.value / "dist" / "apex-assist-opt.js"
+Compile / fastOptJS / artifactPath := baseDirectory.value / "dist" / "apex-assist-fastopt.js"
+Compile / fullOptJS / artifactPath := baseDirectory.value / "dist" / "apex-assist-opt.js"
 
 val npmTargetDir = s"target/npm/" // where to generate npm
 val npmConf = "npm_config" // directory with static files for NPM package
