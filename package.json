@@ -65,6 +65,10 @@
     },
     "commands": [
       {
+        "command": "apex-assist.gulp",
+        "title": "Assist: Download metadata from org"
+      },
+      {
         "command": "apex-assist.clearDiagnostics",
         "title": "Assist: Clear Diagnostics"
       },

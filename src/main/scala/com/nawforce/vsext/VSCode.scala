@@ -88,12 +88,43 @@ class QuickPickOptions extends js.Object {
   var placeHolder: String     = ""
 }
 
+class InputBoxOptions extends js.Object {
+  var ignoreFocusOut: Boolean = false
+  var placeHolder: String     = ""
+  var prompt: String          = ""
+  var title: String           = ""
+  var value: js.UndefOr[String] = js.undefined
+  var validateInput: js.Function1[String, js.UndefOr[String]] = (value) => js.undefined
+}
+
+object ProgressLocation {
+  val NOTIFICATION: Int = 15
+  val SOURCE_CONTROL: Int = 1
+  val WINDOW: Int    = 10
+}
+
+class ProgressOptions extends js.Object {
+  var cancellable: js.UndefOr[Boolean] = false
+  var location: Int = ProgressLocation.NOTIFICATION
+  var title: js.UndefOr[String] = js.undefined
+}
+
+class ProgressMessage extends js.Object {
+  var message: js.UndefOr[String] = js.undefined
+}
+
+@js.native
+trait Progress extends js.Object {
+  def report(value: ProgressMessage): Unit = js.native
+}
+
 @js.native
 trait WindowOps extends js.Object {
   var activeTextEditor: js.UndefOr[TextEditor] = js.native
 
   def createOutputChannel(name: String): OutputChannel = js.native
   def showInformationMessage(msg: String): Unit        = js.native
+  def showErrorMessage(msg: String): Unit              = js.native
   def createStatusBarItem(): StatusBar                 = js.native
   def createWebviewPanel(
     viewType: String,
@@ -107,6 +138,12 @@ trait WindowOps extends js.Object {
     options: QuickPickOptions,
     token: js.UndefOr[CancellationToken]
   ): js.Promise[js.UndefOr[T | js.Array[T]]] = js.native
+  def showInputBox(
+    options: InputBoxOptions,
+    token: js.UndefOr[CancellationToken]
+  ): js.Promise[js.UndefOr[String]] = js.native
+  def withProgress[T](options: ProgressOptions,
+                      task: js.Function2[Progress, CancellationToken, js.Promise[T]]): js.Promise[T] = js.native
 }
 
 @js.native

@@ -13,7 +13,7 @@
  */
 package com.nawforce.vsext
 
-import com.nawforce.commands.{ClearDiagnostics, DependencyBombs, DependencyExplorer}
+import com.nawforce.commands.{ClearDiagnostics, DependencyBombs, DependencyExplorer, Gulp}
 import com.nawforce.pkgforce.diagnostics.LoggerOps
 import com.nawforce.providers.{CompletionProvider, DefinitionProvider}
 import com.nawforce.rpc.{APIError, Server}
@@ -73,6 +73,7 @@ object Extension {
         this.server = Some(server)
         val issueLog = IssueLog(server, diagnostics)
         Watchers(context, server, issueLog)
+        Gulp(context)
         DefinitionProvider(context, server)
         CompletionProvider(context, server)
         Summary(context, issueLog)
