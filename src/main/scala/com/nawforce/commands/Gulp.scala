@@ -13,18 +13,19 @@
  */
 package com.nawforce.commands
 
+import com.nawforce.pkgforce.diagnostics.LoggerOps
 import com.nawforce.pkgforce.sfdx.{PositionParser, SFDXProject, ValueWithPositions}
 import com.nawforce.runtime.platform.Path
-import com.nawforce.vsext.{ProgressMessage, _}
+import com.nawforce.vsext.{VSCode, _}
 
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scala.scalajs.js.JSON
-import scala.scalajs.js.annotation.{JSBracketAccess, JSGlobal, JSImport}
-import scala.util.{Failure, Success, Try}
+import scala.scalajs.js.{JSON, JavaScriptException}
+import scala.scalajs.js.annotation.{JSBracketAccess, JSImport}
+import scala.util.{Failure, Success}
 
 class Gulp(context: ExtensionContext) {
 
@@ -39,36 +40,66 @@ class Gulp(context: ExtensionContext) {
         gulper
           .getDefaultUsername(workspacePath)
           .toFuture
-          .map(usernameOrUndef => {
+          .flatMap(usernameOrUndef => {
             if (usernameOrUndef.isEmpty || usernameOrUndef.get == null) {
-              VSCode.window.showErrorMessage(
+              throw new Exception(
                 "Could not find org username, have you set a default org for this workspace?"
               )
-            } else {
-              // This is just a test query to check org connectivity
-              gulper
-                .getOrgNamespace(workspacePath, null)
-                .toFuture
-                .map(namespaceOrUndef => {
-                  if (namespaceOrUndef.isEmpty) {
-                    VSCode.window.showErrorMessage(
-                      "Query for org namespace failed, is the workspace default org still accessible?"
-                    )
-                  } else {
-                    promptNamespaces(workspacePath, projectFile)
-                  }
-                })
             }
+            getOrgNamespace(gulper, workspacePath)
           })
+          .flatMap(_ => promptNamespaces(gulper, workspacePath, projectFile))
+          .flatMap(projectAndNamespaces => {
+            if (projectAndNamespaces._2.isEmpty)
+              Future.successful( () )
+            else
+              loadMetadata(
+                gulper,
+                workspacePath,
+                projectFile,
+                projectAndNamespaces._1,
+                projectAndNamespaces._2.get
+              )
+          })
+          .onComplete {
+            case Failure(ex) =>
+              ex match {
+                case ex: JavaScriptException =>
+                  VSCode.window.showErrorMessage(s"Failed to download metadata - ${ex.getMessage}")
+                case _: Throwable =>
+                  VSCode.window.showErrorMessage(ex.getMessage)
+              }
+              LoggerOps.info("Failed to download metadata", ex)
+            case Success(_) =>
+          }
       }
     )
   )
 
-  private def promptNamespaces(workspacePath: String, projectFile: Path): Future[Unit] = {
+  private def getOrgNamespace(gulper: Gulper, workspacePath: String): Future[Boolean] = {
+    gulper
+      .getOrgNamespace(workspacePath, null)
+      .toFuture
+      .flatMap { namespaceOrUndef =>
+        if (namespaceOrUndef.isEmpty) {
+          Future.failed(
+            new Exception(
+              "Query for org namespace failed, is the workspace default org still accessible?"
+            )
+          )
+        } else {
+          Future.successful(true)
+        }
+      }
+  }
+
+  private def promptNamespaces(
+    gulper: Gulper,
+    workspacePath: String,
+    projectFile: Path
+  ): Future[(SFDXProject, Option[String])] = {
     loadProject(projectFile) match {
-      case Left(err) =>
-        VSCode.window.showErrorMessage(err)
-        Future.successful(())
+      case Left(err) => Future.failed(new Exception(err))
       case Right(projectValue) =>
         val project = new SFDXProject(projectFile, projectValue)
         val initial: js.UndefOr[String] =
@@ -77,25 +108,18 @@ class Gulp(context: ExtensionContext) {
           else
             project.additionalNamespaces.map(_.getOrElse("unmanaged")).mkString(" ")
 
-        val gulper = new Gulper()
-        Try(gulper.getOrgPackageNamespaces(workspacePath)) match {
-          case Failure(exception) =>
-            VSCode.window.showErrorMessage(exception.toString)
-            Future.successful(())
-          case Success(value) =>
-            value.toFuture.map(namespaces => {
-              val options = new InputOptions(initial, namespaces.map(_.namespace))
-              VSCode.window
-                .showInputBox(options, js.undefined)
-                .toFuture
-                .map(selected => {
-                  if (selected.isEmpty)
-                    Future.successful(())
-                  else
-                    loadMetadata(gulper, workspacePath, projectFile, selected.get)
-                })
-            })
-        }
+        gulper
+          .getOrgPackageNamespaces(workspacePath)
+          .toFuture
+          .flatMap(namespaces => {
+            val options = new InputOptions(initial, namespaces.map(_.namespace))
+            VSCode.window
+              .showInputBox(options, js.undefined)
+              .toFuture
+              .map(namespaces => {
+                (project, namespaces.toOption)
+              })
+          })
     }
   }
 
@@ -103,38 +127,34 @@ class Gulp(context: ExtensionContext) {
     gulper: Gulper,
     workspacePath: String,
     projectFile: Path,
+    project: SFDXProject,
     selected: String
-  ): Unit = {
-    loadProject(projectFile) match {
-      case Left(err) =>
-        VSCode.window.showErrorMessage(err)
-      case Right(projectValue) =>
-        val trimmed = selected.trim
-        val selectedNamespaces: Array[String] =
-          if (trimmed.isEmpty)
-            Array.empty
-          else
-            trimmed.split("\\s+")
-        val project = new SFDXProject(projectFile, projectValue)
+  ): Future[Boolean] = {
+    val trimmed = selected.trim
+    val selectedNamespaces: Array[String] =
+      if (trimmed.isEmpty)
+        Array.empty
+      else
+        trimmed.split("\\s+")
 
-        val options = new ProgressOptions
-        options.title = "Downloading metadata"
-        VSCode.window
-          .withProgress(
-            options,
-            (progress, _) => {
-              val logger = new StatusLogger(progress)
-              gulper.update(workspacePath, logger, null, selectedNamespaces.toJSArray)
-            }
-          )
-          .toFuture
-          .map(_ => {
-            if (project.additionalNamespaces.iterator sameElements selectedNamespaces) {
-              updateProject(projectFile, selectedNamespaces)
-                .foreach(err => VSCode.window.showErrorMessage(err))
-            }
-          })
-    }
+    val options = new ProgressOptions
+    options.title = "Downloading metadata"
+    VSCode.window
+      .withProgress(
+        options,
+        (progress, _) => {
+          val logger = new StatusLogger(progress)
+          gulper.update(workspacePath, logger, null, selectedNamespaces.toJSArray)
+        }
+      )
+      .toFuture
+      .flatMap( _ => {
+        if (project.additionalNamespaces.iterator sameElements selectedNamespaces) {
+          updateProject(projectFile, selectedNamespaces)
+            .foreach(err => throw new Exception(err))
+        }
+        Future.successful( true )
+      })
   }
 
   private def loadProject(projectFile: Path): Either[String, ValueWithPositions] = {
@@ -208,7 +228,15 @@ class Gulp(context: ExtensionContext) {
 }
 
 class StatusLogger(progress: Progress) extends Logger {
-  private val phases = mutable.Set("Classes", "Components", "Custom SObjects", "Flows", "Labels", "Pages", "Standard SObjects")
+  private val phases = mutable.Set(
+    "Classes",
+    "Components",
+    "Custom SObjects",
+    "Flows",
+    "Labels",
+    "Pages",
+    "Standard SObjects"
+  )
   private val progressMassage = new ProgressMessage
   progressMassage.message = s"Waiting for ${phases.mkString(", ")}"
   progress.report(progressMassage)
@@ -219,12 +247,12 @@ class StatusLogger(progress: Progress) extends Logger {
 
   def complete(stage: LoggerStage): Unit = {
     stage match {
-      case LoggerStage.CLASSES => phases.remove("Classes")
-      case LoggerStage.COMPONENTS => phases.remove("Components")
-      case LoggerStage.CUSTOM_SOBJECTS => phases.remove("Custom SObjects")
-      case LoggerStage.FLOWS => phases.remove("Flows")
-      case LoggerStage.LABELS => phases.remove("Labels")
-      case LoggerStage.PAGES => phases.remove("Pages")
+      case LoggerStage.CLASSES           => phases.remove("Classes")
+      case LoggerStage.COMPONENTS        => phases.remove("Components")
+      case LoggerStage.CUSTOM_SOBJECTS   => phases.remove("Custom SObjects")
+      case LoggerStage.FLOWS             => phases.remove("Flows")
+      case LoggerStage.LABELS            => phases.remove("Labels")
+      case LoggerStage.PAGES             => phases.remove("Pages")
       case LoggerStage.STANDARD_SOBJECTS => phases.remove("Standard SObjects")
     }
     progressMassage.message = s"Waiting for ${phases.mkString(", ")}"
