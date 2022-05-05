@@ -149,9 +149,14 @@ class Gulp(context: ExtensionContext) {
       )
       .toFuture
       .flatMap( _ => {
-        if (project.additionalNamespaces.iterator sameElements selectedNamespaces) {
-          updateProject(projectFile, selectedNamespaces)
-            .foreach(err => throw new Exception(err))
+        if (!(project.additionalNamespaces.iterator sameElements selectedNamespaces)) {
+          val error = updateProject(projectFile, selectedNamespaces)
+          if (error.nonEmpty) {
+            throw new Exception(error.get)
+          } else {
+            val resetHandler  = new ResetHandler
+            resetHandler.fire(hard = true)
+          }
         }
         Future.successful( true )
       })

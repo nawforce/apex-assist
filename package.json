@@ -13,7 +13,7 @@
   "dependencies": {
     "apex-parser": "2.13.0",
     "vf-parser": "1.0.0",
-    "apexlink-gulp": "1.0.0"
+    "apexlink-gulp": "1.1.0"
   },
   "scripts": {
     "package": "npm i && npm run build && vsce package",
@@ -64,6 +64,10 @@
       }
     },
     "commands": [
+      {
+        "command": "apex-assist.reload",
+        "title": "Assist: Reload Workspace"
+      },
       {
         "command": "apex-assist.gulp",
         "title": "Assist: Download metadata from org"

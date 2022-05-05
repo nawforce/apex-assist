@@ -14,9 +14,10 @@
 package com.nawforce.vsext
 
 import com.nawforce.pkgforce.diagnostics.CatchingLogger
-import com.nawforce.pkgforce.path.PathFactory
+import com.nawforce.pkgforce.path.{PathFactory, PathLike}
 import com.nawforce.pkgforce.sfdx.SFDXProject
 import com.nawforce.rpc.Server
+import com.nawforce.runtime.platform.Environment
 import io.scalajs.nodejs.timers.Timeout
 import io.scalajs.nodejs.{clearTimeout, setTimeout}
 
@@ -88,9 +89,33 @@ abstract class Debouncer {
 }
 
 class ResetHandler extends Debouncer {
+
   protected def fire(): Unit = {
+    fire(false)
+  }
+
+  def fire(hard: Boolean): Unit = {
+    if (hard) {
+      Environment.cacheDir.foreach(clearContents)
+    }
     Extension.reset()
   }
+
+  private def clearContents(path: PathLike): Unit = {
+    path.directoryList() match {
+      case Left(_) => ()
+      case Right(names) =>
+        names.foreach(name => {
+          val pathEntry = path.join(name)
+          if (pathEntry.isDirectory) {
+            clearContents(pathEntry)
+          }
+          pathEntry.delete()
+        })
+    }
+    path.delete()
+  }
+
 }
 
 class IssueUpdater(issueLog: IssueLog) extends Debouncer {
