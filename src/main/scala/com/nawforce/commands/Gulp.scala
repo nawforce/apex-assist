@@ -264,9 +264,8 @@ class InputOptions(initial: js.UndefOr[String], namespaces: js.Array[String])
     extends InputBoxOptions {
   ignoreFocusOut = true
   title = "Which namespace(s) would you like to download metadata for?"
-  placeHolder =
-    "List namespace(s) to download, separate them with spaces, put any extension packages after their base packages"
-  prompt = s"Valid namespaces are ${namespaces.mkString(", ")}"
+  placeHolder = "List namespace(s) to download, separate them with spaces"
+  prompt = s"Valid namespaces are ${namespaces.mkString(", ")}, put any extension packages after their base packages"
   value = initial
 
   validateInput = value => {
