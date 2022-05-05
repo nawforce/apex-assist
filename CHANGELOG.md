@@ -1,3 +1,8 @@
+## [1.7.0]
+* Support for downloading org metadata to aid semantic analysis
+* Support for a custom unpackage metadata directive
+* Fixes for unused analysis and code completion processing
+
 ## [1.6.0]
 * Support context sensitive code completion
 * Enabled code completion and got definition for triggers
