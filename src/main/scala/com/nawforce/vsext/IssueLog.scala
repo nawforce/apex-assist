@@ -15,7 +15,6 @@ package com.nawforce.vsext
 
 import com.nawforce.pkgforce.diagnostics._
 import com.nawforce.pkgforce.path.{Location, PathFactory, PathLike}
-import com.nawforce.rpc.Server
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
@@ -23,17 +22,20 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
-class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
+class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
 
   private final val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings"
-  private final val showWarningsOnChangeConfig = "apex-assist.errorsAndWarnings.showWarningsOnChange"
+  private final val showWarningsOnChangeConfig =
+    "apex-assist.errorsAndWarnings.showWarningsOnChange"
   private val warningsAllowed = new mutable.HashSet[String]()
 
   VSCode.workspace.onDidChangeConfiguration(onConfigChanged, js.undefined, js.Array())
 
   def onConfigChanged(event: ConfigurationChangeEvent): Unit = {
     if (
-      event.affectsConfiguration(showWarningsConfig) || event.affectsConfiguration(showWarningsOnChangeConfig)
+      event.affectsConfiguration(showWarningsConfig) || event.affectsConfiguration(
+        showWarningsOnChangeConfig
+      )
     ) {
       LoggerOps.info(s"$showWarningsConfig or $showWarningsOnChangeConfig Configuration Changed")
       refreshDiagnostics()
@@ -59,22 +61,26 @@ class IssueLog(server: Server, diagnostics: DiagnosticCollection) {
       PathFactory(VSCode.workspace.workspaceFolders.get.head.uri.fsPath)
         .join("sfdx-project.json")
 
-    server.hasUpdatedIssues.map(paths => {
-      paths.foreach(path => diagnostics.set(VSCode.Uri.file(path), js.Array()))
-      server.issuesForFiles(paths, includeWarnings = true, maxErrorsPerFile = 25).map(issuesResult => {
-        val issueMap = issuesResult.issues
-          .filter(i => allowIssue(i, workspaceProjectFile, showWarnings, showWarningsOnChange))
-          .groupBy(_.path)
-          .map { case (x, xs) => (x, xs) }
-        issueMap.keys.foreach(path => {
-          diagnostics.set(
-            VSCode.Uri.file(path.toString),
-            issueMap(path)
-              .sortBy(_.diagnostic.location.startLine)
-              .map(issue => issueToDiagnostic(issue, isLocal = false))
-              .toJSArray
-          )
-        })
+    Extension.server.map(server => {
+      server.hasUpdatedIssues.map(paths => {
+        paths.foreach(path => diagnostics.set(VSCode.Uri.file(path), js.Array()))
+        server
+          .issuesForFiles(paths, includeWarnings = true, maxErrorsPerFile = 25)
+          .map(issuesResult => {
+            val issueMap = issuesResult.issues
+              .filter(i => allowIssue(i, workspaceProjectFile, showWarnings, showWarningsOnChange))
+              .groupBy(_.path)
+              .map { case (x, xs) => (x, xs) }
+            issueMap.keys.foreach(path => {
+              diagnostics.set(
+                VSCode.Uri.file(path.toString),
+                issueMap(path)
+                  .sortBy(_.diagnostic.location.startLine)
+                  .map(issue => issueToDiagnostic(issue, isLocal = false))
+                  .toJSArray
+              )
+            })
+          })
       })
     })
   }
@@ -132,7 +138,7 @@ object IssueLog {
   val localTag: String  = "ApexAssist"
   val serverTag: String = "ApexAssist\u200B"
 
-  def apply(server: Server, diagnostics: DiagnosticCollection): IssueLog = {
-    new IssueLog(server, diagnostics)
+  def apply(context: ExtensionContext, diagnostics: DiagnosticCollection): IssueLog = {
+    new IssueLog(context, diagnostics)
   }
 }
