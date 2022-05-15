@@ -45,7 +45,7 @@ class ReplyDependentsMessage(
   val linkData: js.Array[ReplyLinkData]
 ) extends js.Object
 
-class DependencyExplorer(context: ExtensionContext, server: Server) {
+class DependencyExplorer(context: ExtensionContext) {
 
   context.subscriptions.push(
     VSCode.commands.registerCommand("apex-assist.dependencyGraph", (uri: URI) => createView(uri))
@@ -59,13 +59,17 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
     }
 
     filePath.foreach(filePath => {
-      server
-        .identifierForPath(filePath)
-        .foreach(_.identifier.foreach(id => new View(id)))
+      if (Extension.server.isEmpty) {
+        VSCode.window.showErrorMessage("Command is not available until workspace is loaded")
+      } else {
+        Extension.server.get
+          .identifierForPath(filePath)
+          .foreach(_.identifier.foreach(id => new View(id, Extension.server.get)))
+      }
     })
   }
 
-  class View(startingIdentifier: TypeIdentifier) {
+  class View(startingIdentifier: TypeIdentifier, server: Server) {
     private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
     private var identifier              = startingIdentifier
 
@@ -324,7 +328,7 @@ class DependencyExplorer(context: ExtensionContext, server: Server) {
 }
 
 object DependencyExplorer {
-  def apply(context: ExtensionContext, server: Server): DependencyExplorer = {
-    new DependencyExplorer(context, server)
+  def apply(context: ExtensionContext): DependencyExplorer = {
+    new DependencyExplorer(context)
   }
 }

@@ -35,11 +35,11 @@ class WorkspaceException(error: APIError) extends Throwable(error.message)
 object Extension {
   private final val loggingLevelConfig = "apex-assist.loggingLevel"
 
+  var server: Option[Server]                    = None
   private var context: ExtensionContext         = _
   private var diagnostics: DiagnosticCollection = _
   private var output: OutputChannel             = _
   private var statusBar: StatusBar              = _
-  private var server: Option[Server]            = None
 
   @JSExportTopLevel("activate")
   def activate(context: ExtensionContext): Unit = {
@@ -53,7 +53,8 @@ object Extension {
       output = OutputLogging.setup(context)
     diagnostics = VSCode.languages.createDiagnosticCollection("apex-assist")
     context.subscriptions.push(diagnostics)
-    val loggingLevel = VSCode.workspace.getConfiguration().get[String](loggingLevelConfig).getOrElse("info")
+    val loggingLevel =
+      VSCode.workspace.getConfiguration().get[String](loggingLevelConfig).getOrElse("info")
     LoggerOps.setLoggingLevel(loggingLevel)
     LoggerOps.info("Apex Assist activated")
 
@@ -63,6 +64,14 @@ object Extension {
     context.subscriptions.push(statusBar)
     statusBar.show()
 
+    // Commands
+    val issueLog = IssueLog(context, diagnostics)
+    Gulp(context)
+    Reload(context)
+    DependencyBombs(context)
+    ClearDiagnostics(context, issueLog)
+    DependencyExplorer(context)
+
     // And finally the server
     startServer(loggingLevel, output) map {
       case Failure(ex) =>
@@ -71,21 +80,19 @@ object Extension {
       case Success(server) =>
         statusBar.hide()
         this.server = Some(server)
-        val issueLog = IssueLog(server, diagnostics)
+
         Watchers(context, server, issueLog)
-        Gulp(context)
-        Reload(context)
         DefinitionProvider(context, server)
         CompletionProvider(context, server)
         Summary(context, issueLog)
-        DependencyExplorer(context, server)
-        DependencyBombs(context, server)
-        ClearDiagnostics(context, issueLog)
         issueLog.refreshDiagnostics()
     }
   }
 
-  private def startServer(loggingLevel: String, outputChannel: OutputChannel): Future[Try[Server]] = {
+  private def startServer(
+    loggingLevel: String,
+    outputChannel: OutputChannel
+  ): Future[Try[Server]] = {
     // Init server
     val server = Server(outputChannel)
     server.setLoggingLevel(loggingLevel)
@@ -117,11 +124,13 @@ object Extension {
   @JSExportTopLevel("deactivate")
   def deactivate(): Unit = {
     server.foreach(_.stop())
+    server = None
     context.subscriptions.foreach(_.dispose())
   }
 
   def reset(): Unit = {
     server.foreach(_.stop())
+    server = None
     context.subscriptions.filterNot(_ == output).foreach(_.dispose())
     start(reuseOutput = true)
   }
