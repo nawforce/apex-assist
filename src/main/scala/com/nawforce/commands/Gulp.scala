@@ -144,7 +144,7 @@ class Gulp(context: ExtensionContext) {
         options,
         (progress, _) => {
           val logger = new StatusLogger(progress)
-          gulper.update(workspacePath, logger, null, selectedNamespaces.toJSArray)
+          gulper.update(workspacePath, logger, null, selectedNamespaces.toJSArray, false)
         }
       )
       .toFuture
@@ -337,7 +337,8 @@ class Gulper() extends js.Object {
     workspacePath: String,
     logger: Logger,
     connection: js.Object,
-    namespaces: js.Array[String]
+    namespaces: js.Array[String],
+    partialLoad: Boolean
   ): js.Promise[Unit] = js.native
 }
 

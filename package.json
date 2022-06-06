@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
@@ -13,7 +13,7 @@
   "dependencies": {
     "apex-parser": "2.13.0",
     "vf-parser": "1.0.0",
-    "apexlink-gulp": "1.1.1"
+    "apexlink-gulp": "1.2.0"
   },
   "scripts": {
     "package": "npm i && npm run build && vsce package",
