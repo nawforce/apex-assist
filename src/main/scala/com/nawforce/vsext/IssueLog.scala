@@ -85,9 +85,9 @@ class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
     })
   }
 
-  def setLocalDiagnostics(td: TextDocument, issues: ArraySeq[Issue]): Unit = {
+  def setLocalDiagnostics(uri: URI, issues: ArraySeq[Issue]): Unit = {
     val nonLocal =
-      diagnostics.get(td.uri).getOrElse(js.Array()).filter(_.code == IssueLog.serverTag)
+      diagnostics.get(uri).getOrElse(js.Array()).filter(_.code == IssueLog.serverTag)
     val nonLocalLocations = nonLocal
       .map(
         diag =>
@@ -102,7 +102,7 @@ class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
     val newIssues = issues
       .filterNot(issue => nonLocalLocations.contains(issue.diagnostic.location))
       .map(issue => issueToDiagnostic(issue, isLocal = true))
-    diagnostics.set(td.uri, nonLocal ++ newIssues.toJSArray)
+    diagnostics.set(uri, nonLocal ++ newIssues.toJSArray)
   }
 
   private def allowIssue(

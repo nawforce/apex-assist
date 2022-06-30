@@ -1,5 +1,9 @@
 .idea/
 .metals/
+.bloop/
+project/metals.sbt
+project/.bloop/
+project/project/
 .bsp/
 **/node_modules
 target/

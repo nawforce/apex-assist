@@ -157,7 +157,7 @@ object Server {
   private final val maxMemoryConfig = "apex-assist.server.maxMemory"
   private val maxMemory =
     Math.max(
-      Math.min(VSCode.workspace.getConfiguration().get[Int](maxMemoryConfig).getOrElse(512), 4096),
+      Math.min(VSCode.workspace.getConfiguration().get[Int](maxMemoryConfig).getOrElse(1024), 4096),
       128
     )
 
@@ -169,7 +169,7 @@ object Server {
         // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         "-Dfile.encoding=UTF-8",
         "-cp",
-        "jars/apexlink-2.3.6.jar",
+        "jars/apexlink-2.3.7.jar",
         "com.nawforce.apexlink.cmds.Server"
       )
 
@@ -183,15 +183,26 @@ object Server {
     )
 
     child.on(
+      "error",
+      (err: Error) => {
+          VSCode.window.showErrorMessage(
+            s"ApexAssist server failed to start, is Java installed? The error was $err"
+          )
+        outputChannel.appendLine(s"Server spawn error: $err")
+      }
+    )
+
+    child.on(
       "exit",
       (code: Int, signal: String) => {
         if (code != 0 && code != 143)
-          VSCode.window.showInformationMessage(
-            s"ApexAssist server failed to start, code: $code, signal: $signal"
+          VSCode.window.showErrorMessage(
+            s"ApexAssist server quit unexpectedly, code: $code, signal: $signal"
           )
         outputChannel.appendLine(s"Server died! code: $code, signal: $signal")
       }
     )
+
     child.stderr.on(
       "data",
       (data: Buffer) =>

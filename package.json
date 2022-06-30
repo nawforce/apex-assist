@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
@@ -13,7 +13,7 @@
   "dependencies": {
     "apex-parser": "2.14.0",
     "vf-parser": "1.0.0",
-    "apexlink-gulp": "1.2.0"
+    "apexlink-gulp": "1.3.0"
   },
   "scripts": {
     "package": "npm i && npm run build && vsce package",
@@ -35,7 +35,7 @@
         "apex-assist.server.maxMemory": {
           "type": "integer",
           "default": 512,
-          "description": "Maximum memory for the JVM server, default is 512MB, valid range 128-4096."
+          "description": "Maximum memory for the JVM server, default is 1024MB, valid range 128-4096."
         },
         "apex-assist.errorsAndWarnings.showWarnings": {
           "type": "boolean",
