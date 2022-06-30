@@ -29,15 +29,17 @@ class Summary(context: ExtensionContext, issueLog: IssueLog) {
   VSCode.workspace.onDidChangeTextDocument(onChangeSummary, js.undefined, js.Array())
 
   private def onSummary(td: TextDocument): js.Promise[Unit] = {
+    val uri = td.uri
+    val text = td.getText()
     Future({
-      val path = td.uri.fsPath
+      val path = uri.fsPath
       if (path.endsWith(".cls") || path.endsWith(".trigger")) {
-        val parser = CodeParser(PathFactory(path), SourceData(td.getText()))
+        val parser = CodeParser(PathFactory(path), SourceData(text))
         val result = if (path.endsWith(".cls")) parser.parseClass() else parser.parseTrigger()
         val node = new ApexClassVisitor(parser).visit(result.value).headOption
 
         issueLog.setLocalDiagnostics(
-          td,
+          uri,
           result.issues ++ node.map(_.collectIssues()).getOrElse(ArraySeq())
         )
       }
