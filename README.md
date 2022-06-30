@@ -32,6 +32,8 @@ When your project loads, you are likely to see some warnings. You can disable th
 
 The extension requires that you have a Java 8 or above installed and that the 'java' command line executable is available.
 
+For more information on project setup see [ApexAssist Project Setup](https://github.com/nawforce/apex-assist/wiki/ApexAssist-Project-Setup).
+
 ## Cache Management
 
 To speed workspace loading in VSCode the extension uses a cache that is by default created in $HOME/.apexlink_cache. The first time you use the extension on a workspace it will take a little longer to start-up, typically up to 30 seconds dependning on size. Subsequent workspace loading will be significantly quicker, a few seconds typically.  
