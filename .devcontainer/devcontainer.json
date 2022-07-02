@@ -1,0 +1,10 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.194.0/containers/java
+{
+    "name": "ApexAssist",
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+        "scalameta.metals"
+    ],
+    "onCreateCommand": "cs install sbt bloop",
+}
