@@ -16,9 +16,9 @@
     "apexlink-gulp": "1.3.0"
   },
   "scripts": {
-    "package": "npm i && npm run build && vsce package",
+    "package": "npm i && npm run build && npm prune --production && vsce package",
     "build": "npm run webview && npm run maven && npm run sbt",
-    "webview": "(cd webview; npm i && npm run build)",
+    "webview": "(cd webview; npm i && npm run build && npm prune --production)",
     "sbt": "sbt build",
     "maven": "(cd jars; mvn -DoutputDirectory=. dependency:copy-dependencies -DincludeScope=runtime;)"
   },
