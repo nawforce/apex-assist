@@ -2,7 +2,7 @@
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.{ModuleKind, scalaJSLinkerConfig}
 
 name := "apex-assist"
-version := "1.7.4"
+version := "1.7.5"
 scalaVersion := "2.13.3"
 scalacOptions += "-deprecation"
 Global / onChangedBuildSource := ReloadOnSourceChanges
