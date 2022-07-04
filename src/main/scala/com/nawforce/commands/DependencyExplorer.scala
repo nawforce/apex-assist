@@ -165,47 +165,27 @@ class DependencyExplorer(context: ExtensionContext) {
         case Right(data) => JSON.parse(data)
       }
 
-      val files   = assetManifest.files
-      val main    = files.`main.js`.asInstanceOf[String]
-      val style   = files.`main.css`.asInstanceOf[String]
-      val runtime = files.`runtime-main.js`.asInstanceOf[String]
-      val chunksJS = js.Object
-        .keys(files.asInstanceOf[js.Object])
-        .filter(_.endsWith("chunk.js"))
-        .map(k => files.selectDynamic(k).asInstanceOf[String])
-      val chunksCSS = js.Object
-        .keys(files.asInstanceOf[js.Object])
-        .filter(_.endsWith("chunk.css"))
-        .map(k => files.selectDynamic(k).asInstanceOf[String])
+      val files = assetManifest.files
+      val main  = files.`main.js`.asInstanceOf[String]
+      val style = files.`main.css`.asInstanceOf[String]
 
       val mainUri =
-        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(main)).toString))
+        webview
+          .asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(main)).toString))
+          .toString(true)
       val styleUri =
-        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString))
-      val runtimeUri =
-        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(runtime)).toString))
-      val chunksJSUri =
-        chunksJS.map(
-          p =>
-            webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString))
-        )
-      val chunksCSSUri =
-        chunksCSS.map(
-          p =>
-            webview.asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(p)).toString))
-        )
-
-      val chunksCSSMarkup = chunksCSSUri.map(chunkUri => {
-        s"""<link rel="stylesheet" type="text/css" href="${chunkUri.toString(true)}">"""
-      })
-      val chunksScripts = chunksJSUri.map(chunkUri => {
-        s"""<script crossorigin="anonymous" src="${chunkUri.toString(true)}"></script>"""
-      })
+        webview
+          .asWebviewUri(VSCode.Uri.file(webviewPath.join(parseManifestPath(style)).toString))
+          .toString(true)
 
       val lightTheme =
-        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join("light-theme.css").toString))
+        webview
+          .asWebviewUri(VSCode.Uri.file(webviewPath.join("light-theme.css").toString))
+          .toString(true)
       val darkTheme =
-        webview.asWebviewUri(VSCode.Uri.file(webviewPath.join("dark-theme.css").toString))
+        webview
+          .asWebviewUri(VSCode.Uri.file(webviewPath.join("dark-theme.css").toString))
+          .toString(true)
 
       s"""
          |<!DOCTYPE html>
@@ -214,20 +194,14 @@ class DependencyExplorer(context: ExtensionContext) {
          |   <meta charset="UTF-8">
          |   <meta name="viewport" content="width=device-width, initial-scale=1.0">
          |   <title>Dependency Graph</title>
-         |   ${chunksCSSMarkup.mkString("\n")}
-         |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme
-        .toString(true)}">
-         |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${darkTheme
-        .toString(true)}">
+         |   <link rel="stylesheet" type="text/css" href="${styleUri}">
+         |   <link rel="prefetch" type="text/css" id="theme-prefetch-light" href="${lightTheme}">
+         |   <link rel="stylesheet" type="text/css" id="theme-prefetch-dark" href="${darkTheme}">
          |   <!-- inject-styles-here -->
-         |   <link rel="stylesheet" type="text/css" href="${styleUri.toString(true)}">
          | </head>
          | <body data-theme="light" style="padding: 0">
          |   <div id="root"></div>
-         |   <script crossorigin="anonymous" src="${runtimeUri
-        .toString(true)}"></script>
-         |   ${chunksScripts.mkString("\n")}
-         |   <script crossorigin="anonymous" src="${mainUri.toString(true)}"></script>
+         |   <script crossorigin="anonymous" src="${mainUri}"></script>
          | </body>
          |</html>
          |""".stripMargin
