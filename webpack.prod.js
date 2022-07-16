@@ -17,11 +17,19 @@ const config = {
   },
   devtool: 'source-map',
   externals: {
-    vscode: 'commonjs vscode' 
+    vscode: 'commonjs vscode'
   },
   resolve: {
-    mainFields: ['main'], 
+    mainFields: ['main'],
     extensions: ['.js'],
+  },
+  module: {
+    rules: [
+      {
+        test: /\..*\.bin$/,
+        type: 'asset/inline'
+      }
+    ]
   },
   ignoreWarnings: [
     {

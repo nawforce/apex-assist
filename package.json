@@ -23,7 +23,7 @@
   "scripts": {
     "package": "npm ci && npm run build && vsce package",
     "build": "npm run webview && npm run maven && npm run sbt && npm run webpack-prod",
-    "webview": "(cd webview; npm ci && npm run build)",
+    "webview": "(cd webview; npm ci && npm run buildAndCopy)",
     "sbt": "sbt build",
     "maven": "(cd jars; mvn -DoutputDirectory=. dependency:copy-dependencies -DincludeScope=runtime;)",
     "webpack-dev": "webpack --mode development --config ./webpack.dev.js",

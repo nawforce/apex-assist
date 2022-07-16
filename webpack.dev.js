@@ -23,6 +23,14 @@ const config = {
     mainFields: ['main'], 
     extensions: ['.js'],
   },
+  module: {
+    rules: [
+      {
+        test: /\..*\.bin$/,
+        type: 'asset/inline'
+      }
+    ]
+  },
   ignoreWarnings: [
     {
       module: /dist\/boot-dev.js/,

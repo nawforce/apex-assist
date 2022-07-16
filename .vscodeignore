@@ -12,15 +12,12 @@ node_modules/
 project/
 src/
 target/
-dist/apex-assist*
-dist/*.map
-dist/boot-*
 jar/pom.xml
+webview/
+dist/
+!dist/extension.js
+
 webpack.dev.js
 webpack.prod.js
 BUILDING.md
-
-webview/
-!webview/build/
-webview/build/**/*.map
 
