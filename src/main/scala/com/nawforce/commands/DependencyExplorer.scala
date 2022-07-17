@@ -104,7 +104,7 @@ class DependencyExplorer(context: ExtensionContext, assets: Map[ResouceName, Str
             case Right(id) =>
               identifier = id
               server
-                .dependencyGraph(identifier, msg.depth, apexOnly = true)
+                .dependencyGraph(identifier, msg.depth, apexOnly = false)
                 .foreach(graph => {
                   val reduced =
                     removeOrphans(identifier, reduceGraph(graph, retainByName(ignoreTypes, msg.hide.toSet)))
