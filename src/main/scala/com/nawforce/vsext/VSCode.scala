@@ -89,24 +89,24 @@ class QuickPickOptions extends js.Object {
 }
 
 class InputBoxOptions extends js.Object {
-  var ignoreFocusOut: Boolean = false
-  var placeHolder: String     = ""
-  var prompt: String          = ""
-  var title: String           = ""
-  var value: js.UndefOr[String] = js.undefined
-  var validateInput: js.Function1[String, js.UndefOr[String]] = (value) => js.undefined
+  var ignoreFocusOut: Boolean                                 = false
+  var placeHolder: String                                     = ""
+  var prompt: String                                          = ""
+  var title: String                                           = ""
+  var value: js.UndefOr[String]                               = js.undefined
+  var validateInput: js.Function1[String, js.UndefOr[String]] = value => js.undefined
 }
 
 object ProgressLocation {
-  val NOTIFICATION: Int = 15
+  val NOTIFICATION: Int   = 15
   val SOURCE_CONTROL: Int = 1
-  val WINDOW: Int    = 10
+  val WINDOW: Int         = 10
 }
 
 class ProgressOptions extends js.Object {
   var cancellable: js.UndefOr[Boolean] = false
-  var location: Int = ProgressLocation.NOTIFICATION
-  var title: js.UndefOr[String] = js.undefined
+  var location: Int                    = ProgressLocation.NOTIFICATION
+  var title: js.UndefOr[String]        = js.undefined
 }
 
 class ProgressMessage extends js.Object {
@@ -126,24 +126,20 @@ trait WindowOps extends js.Object {
   def showInformationMessage(msg: String): Unit        = js.native
   def showErrorMessage(msg: String): Unit              = js.native
   def createStatusBarItem(): StatusBar                 = js.native
-  def createWebviewPanel(
-    viewType: String,
-    title: String,
-    viewColumn: Int,
-    options: WebviewOptions
-  ): WebviewPanel                                                   = js.native
+  def createWebviewPanel(viewType: String, title: String, viewColumn: Int, options: WebviewOptions): WebviewPanel =
+    js.native
   def showTextDocument(textDocument: TextDocument): js.Promise[Any] = js.native
   def showQuickPick[T <: QuickPickItem](
     items: js.Array[T],
     options: QuickPickOptions,
     token: js.UndefOr[CancellationToken]
   ): js.Promise[js.UndefOr[T | js.Array[T]]] = js.native
-  def showInputBox(
-    options: InputBoxOptions,
-    token: js.UndefOr[CancellationToken]
-  ): js.Promise[js.UndefOr[String]] = js.native
-  def withProgress[T](options: ProgressOptions,
-                      task: js.Function2[Progress, CancellationToken, js.Promise[T]]): js.Promise[T] = js.native
+  def showInputBox(options: InputBoxOptions, token: js.UndefOr[CancellationToken]): js.Promise[js.UndefOr[String]] =
+    js.native
+  def withProgress[T](
+    options: ProgressOptions,
+    task: js.Function2[Progress, CancellationToken, js.Promise[T]]
+  ): js.Promise[T] = js.native
 }
 
 @js.native
@@ -240,6 +236,26 @@ trait DefinitionProvider extends js.Object {
   ): js.Promise[js.Array[DefinitionLink]]
 }
 
+trait ImplementationProvider extends js.Object {
+  type ImplementationLink = LocationLink
+
+  def provideImplementation(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): js.Promise[js.Array[ImplementationLink]]
+}
+
+trait ReferenceProvider extends js.Object {
+  type ReferenceLink = LocationLink
+
+  def provideReference(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): js.Promise[js.Array[ReferenceLink]]
+}
+
 trait CompletionItemProvider extends js.Object {
   def provideCompletionItems(
     document: TextDocument,
@@ -300,10 +316,11 @@ object CompletionItemKind {
 trait LanguagesOps extends js.Object {
   def createDiagnosticCollection(name: String): DiagnosticCollection = js.native
 
-  def registerDefinitionProvider(
-    selector: DocumentFilter,
-    provider: DefinitionProvider
-  ): Disposable = js.native
+  def registerDefinitionProvider(selector: DocumentFilter, provider: DefinitionProvider): Disposable = js.native
+
+  def registerImplementationProvider(selector: DocumentFilter, provider: ImplementationProvider): Disposable = js.native
+
+  def registerReferenceProvider(selector: DocumentFilter, provider: ReferenceProvider): Disposable = js.native
 
   def registerCompletionItemProvider(
     selector: DocumentFilter,
@@ -393,11 +410,7 @@ trait VSCodeModule extends js.Object {
 
 @js.native
 trait Event[T] extends js.Object {
-  def apply(
-    listener: js.Function1[T, js.Any],
-    args: js.Any,
-    disposables: js.Array[Disposable]
-  ): Event[T] = js.native
+  def apply(listener: js.Function1[T, js.Any], args: js.Any, disposables: js.Array[Disposable]): Event[T] = js.native
 }
 
 @js.native
@@ -434,7 +447,7 @@ object VSCode {
     js.Dynamic.newInstance(module.RelativePattern)(base, pattern).asInstanceOf[RelativePattern]
   }
 
-  def newCompletionItem(label: String, kind: Int, detail: String=null): CompletionItem = {
+  def newCompletionItem(label: String, kind: Int, detail: String = null): CompletionItem = {
     val item = js.Dynamic.newInstance(module.CompletionItem)(label, kind).asInstanceOf[CompletionItem]
     if (detail != null)
       item.detail = detail
@@ -442,11 +455,6 @@ object VSCode {
   }
 
   def locationToRange(location: Location): Range = {
-    newRange(
-      location.startLine - 1,
-      location.startPosition,
-      location.endLine - 1,
-      location.endPosition
-    )
+    newRange(location.startLine - 1, location.startPosition, location.endLine - 1, location.endPosition)
   }
 }

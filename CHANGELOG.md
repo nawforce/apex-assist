@@ -1,6 +1,6 @@
 ## [2.0.0]
 * Updated to support Spring '23 
-* Improved code navigation 
+* Improved code navigation incl goto implementation
 * Enhanced support for final keyword
 * Support for Analytics namespace types
 
