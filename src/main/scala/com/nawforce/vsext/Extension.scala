@@ -15,7 +15,7 @@ package com.nawforce.vsext
 
 import com.nawforce.commands.{ClearDiagnostics, DependencyBombs, DependencyExplorer, Gulp, Reload}
 import com.nawforce.pkgforce.diagnostics.LoggerOps
-import com.nawforce.providers.{CompletionProvider, DefinitionProvider}
+import com.nawforce.providers.{CompletionProvider, DefinitionProvider, ImplementationProvider}
 import com.nawforce.rpc.{APIError, Server}
 
 import scala.annotation.unused
@@ -84,6 +84,7 @@ object Extension {
 
         Watchers(context, server, issueLog)
         DefinitionProvider(context, server)
+        ImplementationProvider(context, server)
         CompletionProvider(context, server)
         Summary(issueLog)
         issueLog.refreshDiagnostics()
