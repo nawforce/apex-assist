@@ -14,10 +14,10 @@
 package com.nawforce.vsext
 
 import com.nawforce.pkgforce.diagnostics.CatchingLogger
-import com.nawforce.pkgforce.path.{PathFactory, PathLike}
+import com.nawforce.pkgforce.path.PathLike
 import com.nawforce.pkgforce.sfdx.SFDXProject
 import com.nawforce.rpc.Server
-import com.nawforce.runtime.platform.Environment
+import com.nawforce.runtime.platform.{Environment, Path}
 import io.scalajs.nodejs.timers.Timeout
 import io.scalajs.nodejs.{clearTimeout, setTimeout}
 
@@ -43,7 +43,7 @@ class Watchers(
 
   private def onWatchedReset(uri: URI): js.Promise[Unit] = {
     val hash =
-      PathFactory(uri.fsPath).read() match {
+      Path(uri.fsPath).read() match {
         case Left(_)     => None
         case Right(data) => Some(scala.util.hashing.MurmurHash3.stringHash(data))
       }
@@ -57,7 +57,9 @@ class Watchers(
   }
 
   private def onWatchedRefresh(uri: URI): js.Promise[Unit] = {
-    server.refresh(uri.fsPath)
+    val activeDoc    = VSCode.window.activeTextEditor.map(_.document.uri.toString()).toOption
+    val highPriority = activeDoc.contains(uri.toString())
+    server.refresh(uri.fsPath, highPriority)
     issueUpdater.trigger()
     js.Promise.resolve[Unit](())
   }
@@ -134,16 +136,13 @@ object Watchers {
     val resetWatchers = folders
       .flatMap(folder => {
         val baseURI = folder.uri
-        Array(
-          hashFiles(context, baseURI, "sfdx-project.json"),
-          hashFiles(context, baseURI, ".forceignore")
-        )
+        Array(hashFiles(context, baseURI, "sfdx-project.json"), hashFiles(context, baseURI, ".forceignore"))
       })
 
     val metadataWatchers = folders
       .flatMap(folder => {
         val baseURI = folder.uri
-        SFDXProject(PathFactory(baseURI.fsPath), new CatchingLogger())
+        SFDXProject(Path(baseURI.fsPath), new CatchingLogger())
           .map(project => {
             createWatchers(context, baseURI, project.metadataGlobs.toArray)
           })
@@ -153,13 +152,9 @@ object Watchers {
     new Watchers(server, issueLog, resetWatchers, metadataWatchers)
   }
 
-  private def hashFiles(
-    context: ExtensionContext,
-    base: URI,
-    name: String
-  ): (URI, FileSystemWatcher, Option[Int]) = {
+  private def hashFiles(context: ExtensionContext, base: URI, name: String): (URI, FileSystemWatcher, Option[Int]) = {
     val uri  = VSCode.Uri.joinPath(base, name)
-    val path = PathFactory(uri.fsPath)
+    val path = Path(uri.fsPath)
     val hash = path.read() match {
       case Left(_)     => None
       case Right(data) => Some(scala.util.hashing.MurmurHash3.stringHash(data))
@@ -167,11 +162,7 @@ object Watchers {
     (uri, createWatcher(context, base, name), hash)
   }
 
-  private def createWatchers(
-    context: ExtensionContext,
-    base: URI,
-    globs: Array[String]
-  ): Array[FileSystemWatcher] = {
+  private def createWatchers(context: ExtensionContext, base: URI, globs: Array[String]): Array[FileSystemWatcher] = {
     globs.map(glob => createWatcher(context, base, glob))
   }
 

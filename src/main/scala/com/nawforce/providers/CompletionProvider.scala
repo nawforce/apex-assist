@@ -16,16 +16,13 @@ package com.nawforce.providers
 import com.nawforce.rpc.Server
 import com.nawforce.vsext._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.{JSRichFutureNonThenable, _}
 
-class CompletionProvider(context: ExtensionContext, server: Server)
-    extends com.nawforce.vsext.CompletionItemProvider {
+class CompletionProvider(context: ExtensionContext, server: Server) extends com.nawforce.vsext.CompletionItemProvider {
 
-  context.subscriptions.push(
-    VSCode.languages.registerCompletionItemProvider(new ApexDefinitionFilter, this, ".")
-  )
+  context.subscriptions.push(VSCode.languages.registerCompletionItemProvider(new ApexDefinitionFilter, this, "."))
 
   override def provideCompletionItems(
     document: TextDocument,
@@ -34,12 +31,7 @@ class CompletionProvider(context: ExtensionContext, server: Server)
     context: CompletionContext
   ): js.Promise[CompletionList] = {
     server
-      .getCompletionItems(
-        document.uri.fsPath,
-        position.line + 1,
-        position.character,
-        document.getText()
-      )
+      .getCompletionItems(document.uri.fsPath, position.line + 1, position.character, document.getText())
       .map(items => {
         val completions = new CompletionList
         completions.isIncomplete = true

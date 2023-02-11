@@ -37,7 +37,7 @@ class Gulp(context: ExtensionContext) {
         val projectFile   = Path(workspacePath).join("sfdx-project.json")
 
         val gulper = new Gulper()
-        gulper
+        Gulper
           .getDefaultUsername(workspacePath)
           .toFuture
           .flatMap(usernameOrUndef => {
@@ -301,7 +301,7 @@ trait Logger extends js.Object {
 sealed trait LoggerStage extends js.Object {}
 
 @js.native
-@JSImport("apexlink-gulp", "LoggerStage")
+@JSImport("@apexdevtools/metadata-gulp", "LoggerStage")
 object LoggerStage extends js.Object {
   val LABELS: LoggerStage            = js.native
   val CLASSES: LoggerStage           = js.native
@@ -315,17 +315,15 @@ object LoggerStage extends js.Object {
 }
 
 @js.native
-@JSImport("apexlink-gulp", "NamespaceInfo")
+@JSImport("@apexdevtools/metadata-gulp", "NamespaceInfo")
 class NamespaceInfo extends js.Object {
   val namespace: String   = js.native
   val description: String = js.native
 }
 
 @js.native
-@JSImport("apexlink-gulp", "Gulp")
-class Gulper() extends js.Object {
-
-  def getDefaultUsername(workspacePath: String): js.Promise[js.UndefOr[String]] = js.native
+@JSImport("@apexdevtools/metadata-gulp", "Gulp")
+class Gulper extends js.Object {
 
   def getOrgNamespace(workspacePath: String, connection: js.Any): js.Promise[js.UndefOr[String]] =
     js.native
@@ -340,6 +338,12 @@ class Gulper() extends js.Object {
     namespaces: js.Array[String],
     partialLoad: Boolean
   ): js.Promise[Unit] = js.native
+}
+
+@js.native
+@JSImport("@apexdevtools/metadata-gulp", JSImport.Namespace)
+object Gulper extends js.Object {
+  def getDefaultUsername(workspacePath: String): js.Promise[js.UndefOr[String]] = js.native
 }
 
 object Gulp {

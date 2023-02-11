@@ -1,3 +1,9 @@
+## [2.0.0]
+* Updated to support Spring '23 
+* Improved code navigation 
+* Enhanced support for final keyword
+* Support for Analytics namespace types
+
 ## [1.7.0]
 * Support for downloading org metadata to aid semantic analysis
 * Support for a custom unpackage metadata directive

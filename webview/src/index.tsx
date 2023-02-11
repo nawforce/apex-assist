@@ -26,7 +26,7 @@ if (lightPrefetch && darkPrefetch) {
 }
 
 let vscode: vscodeAPI;
-if (typeof acquireVsCodeApi !== undefined) {
+if (typeof acquireVsCodeApi !== "undefined") {
     vscode = acquireVsCodeApi();
     vscode.postMessage({ cmd: "init"});
 }

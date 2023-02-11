@@ -15,9 +15,8 @@ package com.nawforce.rpc
 
 import com.nawforce.pkgforce.diagnostics.LoggerOps
 import com.nawforce.pkgforce.names.TypeIdentifier
-import com.nawforce.pkgforce.path.PathFactory
+import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext.{OutputChannel, VSCode}
-import io.github.shogowada.scala.jsonrpc.api
 import io.github.shogowada.scala.jsonrpc.client.JSONRPCClient
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer
 import io.github.shogowada.scala.jsonrpc.serializers.UpickleJSONSerializer._
@@ -60,7 +59,7 @@ class Server(child: ChildProcess) {
     var terminator = inboundData.indexOf('\u0000', existingLength)
     while (terminator != -1) {
       val msg = inboundData.slice(0, terminator).mkString
-      LoggerOps.trace(s"ClientRPC: terminated msg, ${msg.size} chars")
+      LoggerOps.trace(s"ClientRPC: terminated msg, ${msg.length} chars")
       handleMessage(msg)
       inboundData = inboundData.slice(terminator + 1, inboundData.length)
       LoggerOps.trace(s"ClientRPC: residual data, ${inboundData.size} chars")
@@ -86,8 +85,8 @@ class Server(child: ChildProcess) {
     orgAPI.open(directory)
   }
 
-  def getIssues(includeWarnings: Boolean, includeZombies: Boolean): Future[GetIssuesResult] = {
-    orgAPI.getIssues(includeWarnings, includeZombies)
+  def getIssues(includeWarnings: Boolean, maxIssuesPerFile: Integer): Future[GetIssuesResult] = {
+    orgAPI.getIssues(includeWarnings, maxIssuesPerFile)
   }
 
   def hasUpdatedIssues: Future[Array[String]] = {
@@ -106,19 +105,15 @@ class Server(child: ChildProcess) {
     orgAPI.issuesForFiles(paths, includeWarnings, maxErrorsPerFile)
   }
 
-  def refresh(path: String): Future[Unit] = {
-    orgAPI.refresh(path)
+  def refresh(path: String, highPriority: Boolean): Future[Unit] = {
+    orgAPI.refresh(path, highPriority)
   }
 
   def typeIdentifiers(apexOnly: Boolean): Future[GetTypeIdentifiersResult] = {
     orgAPI.typeIdentifiers(apexOnly)
   }
 
-  def dependencyGraph(
-    identifier: TypeIdentifier,
-    depth: Int,
-    apexOnly: Boolean
-  ): Future[DependencyGraph] = {
+  def dependencyGraph(identifier: TypeIdentifier, depth: Int, apexOnly: Boolean): Future[DependencyGraph] = {
     orgAPI.dependencyGraph(IdentifiersRequest(Array(identifier)), depth, apexOnly, IdentifiersRequest(Array()))
   }
 
@@ -130,12 +125,7 @@ class Server(child: ChildProcess) {
     orgAPI.identifierForPath(path)
   }
 
-  def getDefinition(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: Option[String]
-  ): Future[Array[LocationLink]] = {
+  def getDefinition(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]] = {
     orgAPI.getDefinition(path, line, offset, content)
   }
 
@@ -143,12 +133,7 @@ class Server(child: ChildProcess) {
     orgAPI.getDependencyBombs(count)
   }
 
-  def getCompletionItems(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: String
-  ): Future[Array[CompletionItemLink]] = {
+  def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]] = {
     orgAPI.getCompletionItems(path, line, offset, content)
   }
 }
@@ -156,20 +141,17 @@ class Server(child: ChildProcess) {
 object Server {
   private final val maxMemoryConfig = "apex-assist.server.maxMemory"
   private val maxMemory =
-    Math.max(
-      Math.min(VSCode.workspace.getConfiguration().get[Int](maxMemoryConfig).getOrElse(1024), 4096),
-      128
-    )
+    Math.max(Math.min(VSCode.workspace.getConfiguration().get[Int](maxMemoryConfig).getOrElse(1024), 4096), 128)
 
   def apply(outputChannel: OutputChannel): Server = {
-    val path = PathFactory(g.__dirname.asInstanceOf[String]).join("..")
+    val path = Path(g.__dirname.asInstanceOf[String]).join("..")
     val args =
       js.Array(
         s"-Xmx${maxMemory}m",
         // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         "-Dfile.encoding=UTF-8",
         "-cp",
-        "jars/apexlink-2.3.7.jar",
+        "jars/apex-ls_2.13-4.1.1.jar",
         "com.nawforce.apexlink.cmds.Server"
       )
 
@@ -185,9 +167,7 @@ object Server {
     child.on(
       "error",
       (err: Error) => {
-          VSCode.window.showErrorMessage(
-            s"ApexAssist server failed to start, is Java installed? The error was $err"
-          )
+        VSCode.window.showErrorMessage(s"ApexAssist server failed to start, is Java installed? The error was $err")
         outputChannel.appendLine(s"Server spawn error: $err")
       }
     )
@@ -196,17 +176,14 @@ object Server {
       "exit",
       (code: Int, signal: String) => {
         if (code != 0 && code != 143)
-          VSCode.window.showErrorMessage(
-            s"ApexAssist server quit unexpectedly, code: $code, signal: $signal"
-          )
+          VSCode.window.showErrorMessage(s"ApexAssist server quit unexpectedly, code: $code, signal: $signal")
         outputChannel.appendLine(s"Server died! code: $code, signal: $signal")
       }
     )
 
     child.stderr.on(
       "data",
-      (data: Buffer) =>
-        data.toString().split("\n").map(d => outputChannel.appendLine(s"Server: $d"))
+      (data: Buffer) => data.toString().split("\n").map(d => outputChannel.appendLine(s"Server: $d"))
     )
 
     new Server(child)

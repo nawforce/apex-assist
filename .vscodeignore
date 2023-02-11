@@ -1,16 +1,23 @@
 .idea/
+.bloop/
+.metals/
+.github/
 .vscode/
 .scalafmt.conf
+.gitignore
 build.sbt
 pom.xml
 
+node_modules/
 project/
 src/
 target/
-dist/apex-assist-fastopt.js
-dist/*.map
 jar/pom.xml
-
 webview/
-!webview/build/
+dist/
+!dist/extension.js
+
+webpack.dev.js
+webpack.prod.js
+BUILDING.md
 
