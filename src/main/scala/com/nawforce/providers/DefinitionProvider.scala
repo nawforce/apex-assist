@@ -16,16 +16,13 @@ package com.nawforce.providers
 import com.nawforce.rpc.Server
 import com.nawforce.vsext._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.{JSRichFutureNonThenable, _}
 
-class DefinitionProvider(context: ExtensionContext, server: Server)
-    extends com.nawforce.vsext.DefinitionProvider {
+class DefinitionProvider(context: ExtensionContext, server: Server) extends com.nawforce.vsext.DefinitionProvider {
 
-  context.subscriptions.push(
-    VSCode.languages.registerDefinitionProvider(new ApexDefinitionFilter, this)
-  )
+  context.subscriptions.push(VSCode.languages.registerDefinitionProvider(new ApexDefinitionFilter, this))
 
   override def provideDefinition(
     document: TextDocument,

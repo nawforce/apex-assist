@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "1.7.5",
+  "version": "2.0.0",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
@@ -11,14 +11,14 @@
   "bugs": "https://github.com/nawforce/apex-assist/issues",
   "icon": "logo.png",
   "dependencies": {
-    "@apexdevtools/apex-parser": "3.0.0",
-    "@apexdevtools/metadata-gulp": "2.0.0",
-    "vf-parser": "1.0.0"
+    "@apexdevtools/apex-parser": "3.2.0",
+    "@apexdevtools/metadata-gulp": "2.1.0",
+    "@apexdevtools/vf-parser": "1.0.0"
   },
   "devDependencies": {
-    "vsce": "^2.9.2",
-    "webpack": "^5.73.0",
-    "webpack-cli": "^4.10.0"
+    "@vscode/vsce": "^2.17.0",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   },
   "scripts": {
     "package": "npm ci && npm run build && vsce package",
@@ -41,7 +41,7 @@
       "properties": {
         "apex-assist.server.maxMemory": {
           "type": "integer",
-          "default": 512,
+          "default": 1024,
           "description": "Maximum memory for the JVM server, default is 1024MB, valid range 128-4096."
         },
         "apex-assist.errorsAndWarnings.showWarnings": {

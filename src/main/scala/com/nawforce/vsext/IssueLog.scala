@@ -14,7 +14,8 @@
 package com.nawforce.vsext
 
 import com.nawforce.pkgforce.diagnostics._
-import com.nawforce.pkgforce.path.{Location, PathFactory, PathLike}
+import com.nawforce.pkgforce.path.{Location, PathLike}
+import com.nawforce.runtime.platform.Path
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
@@ -22,7 +23,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
-class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
+class IssueLog(diagnostics: DiagnosticCollection) {
 
   private final val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings"
   private final val showWarningsOnChangeConfig =
@@ -31,12 +32,8 @@ class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
 
   VSCode.workspace.onDidChangeConfiguration(onConfigChanged, js.undefined, js.Array())
 
-  def onConfigChanged(event: ConfigurationChangeEvent): Unit = {
-    if (
-      event.affectsConfiguration(showWarningsConfig) || event.affectsConfiguration(
-        showWarningsOnChangeConfig
-      )
-    ) {
+  private def onConfigChanged(event: ConfigurationChangeEvent): Unit = {
+    if (event.affectsConfiguration(showWarningsConfig) || event.affectsConfiguration(showWarningsOnChangeConfig)) {
       LoggerOps.info(s"$showWarningsConfig or $showWarningsOnChangeConfig Configuration Changed")
       refreshDiagnostics()
     }
@@ -58,7 +55,7 @@ class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
       VSCode.workspace.getConfiguration().get[Boolean](showWarningsOnChangeConfig).getOrElse(true)
 
     val workspaceProjectFile =
-      PathFactory(VSCode.workspace.workspaceFolders.get.head.uri.fsPath)
+      Path(VSCode.workspace.workspaceFolders.get.head.uri.fsPath)
         .join("sfdx-project.json")
 
     Extension.server.map(server => {
@@ -111,7 +108,7 @@ class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
     showWarnings: Boolean,
     showWarningsOnChange: Boolean
   ): Boolean = {
-    if (PathFactory(issue.path.toString) == workspaceProjectFile) {
+    if (Path(issue.path.toString) == workspaceProjectFile) {
       return true
     }
 
@@ -135,10 +132,10 @@ class IssueLog(context: ExtensionContext, diagnostics: DiagnosticCollection) {
 }
 
 object IssueLog {
-  val localTag: String  = "ApexAssist"
-  val serverTag: String = "ApexAssist\u200B"
+  private val localTag: String  = "ApexAssist"
+  private val serverTag: String = "ApexAssist\u200B"
 
-  def apply(context: ExtensionContext, diagnostics: DiagnosticCollection): IssueLog = {
-    new IssueLog(context, diagnostics)
+  def apply(diagnostics: DiagnosticCollection): IssueLog = {
+    new IssueLog(diagnostics)
   }
 }

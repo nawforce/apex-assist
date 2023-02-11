@@ -18,6 +18,7 @@ import com.nawforce.pkgforce.diagnostics.LoggerOps
 import com.nawforce.providers.{CompletionProvider, DefinitionProvider}
 import com.nawforce.rpc.{APIError, Server}
 
+import scala.annotation.unused
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
@@ -26,7 +27,6 @@ import scala.util.{Failure, Success, Try}
 
 @js.native
 trait ExtensionContext extends js.Object {
-  val extensionPath: String
   val subscriptions: js.Array[Disposable]
 }
 
@@ -42,6 +42,7 @@ object Extension {
   private var statusBar: StatusBar              = _
 
   @JSExportTopLevel("activate")
+  @unused
   def activate(context: ExtensionContext): Unit = {
     this.context = context
     start()
@@ -65,7 +66,7 @@ object Extension {
     statusBar.show()
 
     // Commands
-    val issueLog = IssueLog(context, diagnostics)
+    val issueLog = IssueLog(diagnostics)
     Gulp(context)
     Reload(context)
     DependencyBombs(context)
@@ -84,15 +85,12 @@ object Extension {
         Watchers(context, server, issueLog)
         DefinitionProvider(context, server)
         CompletionProvider(context, server)
-        Summary(context, issueLog)
+        Summary(issueLog)
         issueLog.refreshDiagnostics()
     }
   }
 
-  private def startServer(
-    loggingLevel: String,
-    outputChannel: OutputChannel
-  ): Future[Try[Server]] = {
+  private def startServer(loggingLevel: String, outputChannel: OutputChannel): Future[Try[Server]] = {
     // Init server
     val server = Server(outputChannel)
     server.setLoggingLevel(loggingLevel)
@@ -106,9 +104,7 @@ object Extension {
     val workspaceFolders = VSCode.workspace.workspaceFolders.getOrElse(js.Array()).toSeq
     if (workspaceFolders.size > 1) {
       Future.successful(
-        Failure(
-          new WorkspaceException(APIError("Opening multiple folders is not currently supported."))
-        )
+        Failure(new WorkspaceException(APIError("Opening multiple folders is not currently supported.")))
       )
     } else {
       server
@@ -122,6 +118,7 @@ object Extension {
   }
 
   @JSExportTopLevel("deactivate")
+  @unused
   def deactivate(): Unit = {
     server.foreach(_.stop())
     server = None

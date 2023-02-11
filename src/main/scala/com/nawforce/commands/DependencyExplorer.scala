@@ -14,19 +14,16 @@
 package com.nawforce.commands
 
 import com.nawforce.pkgforce.names.TypeIdentifier
-import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.rpc.{DependencyGraph, DependencyLink, Server}
-import com.nawforce.runtime.platform.Path
 import com.nawforce.vsext._
+import io.scalajs.nodejs.buffer.Buffer
 
 import java.util.regex.Pattern
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
+import scala.scalajs.js.Dynamic.{global => g}
 import scala.scalajs.js.JSConverters._
-import scala.scalajs.js.JSON
-import js.Dynamic.{global => g}
-import io.scalajs.nodejs.buffer.Buffer
 
 class IncomingMessage(val cmd: String) extends js.Object
 
@@ -68,7 +65,7 @@ class DependencyExplorer(context: ExtensionContext, assets: Map[ResouceName, Str
     })
   }
 
-  class View(startingIdentifier: TypeIdentifier, server: Server) {
+  private class View(startingIdentifier: TypeIdentifier, server: Server) {
     private final val ignoreTypesConfig = "apex-assist.dependencyExplorer.ignoreTypes"
     private var identifier              = startingIdentifier
 
@@ -79,7 +76,7 @@ class DependencyExplorer(context: ExtensionContext, assets: Map[ResouceName, Str
       VSCode.window.createWebviewPanel("dependencyGraph", "Dependency Explorer", ViewColumn.ONE, new WebviewOptions)
     panel.webview
       .onDidReceiveMessage(event => handleMessage(panel, event), js.undefined, js.Array())
-    panel.webview.html = webContent(panel.webview)
+    panel.webview.html = webContent()
 
     private def handleMessage(panel: WebviewPanel, event: Any): Unit = {
       val cmd = event.asInstanceOf[IncomingMessage]
@@ -148,7 +145,7 @@ class DependencyExplorer(context: ExtensionContext, assets: Map[ResouceName, Str
       }
     }
 
-    private def webContent(webview: Webview): String = {
+    private def webContent(): String = {
       s"""
          |<!DOCTYPE html>
          |<html lang="en">
@@ -167,10 +164,6 @@ class DependencyExplorer(context: ExtensionContext, assets: Map[ResouceName, Str
          | </body>
          |</html>
          |""".stripMargin
-    }
-
-    private def parseManifestPath(path: String): String = {
-      path.split('/').tail.mkString(Path.separator)
     }
 
     private def retainByName(ignoreTypes: Option[String], hideTypes: Set[String])(graph: DependencyGraph): Seq[Int] = {
@@ -265,7 +258,7 @@ object DependencyExplorer {
     new DependencyExplorer(context, requireMap)
   }
 
-  lazy val requireMap: Map[ResouceName, String] = {
+  private lazy val requireMap: Map[ResouceName, String] = {
     val prefix = "data:application/octet-stream;base64,"
     Seq(
       (WebviewJS, true, g.require("./webview.js.bin")),

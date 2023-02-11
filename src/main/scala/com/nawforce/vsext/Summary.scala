@@ -14,8 +14,8 @@
 package com.nawforce.vsext
 
 import com.nawforce.pkgforce.parsers.ApexClassVisitor
-import com.nawforce.pkgforce.path.PathFactory
 import com.nawforce.runtime.parsers.{CodeParser, SourceData}
+import com.nawforce.runtime.platform.Path
 
 import scala.collection.immutable.ArraySeq
 import scala.concurrent.Future
@@ -23,25 +23,22 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
-class Summary(context: ExtensionContext, issueLog: IssueLog) {
+class Summary(issueLog: IssueLog) {
 
   VSCode.workspace.onDidOpenTextDocument(onSummary, js.undefined, js.Array())
   VSCode.workspace.onDidChangeTextDocument(onChangeSummary, js.undefined, js.Array())
 
   private def onSummary(td: TextDocument): js.Promise[Unit] = {
-    val uri = td.uri
+    val uri  = td.uri
     val text = td.getText()
     Future({
       val path = uri.fsPath
       if (path.endsWith(".cls") || path.endsWith(".trigger")) {
-        val parser = CodeParser(PathFactory(path), SourceData(text))
+        val parser = CodeParser(Path(path), SourceData(text))
         val result = if (path.endsWith(".cls")) parser.parseClass() else parser.parseTrigger()
-        val node = new ApexClassVisitor(parser).visit(result.value).headOption
+        val node   = new ApexClassVisitor(parser).visit(result.value).headOption
 
-        issueLog.setLocalDiagnostics(
-          uri,
-          result.issues ++ node.map(_.collectIssues()).getOrElse(ArraySeq())
-        )
+        issueLog.setLocalDiagnostics(uri, result.issues ++ node.map(_.collectIssues()).getOrElse(ArraySeq()))
       }
     }).toJSPromise
   }
@@ -53,7 +50,7 @@ class Summary(context: ExtensionContext, issueLog: IssueLog) {
 }
 
 object Summary {
-  def apply(context: ExtensionContext, issueLog: IssueLog): Summary = {
-    new Summary(context, issueLog)
+  def apply(issueLog: IssueLog): Summary = {
+    new Summary(issueLog)
   }
 }
