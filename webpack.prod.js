@@ -22,6 +22,7 @@ const config = {
   resolve: {
     mainFields: ['main'],
     extensions: ['.js'],
+    preferRelative: true
   },
   module: {
     rules: [
