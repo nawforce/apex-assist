@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
@@ -12,7 +12,7 @@
   "icon": "logo.png",
   "dependencies": {
     "@apexdevtools/apex-parser": "3.2.0",
-    "@apexdevtools/metadata-gulp": "2.1.0",
+    "@apexdevtools/metadata-gulp": "file:/./tmp/apexdevtools-metadata-gulp-2.1.0.tgz",
     "@apexdevtools/vf-parser": "1.0.0"
   },
   "devDependencies": {
