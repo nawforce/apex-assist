@@ -141,11 +141,7 @@ object GetDependencyCountsRequest {
   implicit val rw: RW[GetDependencyCountsRequest] = macroRW
 }
 
-case class DependencyCount(
-  path: String,
-  count: Int,
-  maxDependencyCount: Either[Option[String], Int]
-)
+case class DependencyCount(path: String, count: Int, maxDependencyCount: Either[Option[String], Int])
 
 object DependencyCount {
   implicit val rw: RW[DependencyCount] = macroRW
@@ -195,11 +191,7 @@ trait OrgAPI {
   def issuesForFile(path: String): Future[IssuesResult]
 
   @api.JSONRPCMethod(name = "issuesForFiles")
-  def issuesForFiles(
-    paths: Array[String],
-    includeWarnings: Boolean,
-    maxErrorsPerFile: Int
-  ): Future[IssuesResult]
+  def issuesForFiles(paths: Array[String], includeWarnings: Boolean, maxErrorsPerFile: Int): Future[IssuesResult]
 
   @api.JSONRPCMethod(name = "refresh")
   def refresh(path: String, highPriority: Boolean): Future[Unit]
@@ -222,20 +214,13 @@ trait OrgAPI {
   def identifierForPath(path: String): Future[IdentifierForPathResult]
 
   @api.JSONRPCMethod(name = "getDefinition")
-  def getDefinition(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: Option[String]
-  ): Future[Array[LocationLink]]
+  def getDefinition(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]]
 
   @api.JSONRPCMethod(name = "getImplementation")
-  def getImplementation(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: Option[String]
-  ): Future[Array[LocationLink]]
+  def getImplementation(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]]
+
+  @api.JSONRPCMethod(name = "getReferences")
+  def getReferences(path: String, line: Int, offset: Int): Future[Array[TargetLocation]]
 
   @api.JSONRPCMethod(name = "getDependencyBombs")
   def getDependencyBombs(count: Int): Future[Array[BombScore]]
@@ -247,12 +232,7 @@ trait OrgAPI {
   def getDependencyCounts(paths: GetDependencyCountsRequest): Future[GetDependencyCountsResult]
 
   @api.JSONRPCMethod(name = "getCompletionItems")
-  def getCompletionItems(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: String
-  ): Future[Array[CompletionItemLink]]
+  def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]]
 
   @api.JSONRPCMethod(name = "getAllTestMethods")
   def getAllTestMethods(): Future[Array[TestMethod]]

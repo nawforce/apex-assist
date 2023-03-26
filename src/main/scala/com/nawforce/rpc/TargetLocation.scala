@@ -6,6 +6,6 @@ import io.github.shogowada.scala.jsonrpc.serializers.JSONRPCPickler.{macroRW, Re
 case class TargetLocation(targetPath: String, range: Location)
 
 object TargetLocation {
-  implicit val rw: RW[LocationLink]     = macroRW
+  implicit val rw: RW[TargetLocation]   = macroRW
   implicit val rwLocation: RW[Location] = macroRW
 }

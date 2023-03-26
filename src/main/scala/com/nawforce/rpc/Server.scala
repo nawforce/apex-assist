@@ -133,6 +133,10 @@ class Server(child: ChildProcess) {
     orgAPI.getImplementation(path, line, offset, content)
   }
 
+  def getReferences(path: String, line: Int, offset: Int): Future[Array[TargetLocation]] = {
+    orgAPI.getReferences(path, line, offset)
+  }
+
   def getDependencyBombs(count: Int): Future[Array[BombScore]] = {
     orgAPI.getDependencyBombs(count)
   }
@@ -155,7 +159,7 @@ object Server {
         // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         "-Dfile.encoding=UTF-8",
         "-cp",
-        "jars/apex-ls_2.13-4.2.0.jar",
+        path.join("jars").join("*").toString,
         "com.nawforce.apexlink.cmds.Server"
       )
 
