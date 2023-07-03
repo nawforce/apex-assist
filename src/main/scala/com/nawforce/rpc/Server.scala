@@ -85,6 +85,10 @@ class Server(child: ChildProcess) {
     orgAPI.open(directory)
   }
 
+  def open(directory: String, options: OpenOptions): Future[OpenResult] = {
+    orgAPI.open(directory, options)
+  }
+
   def getIssues(includeWarnings: Boolean, maxIssuesPerFile: Integer): Future[GetIssuesResult] = {
     orgAPI.getIssues(includeWarnings, maxIssuesPerFile)
   }

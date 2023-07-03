@@ -11,7 +11,7 @@ scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
 
 libraryDependencies += "net.exoego"               %%% "scala-js-nodejs-v12"                    % "0.12.0"
 libraryDependencies += "com.lihaoyi"              %%% "upickle"                                % "1.2.0"
-libraryDependencies += "io.github.apex-dev-tools" %%% "apex-ls"                                % "4.2.0"
+libraryDependencies += "io.github.apex-dev-tools" %%% "apex-ls"                                % "4.3.0+10-ddfc6523-SNAPSHOT"
 libraryDependencies += "com.github.nawforce"      %%% "scala-json-rpc"                         % "1.1.0"
 libraryDependencies += "com.github.nawforce"      %%% "scala-json-rpc-upickle-json-serializer" % "1.1.0"
 libraryDependencies += "org.scala-js"             %%% "scala-js-macrotask-executor"            % "1.1.1" // See library doc for why this is needed

@@ -24,6 +24,8 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.util.{Failure, Success, Try}
+import java.nio.file.OpenOption
+import com.nawforce.rpc.OpenOptions
 
 @js.native
 trait ExtensionContext extends js.Object {
@@ -82,7 +84,7 @@ object Extension {
         statusBar.hide()
         this.server = Some(server)
 
-        Watchers(context, server, issueLog)
+        Watchers(context, server)
         DefinitionProvider(context, server)
         ImplementationProvider(context, server)
         CompletionProvider(context, server)
@@ -95,7 +97,6 @@ object Extension {
   private def startServer(loggingLevel: String, outputChannel: OutputChannel): Future[Try[Server]] = {
     // Init server
     val server = Server(outputChannel)
-    server.setLoggingLevel(loggingLevel)
     server
       .version()
       .map(version => {
@@ -109,8 +110,9 @@ object Extension {
         Failure(new WorkspaceException(APIError("Opening multiple folders is not currently supported.")))
       )
     } else {
+      var options = OpenOptions.default().withLoggingLevel(loggingLevel).withIndexerConfiguration(50, 3000)
       server
-        .open(workspaceFolders.head.uri.fsPath)
+        .open(workspaceFolders.head.uri.fsPath, options)
         .map(result => {
           result.error
             .map(error => Failure(new WorkspaceException(error)))

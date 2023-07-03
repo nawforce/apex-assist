@@ -24,14 +24,8 @@ import io.scalajs.nodejs.{clearTimeout, setTimeout}
 import scala.collection.mutable
 import scala.scalajs.js
 
-class Watchers(
-  server: Server,
-  issueLog: IssueLog,
-  resetWatchers: Array[(URI, FileSystemWatcher, Option[Int])],
-  refreshWatchers: Array[FileSystemWatcher]
-) {
+class Watchers(server: Server, resetWatchers: Array[(URI, FileSystemWatcher, Option[Int])]) {
 
-  private val issueUpdater  = new IssueUpdater(issueLog)
   private val resetHandler  = new ResetHandler
   private val currentHashes = mutable.HashMap[String, Option[Int]]()
 
@@ -39,7 +33,6 @@ class Watchers(
     currentHashes.put(watcher._1.toString(), watcher._3)
     installWatcher(watcher._2, onWatchedReset)
   })
-  refreshWatchers.foreach(watcher => installWatcher(watcher, onWatchedRefresh))
 
   private def onWatchedReset(uri: URI): js.Promise[Unit] = {
     val hash =
@@ -53,14 +46,6 @@ class Watchers(
       resetHandler.trigger()
     }
 
-    js.Promise.resolve[Unit](())
-  }
-
-  private def onWatchedRefresh(uri: URI): js.Promise[Unit] = {
-    val activeDoc    = VSCode.window.activeTextEditor.map(_.document.uri.toString()).toOption
-    val highPriority = activeDoc.contains(uri.toString())
-    server.refresh(uri.fsPath, highPriority)
-    issueUpdater.trigger()
     js.Promise.resolve[Unit](())
   }
 
@@ -120,14 +105,8 @@ class ResetHandler extends Debouncer {
 
 }
 
-class IssueUpdater(issueLog: IssueLog) extends Debouncer {
-  protected def fire(): Unit = {
-    issueLog.refreshDiagnostics()
-  }
-}
-
 object Watchers {
-  def apply(context: ExtensionContext, server: Server, issueLog: IssueLog): Watchers = {
+  def apply(context: ExtensionContext, server: Server): Watchers = {
 
     val folders = VSCode.workspace.workspaceFolders
       .map(_.toArray)
@@ -139,17 +118,7 @@ object Watchers {
         Array(hashFiles(context, baseURI, "sfdx-project.json"), hashFiles(context, baseURI, ".forceignore"))
       })
 
-    val metadataWatchers = folders
-      .flatMap(folder => {
-        val baseURI = folder.uri
-        SFDXProject(Path(baseURI.fsPath), new CatchingLogger())
-          .map(project => {
-            createWatchers(context, baseURI, project.metadataGlobs.toArray)
-          })
-          .getOrElse(Array())
-      })
-
-    new Watchers(server, issueLog, resetWatchers, metadataWatchers)
+    new Watchers(server, resetWatchers)
   }
 
   private def hashFiles(context: ExtensionContext, base: URI, name: String): (URI, FileSystemWatcher, Option[Int]) = {
