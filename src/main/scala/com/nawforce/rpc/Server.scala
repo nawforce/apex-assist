@@ -44,7 +44,7 @@ class Server(child: ChildProcess) {
   }
 
   private def sender(json: String): Future[Option[String]] = {
-    LoggerOps.debug(s"Sent: $json")
+    LoggerOps.trace(s"Sent: $json")
     child.stdin.write(json)
     child.stdin.write("\u0000")
     val promise = Promise[Option[String]]()
@@ -68,7 +68,7 @@ class Server(child: ChildProcess) {
   }
 
   private def handleMessage(msg: String): Unit = {
-    LoggerOps.debug(s"Received: $msg")
+    LoggerOps.trace(s"Received: $msg")
     val promise = inboundQueue.dequeue()
     promise.success(Some(msg))
   }
@@ -83,6 +83,10 @@ class Server(child: ChildProcess) {
 
   def open(directory: String): Future[OpenResult] = {
     orgAPI.open(directory)
+  }
+
+  def open(directory: String, options: OpenOptions): Future[OpenResult] = {
+    orgAPI.open(directory, options)
   }
 
   def getIssues(includeWarnings: Boolean, maxIssuesPerFile: Integer): Future[GetIssuesResult] = {
@@ -133,6 +137,10 @@ class Server(child: ChildProcess) {
     orgAPI.getImplementation(path, line, offset, content)
   }
 
+  def getReferences(path: String, line: Int, offset: Int): Future[Array[TargetLocation]] = {
+    orgAPI.getReferences(path, line, offset)
+  }
+
   def getDependencyBombs(count: Int): Future[Array[BombScore]] = {
     orgAPI.getDependencyBombs(count)
   }
@@ -155,7 +163,7 @@ object Server {
         // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         "-Dfile.encoding=UTF-8",
         "-cp",
-        "jars/apex-ls_2.13-4.2.0.jar",
+        path.join("jars").join("*").toString,
         "com.nawforce.apexlink.cmds.Server"
       )
 

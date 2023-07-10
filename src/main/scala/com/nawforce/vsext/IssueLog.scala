@@ -22,13 +22,18 @@ import scala.collection.mutable
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.timers._
 
 class IssueLog(diagnostics: DiagnosticCollection) {
 
+  private val timeoutPoll              = 1000
   private final val showWarningsConfig = "apex-assist.errorsAndWarnings.showWarnings"
   private final val showWarningsOnChangeConfig =
     "apex-assist.errorsAndWarnings.showWarningsOnChange"
   private val warningsAllowed = new mutable.HashSet[String]()
+  private var timer: Option[SetTimeoutHandle] = Some(setTimeout(timeoutPoll) {
+    getDiagnostics()
+  })
 
   VSCode.workspace.onDidChangeConfiguration(onConfigChanged, js.undefined, js.Array())
 
@@ -40,6 +45,8 @@ class IssueLog(diagnostics: DiagnosticCollection) {
   }
 
   def clear(): Unit = {
+    timer.foreach(clearTimeout)
+    timer = None
     diagnostics.clear()
   }
 
@@ -48,6 +55,17 @@ class IssueLog(diagnostics: DiagnosticCollection) {
   }
 
   def refreshDiagnostics(): Unit = {
+    timer.foreach(clearTimeout)
+    timer = Some(setTimeout(timeoutPoll) {
+      getDiagnostics()
+    })
+  }
+
+  private def getDiagnostics(): Unit = {
+    timer = Some(setTimeout(timeoutPoll) {
+      getDiagnostics()
+    })
+
     val showWarnings =
       VSCode.workspace.getConfiguration().get[Boolean](showWarningsConfig).getOrElse(false)
 
@@ -55,29 +73,37 @@ class IssueLog(diagnostics: DiagnosticCollection) {
       VSCode.workspace.getConfiguration().get[Boolean](showWarningsOnChangeConfig).getOrElse(true)
 
     val workspaceProjectFile =
-      Path(VSCode.workspace.workspaceFolders.get.head.uri.fsPath)
+      Path(VSCode.workspace.workspaceFolders.head.uri.fsPath)
         .join("sfdx-project.json")
+
+    val dirty = VSCode.workspace.textDocuments.filter(_.isDirty).map(_.uri.toString()).toSet
 
     Extension.server.map(server => {
       server.hasUpdatedIssues.map(paths => {
-        paths.foreach(path => diagnostics.set(VSCode.Uri.file(path), js.Array()))
-        server
-          .issuesForFiles(paths, includeWarnings = true, maxErrorsPerFile = 25)
-          .map(issuesResult => {
-            val issueMap = issuesResult.issues
-              .filter(i => allowIssue(i, workspaceProjectFile, showWarnings, showWarningsOnChange))
-              .groupBy(_.path)
-              .map { case (x, xs) => (x, xs) }
-            issueMap.keys.foreach(path => {
-              diagnostics.set(
-                VSCode.Uri.file(path.toString),
-                issueMap(path)
-                  .sortBy(_.diagnostic.location.startLine)
-                  .map(issue => issueToDiagnostic(issue, isLocal = false))
-                  .toJSArray
-              )
+        val uris = paths
+          .map(path => VSCode.Uri.file(path))
+          .filterNot(uri => dirty.contains(uri.toString))
+        uris.foreach(uri => diagnostics.set(uri, js.Array()))
+        val issuePaths = uris.map(_.fsPath)
+        if (issuePaths.nonEmpty) {
+          server
+            .issuesForFiles(issuePaths, includeWarnings = true, maxErrorsPerFile = 25)
+            .map(issuesResult => {
+              val issueMap = issuesResult.issues
+                .filter(i => allowIssue(i, workspaceProjectFile, showWarnings, showWarningsOnChange))
+                .groupBy(_.path)
+                .map { case (x, xs) => (x, xs) }
+              issueMap.keys.foreach(path => {
+                diagnostics.set(
+                  VSCode.Uri.file(path.toString),
+                  issueMap(path)
+                    .sortBy(_.diagnostic.location.startLine)
+                    .map(issue => issueToDiagnostic(issue, isLocal = false))
+                    .toJSArray
+                )
+              })
             })
-          })
+        }
       })
     })
   }

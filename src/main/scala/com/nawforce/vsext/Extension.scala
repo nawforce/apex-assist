@@ -15,7 +15,7 @@ package com.nawforce.vsext
 
 import com.nawforce.commands.{ClearDiagnostics, DependencyBombs, DependencyExplorer, Gulp, Reload}
 import com.nawforce.pkgforce.diagnostics.LoggerOps
-import com.nawforce.providers.{CompletionProvider, DefinitionProvider, ImplementationProvider}
+import com.nawforce.providers.{CompletionProvider, DefinitionProvider, ImplementationProvider, ReferenceProvider}
 import com.nawforce.rpc.{APIError, Server}
 
 import scala.annotation.unused
@@ -24,6 +24,8 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.util.{Failure, Success, Try}
+import java.nio.file.OpenOption
+import com.nawforce.rpc.OpenOptions
 
 @js.native
 trait ExtensionContext extends js.Object {
@@ -86,6 +88,7 @@ object Extension {
         DefinitionProvider(context, server)
         ImplementationProvider(context, server)
         CompletionProvider(context, server)
+        ReferenceProvider(context, server)
         Summary(issueLog)
         issueLog.refreshDiagnostics()
     }
@@ -94,7 +97,6 @@ object Extension {
   private def startServer(loggingLevel: String, outputChannel: OutputChannel): Future[Try[Server]] = {
     // Init server
     val server = Server(outputChannel)
-    server.setLoggingLevel(loggingLevel)
     server
       .version()
       .map(version => {
@@ -102,14 +104,15 @@ object Extension {
       })
 
     // Load workspace
-    val workspaceFolders = VSCode.workspace.workspaceFolders.getOrElse(js.Array()).toSeq
+    val workspaceFolders = VSCode.workspace.workspaceFolders.toSeq
     if (workspaceFolders.size > 1) {
       Future.successful(
         Failure(new WorkspaceException(APIError("Opening multiple folders is not currently supported.")))
       )
     } else {
+      var options = OpenOptions.default().withLoggingLevel(loggingLevel).withIndexerConfiguration(50, 3000)
       server
-        .open(workspaceFolders.head.uri.fsPath)
+        .open(workspaceFolders.head.uri.fsPath, options)
         .map(result => {
           result.error
             .map(error => Failure(new WorkspaceException(error)))

@@ -129,10 +129,7 @@ class IssueUpdater(issueLog: IssueLog) extends Debouncer {
 object Watchers {
   def apply(context: ExtensionContext, server: Server, issueLog: IssueLog): Watchers = {
 
-    val folders = VSCode.workspace.workspaceFolders
-      .map(_.toArray)
-      .getOrElse(Array())
-
+    val folders = VSCode.workspace.workspaceFolders.toArray
     val resetWatchers = folders
       .flatMap(folder => {
         val baseURI = folder.uri

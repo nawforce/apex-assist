@@ -1,3 +1,8 @@
+## [2.1.0]
+
+- Support for platform customisation
+- Navigation support for goto references
+
 ## [2.0.1]
 
 - Fix for metadata downloading from org

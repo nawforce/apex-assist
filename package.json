@@ -1,6 +1,6 @@
 {
   "name": "apex-assist",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "displayName": "Apex Assist",
   "description": "Local validation of Apex language and dependency graphing",
   "publisher": "KevinJones",
@@ -30,7 +30,7 @@
     "webpack-prod": "webpack --mode production --devtool hidden-source-map --config ./webpack.prod.js"
   },
   "engines": {
-    "vscode": "^1.41.0"
+    "vscode": "^1.79.0"
   },
   "activationEvents": [
     "workspaceContains:sfdx-project.json"

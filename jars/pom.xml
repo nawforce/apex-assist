@@ -54,7 +54,7 @@
     <dependency>
       <groupId>io.github.apex-dev-tools</groupId>
       <artifactId>apex-ls_2.13</artifactId>
-      <version>4.2.0</version>
+      <version>4.3.0+18-1e79cd60-SNAPSHOT</version>
     </dependency>
   </dependencies>
 

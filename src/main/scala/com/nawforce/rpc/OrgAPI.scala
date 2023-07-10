@@ -141,11 +141,7 @@ object GetDependencyCountsRequest {
   implicit val rw: RW[GetDependencyCountsRequest] = macroRW
 }
 
-case class DependencyCount(
-  path: String,
-  count: Int,
-  maxDependencyCount: Either[Option[String], Int]
-)
+case class DependencyCount(path: String, count: Int, maxDependencyCount: Either[Option[String], Int])
 
 object DependencyCount {
   implicit val rw: RW[DependencyCount] = macroRW
@@ -157,10 +153,59 @@ object GetDependencyCountsResult {
   implicit val rw: RW[GetDependencyCountsResult] = macroRW
 }
 
-case class TestMethod(className: String, methodName: String)
+case class TestClassItemsResult(items: Array[ClassTestItem])
 
-object TestMethod {
-  implicit val rw: RW[TestMethod] = macroRW
+object TestClassItemsResult {
+  implicit val rw: RW[TestClassItemsResult]         = macroRW
+  implicit val rwClassTestItem: RW[ClassTestItem]   = macroRW
+  implicit val rwTargetLocation: RW[TargetLocation] = macroRW
+  implicit val rwLocation: RW[Location]             = macroRW
+}
+
+case class TestMethodItemsResult(items: Array[MethodTestItem])
+
+object TestMethodItemsResult {
+  implicit val rw: RW[TestMethodItemsResult]        = macroRW
+  implicit val rwClassTestItem: RW[MethodTestItem]  = macroRW
+  implicit val rwTargetLocation: RW[TargetLocation] = macroRW
+  implicit val rwLocation: RW[Location]             = macroRW
+}
+
+case class OpenOptions private (
+  parser: Option[String] = None,
+  loggingLevel: Option[String] = None,
+  externalAnalysisMode: Option[String] = None,
+  cacheDirectory: Option[String] = None,
+  indexerConfiguration: Option[(Long, Long)] = None
+) {
+  def withParser(name: String): OpenOptions = {
+    copy(parser = Some(name))
+  }
+
+  def withLoggingLevel(level: String): OpenOptions = {
+    copy(loggingLevel = Some(level))
+  }
+
+  def withExternalAnalysisMode(mode: String): OpenOptions = {
+    copy(externalAnalysisMode = Some(mode))
+  }
+
+  def withCacheDirectory(path: String): OpenOptions = {
+    copy(cacheDirectory = Some(path))
+  }
+
+  def withIndexerConfiguration(rescanTriggerTimeMs: Long, quietPeriodForRescanMs: Long): OpenOptions = {
+    copy(indexerConfiguration = Some((rescanTriggerTimeMs, quietPeriodForRescanMs)))
+  }
+
+}
+
+object OpenOptions {
+  implicit val rw: RW[OpenOptions] = macroRW
+
+  def default(): OpenOptions = {
+    new OpenOptions(None, None, None, None, None)
+  }
 }
 
 trait OrgAPI {
@@ -182,6 +227,9 @@ trait OrgAPI {
   @api.JSONRPCMethod(name = "open")
   def open(directory: String): Future[OpenResult]
 
+  @api.JSONRPCMethod(name = "openWithOptions")
+  def open(directory: String, options: OpenOptions): Future[OpenResult]
+
   @api.JSONRPCMethod(name = "getIssues")
   def getIssues(includeWarnings: Boolean, maxIssuesPerFile: Int): Future[GetIssuesResult]
 
@@ -195,11 +243,7 @@ trait OrgAPI {
   def issuesForFile(path: String): Future[IssuesResult]
 
   @api.JSONRPCMethod(name = "issuesForFiles")
-  def issuesForFiles(
-    paths: Array[String],
-    includeWarnings: Boolean,
-    maxErrorsPerFile: Int
-  ): Future[IssuesResult]
+  def issuesForFiles(paths: Array[String], includeWarnings: Boolean, maxErrorsPerFile: Int): Future[IssuesResult]
 
   @api.JSONRPCMethod(name = "refresh")
   def refresh(path: String, highPriority: Boolean): Future[Unit]
@@ -222,20 +266,13 @@ trait OrgAPI {
   def identifierForPath(path: String): Future[IdentifierForPathResult]
 
   @api.JSONRPCMethod(name = "getDefinition")
-  def getDefinition(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: Option[String]
-  ): Future[Array[LocationLink]]
+  def getDefinition(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]]
 
   @api.JSONRPCMethod(name = "getImplementation")
-  def getImplementation(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: Option[String]
-  ): Future[Array[LocationLink]]
+  def getImplementation(path: String, line: Int, offset: Int, content: Option[String]): Future[Array[LocationLink]]
+
+  @api.JSONRPCMethod(name = "getReferences")
+  def getReferences(path: String, line: Int, offset: Int): Future[Array[TargetLocation]]
 
   @api.JSONRPCMethod(name = "getDependencyBombs")
   def getDependencyBombs(count: Int): Future[Array[BombScore]]
@@ -243,20 +280,18 @@ trait OrgAPI {
   @api.JSONRPCMethod(name = "getTestClassNames")
   def getTestClassNames(paths: GetTestClassNamesRequest): Future[GetTestClassNamesResult]
 
+  @api.JSONRPCMethod(name = "getTestClassItems")
+  def getTestClassItems(paths: Array[String]): Future[TestClassItemsResult]
+
+  @api.JSONRPCMethod(name = "getTestClassItemsChanged")
+  def getTestClassItemsChanged(paths: Array[String]): Future[TestClassItemsResult]
+
+  @api.JSONRPCMethod(name = "getTestMethodItems")
+  def getTestMethodItems(paths: Array[String]): Future[TestMethodItemsResult]
+
   @api.JSONRPCMethod(name = "getDependencyCounts")
   def getDependencyCounts(paths: GetDependencyCountsRequest): Future[GetDependencyCountsResult]
 
   @api.JSONRPCMethod(name = "getCompletionItems")
-  def getCompletionItems(
-    path: String,
-    line: Int,
-    offset: Int,
-    content: String
-  ): Future[Array[CompletionItemLink]]
-
-  @api.JSONRPCMethod(name = "getAllTestMethods")
-  def getAllTestMethods(): Future[Array[TestMethod]]
-
-  @api.JSONRPCMethod(name = "getAllExecutableTestItems")
-  def getAllExecutableTestItems(): Future[Array[TestItem]]
+  def getCompletionItems(path: String, line: Int, offset: Int, content: String): Future[Array[CompletionItemLink]]
 }

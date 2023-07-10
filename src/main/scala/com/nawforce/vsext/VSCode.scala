@@ -246,12 +246,21 @@ trait ImplementationProvider extends js.Object {
   ): js.Promise[js.Array[ImplementationLink]]
 }
 
-trait ReferenceProvider extends js.Object {
-  type ReferenceLink = LocationLink
+class ReferenceLink extends js.Object {
+  var uri: js.UndefOr[URI]     = js.undefined
+  var range: js.UndefOr[Range] = js.undefined
+}
 
-  def provideReference(
+@js.native
+trait ReferenceContext extends js.Object {
+  val includeDeclaration: Boolean = js.native
+}
+
+trait ReferenceProvider extends js.Object {
+  def provideReferences(
     document: TextDocument,
     position: Position,
+    context: ReferenceContext,
     token: CancellationToken
   ): js.Promise[js.Array[ReferenceLink]]
 }
@@ -366,7 +375,8 @@ trait ConfigurationChangeEvent extends js.Object {
 
 @js.native
 trait WorkspaceOps extends js.Object {
-  val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
+  val workspaceFolders: js.Array[WorkspaceFolder] = js.native
+  val textDocuments: js.Array[TextDocument]       = js.native
 
   val onDidOpenTextDocument: Event[TextDocument]                = js.native
   val onDidChangeTextDocument: Event[TextDocumentChangeEvent]   = js.native
