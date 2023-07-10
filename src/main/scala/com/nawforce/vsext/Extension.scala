@@ -84,7 +84,7 @@ object Extension {
         statusBar.hide()
         this.server = Some(server)
 
-        Watchers(context, server)
+        Watchers(context, server, issueLog)
         DefinitionProvider(context, server)
         ImplementationProvider(context, server)
         CompletionProvider(context, server)
@@ -104,7 +104,7 @@ object Extension {
       })
 
     // Load workspace
-    val workspaceFolders = VSCode.workspace.workspaceFolders.getOrElse(js.Array()).toSeq
+    val workspaceFolders = VSCode.workspace.workspaceFolders.toSeq
     if (workspaceFolders.size > 1) {
       Future.successful(
         Failure(new WorkspaceException(APIError("Opening multiple folders is not currently supported.")))

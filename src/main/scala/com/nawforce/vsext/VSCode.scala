@@ -375,7 +375,8 @@ trait ConfigurationChangeEvent extends js.Object {
 
 @js.native
 trait WorkspaceOps extends js.Object {
-  val workspaceFolders: js.UndefOr[js.Array[WorkspaceFolder]] = js.native
+  val workspaceFolders: js.Array[WorkspaceFolder] = js.native
+  val textDocuments: js.Array[TextDocument]       = js.native
 
   val onDidOpenTextDocument: Event[TextDocument]                = js.native
   val onDidChangeTextDocument: Event[TextDocumentChangeEvent]   = js.native

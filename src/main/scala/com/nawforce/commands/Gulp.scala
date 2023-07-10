@@ -33,7 +33,7 @@ class Gulp(context: ExtensionContext) {
     VSCode.commands.registerCommand(
       "apex-assist.gulp",
       () => {
-        val workspacePath = VSCode.workspace.workspaceFolders.get.head.uri.fsPath
+        val workspacePath = VSCode.workspace.workspaceFolders.head.uri.fsPath
         val projectFile   = Path(workspacePath).join("sfdx-project.json")
 
         val gulper = new Gulper()
@@ -42,24 +42,16 @@ class Gulp(context: ExtensionContext) {
           .toFuture
           .flatMap(usernameOrUndef => {
             if (usernameOrUndef.isEmpty || usernameOrUndef.get == null) {
-              throw new Exception(
-                "Could not find org username, have you set a default org for this workspace?"
-              )
+              throw new Exception("Could not find org username, have you set a default org for this workspace?")
             }
             getOrgNamespace(gulper, workspacePath)
           })
           .flatMap(_ => promptNamespaces(gulper, workspacePath, projectFile))
           .flatMap(projectAndNamespaces => {
             if (projectAndNamespaces._2.isEmpty)
-              Future.successful( () )
+              Future.successful(())
             else
-              loadMetadata(
-                gulper,
-                workspacePath,
-                projectFile,
-                projectAndNamespaces._1,
-                projectAndNamespaces._2.get
-              )
+              loadMetadata(gulper, workspacePath, projectFile, projectAndNamespaces._1, projectAndNamespaces._2.get)
           })
           .onComplete {
             case Failure(ex) =>
@@ -82,11 +74,7 @@ class Gulp(context: ExtensionContext) {
       .toFuture
       .flatMap { namespaceOrUndef =>
         if (namespaceOrUndef.isEmpty) {
-          Future.failed(
-            new Exception(
-              "Query for org namespace failed, is the workspace default org still accessible?"
-            )
-          )
+          Future.failed(new Exception("Query for org namespace failed, is the workspace default org still accessible?"))
         } else {
           Future.successful(true)
         }
@@ -148,17 +136,17 @@ class Gulp(context: ExtensionContext) {
         }
       )
       .toFuture
-      .flatMap( _ => {
+      .flatMap(_ => {
         if (!(project.additionalNamespaces.iterator sameElements selectedNamespaces)) {
           val error = updateProject(projectFile, selectedNamespaces)
           if (error.nonEmpty) {
             throw new Exception(error.get)
           } else {
-            val resetHandler  = new ResetHandler
+            val resetHandler = new ResetHandler
             resetHandler.fire(hard = true)
           }
         }
-        Future.successful( true )
+        Future.successful(true)
       })
   }
 
@@ -179,10 +167,7 @@ class Gulp(context: ExtensionContext) {
     }
   }
 
-  private def updateProject(
-    projectFile: Path,
-    additionalNamespaces: Array[String]
-  ): Option[String] = {
+  private def updateProject(projectFile: Path, additionalNamespaces: Array[String]): Option[String] = {
     loadProject(projectFile) match {
       case Left(err) => Some(err)
       case Right(projectValue) =>
@@ -233,15 +218,8 @@ class Gulp(context: ExtensionContext) {
 }
 
 class StatusLogger(progress: Progress) extends Logger {
-  private val phases = mutable.Set(
-    "Classes",
-    "Components",
-    "Custom SObjects",
-    "Flows",
-    "Labels",
-    "Pages",
-    "Standard SObjects"
-  )
+  private val phases =
+    mutable.Set("Classes", "Components", "Custom SObjects", "Flows", "Labels", "Pages", "Standard SObjects")
   private val progressMassage = new ProgressMessage
   progressMassage.message = s"Waiting for ${phases.mkString(", ")}"
   progress.report(progressMassage)
@@ -265,8 +243,7 @@ class StatusLogger(progress: Progress) extends Logger {
   }
 }
 
-class InputOptions(initial: js.UndefOr[String], namespaces: js.Array[String])
-    extends InputBoxOptions {
+class InputOptions(initial: js.UndefOr[String], namespaces: js.Array[String]) extends InputBoxOptions {
   ignoreFocusOut = true
   title = "Which namespace(s) would you like to download metadata for?"
   placeHolder = "List namespace(s) to download, separate them with spaces"
@@ -287,8 +264,7 @@ class InputOptions(initial: js.UndefOr[String], namespaces: js.Array[String])
   }
 }
 
-class NamespaceItem(val label: String, val description: String, val picked: Boolean)
-    extends QuickPickItem {
+class NamespaceItem(val label: String, val description: String, val picked: Boolean) extends QuickPickItem {
   override val alwaysShow: Boolean = true
 }
 
